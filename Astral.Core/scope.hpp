@@ -14,4 +14,6 @@ struct ScopeOnly
         instance->deinit();
     }
 };
-#define Scope(type, instance) ScopeOnly<type> var##__LINE__ = ScopeOnly<type>(&instance);
+#define CONCATIMPL(a, b) a ## b
+#define CONCAT(a, b) CONCATIMPL(a, b)
+#define Scope(type, instance) ScopeOnly<type> CONCAT(temp, __LINE__) = ScopeOnly<type>(&instance);

@@ -223,6 +223,13 @@ namespace Maths
 				W * q2w - dot
 			);
 		}
+		inline void ToAxisAngle(float *output)
+		{
+			output[3] = acosf(W) * 2.0f;
+			output[0] = X / sinf(output[3] * 0.5f);
+			output[1] = Y / sinf(output[3] * 0.5f);
+			output[2] = Z / sinf(output[3] * 0.5f);
+		}
 		inline Quaternion operator*(Quaternion other)
 		{
 			return Mult(other);

@@ -86,13 +86,13 @@ namespace collections
         }
         void Add(T item)
         {
-            EnsureArrayCapacity(count + 1);
+            EnsureArrayCapacity(count + 2); //+2 for a null buffer
             ptr[count] = item;
             count += 1;
         }
         void Insert(T item, usize at)
         {
-            EnsureArrayCapacity(count + 1);
+            EnsureArrayCapacity(count + 2); //+2 for a null buffer
             for (i64 i = (i64)count; i > (i64)at; i--)
             {
                 ptr[i] = ptr[i - 1];
@@ -102,7 +102,7 @@ namespace collections
         }
         void InsertAll(T* item, usize numItems, usize at)
         {
-            EnsureArrayCapacity(count + numItems);
+            EnsureArrayCapacity(count + numItems + 1); //+1 for a null buffer
             for (i64 i = (i64)count -1 + numItems; i >= at + numItems; i--)
             {
                 ptr[i] = ptr[i - 1];

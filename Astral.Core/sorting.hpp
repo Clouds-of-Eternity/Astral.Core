@@ -139,7 +139,7 @@ void TimSort(T* array, usize arrayLength, i8(*comparator)(T&, T&))
     }
 }
 
-#define IMPL_COMPARATORS(nameOfType, compareVar) inline bool operator<(nameOfType &other) { return this->compareVar < other.compareVar;} inline bool operator>(nameOfType &other) { return this->compareVar > other.compareVar;} inline bool operator<=(nameOfType &other) { return this->compareVar <= other.compareVar;} inline bool operator>=(nameOfType &other) { return this->compareVar >+ other.compareVar;} inline bool operator==(nameOfType &other) { return this->compareVar == other.compareVar;} inline bool operator!=(nameOfType &other) { return this->compareVar != other.compareVar;}
+#define IMPL_COMPARATORS(nameOfType, compareVar) inline bool operator<(nameOfType &other) { return this->compareVar < other.compareVar;} inline bool operator>(nameOfType &other) { return this->compareVar > other.compareVar;} inline bool operator<=(nameOfType &other) { return this->compareVar <= other.compareVar;} inline bool operator>=(nameOfType &other) { return this->compareVar >= other.compareVar;} inline bool operator==(nameOfType &other) { return this->compareVar == other.compareVar;} inline bool operator!=(nameOfType &other) { return this->compareVar != other.compareVar;}
 
 template<typename T>
 i8 OperatorBasedComparator(T& A, T& B)

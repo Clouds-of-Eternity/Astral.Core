@@ -54,7 +54,7 @@ namespace collections
         {
             if (capacity < minCapacity)
             {
-                i32 newCapacity = capacity;
+                usize newCapacity = capacity;
                 if (newCapacity == 0)
                 {
                     newCapacity = 4;

@@ -95,3 +95,29 @@ inline void ByteToBits(u8 byte, char* results)
     results[6] = ((byte >> 1) & 1) ? '1' : '0';
     results[7] = (byte & 1) ? '1' : '0';
 }
+inline u8 CharPointToUTF8(u32 charPoint, char *output)
+{
+    if (charPoint <= 0x7F) {
+        output[0] = charPoint;
+        return 1;
+    }
+    if (charPoint <= 0x7FF) {
+        output[0] = 0xC0 | (charPoint >> 6);            /* 110xxxxx */
+        output[1] = 0x80 | (charPoint & 0x3F);          /* 10xxxxxx */
+        return 2;
+    }
+    if (charPoint <= 0xFFFF) {
+        output[0] = 0xE0 | (charPoint >> 12);           /* 1110xxxx */
+        output[1] = 0x80 | ((charPoint >> 6) & 0x3F);   /* 10xxxxxx */
+        output[2] = 0x80 | (charPoint & 0x3F);          /* 10xxxxxx */
+        return 3;
+    }
+    if (charPoint <= 0x10FFFF) {
+        output[0] = 0xF0 | (charPoint >> 18);           /* 11110xxx */
+        output[1] = 0x80 | ((charPoint >> 12) & 0x3F);  /* 10xxxxxx */
+        output[2] = 0x80 | ((charPoint >> 6) & 0x3F);   /* 10xxxxxx */
+        output[3] = 0x80 | (charPoint & 0x3F);          /* 10xxxxxx */
+        return 4;
+    }
+    return 0;
+}

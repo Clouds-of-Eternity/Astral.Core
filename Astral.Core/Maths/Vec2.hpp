@@ -53,6 +53,10 @@ namespace Maths
             X *= other.X;
             Y *= other.Y;
         }
+        inline Vec2 operator*(float value)
+        {
+            return Vec2(X * value, Y * value);
+        }
 
         inline Vec2 operator/(Vec2 other)
         {

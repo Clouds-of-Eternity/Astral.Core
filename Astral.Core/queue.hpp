@@ -47,7 +47,7 @@ namespace collections
         {
             if (capacity < minCapacity)
             {
-                i32 newCapacity = capacity;
+                usize newCapacity = capacity;
                 if (newCapacity == 0)
                 {
                     newCapacity = 4;
@@ -57,13 +57,21 @@ namespace collections
                     newCapacity *= 2;
                 }
                 T *newPtr = (T*)allocator.Allocate(sizeof(T) * newCapacity);
-                for (usize i = 0; i < capacity; i += 1)
+                if (items != NULL)
                 {
-                    newPtr[i] = items[i];
+                    if (firstItemIndex < lastItemIndex) {
+                        memcpy(newPtr, items + firstItemIndex, sizeof(T) * count);
+                        //Array.Copy(_array, _head, newarray, 0, _size);
+                    } else {
+                        memcpy(newPtr, items + firstItemIndex, sizeof(T) * (capacity - firstItemIndex));
+                        memcpy(newPtr + (capacity - firstItemIndex), items, sizeof(T) * lastItemIndex);
+                    }
                 }
                 allocator.FREEPTR(items);
                 items = newPtr;
                 capacity = newCapacity;
+                firstItemIndex = 0;
+                lastItemIndex = (count == newCapacity) ? 0 : count; 
             }
         }
 

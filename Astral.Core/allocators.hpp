@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Linxc.h"
 #include <stdlib.h>
 

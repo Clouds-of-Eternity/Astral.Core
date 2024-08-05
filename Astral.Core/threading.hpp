@@ -19,8 +19,15 @@ namespace threading
 
         inline ConditionVariable()
         {
-            pthread_cond_init(&handle, NULL);
-            pthread_mutex_init(&mutex, NULL);
+            handle = {};
+            mutex = {};
+        }
+        inline static ConditionVariable init()
+        {
+            ConditionVariable result;
+            pthread_cond_init(&result.handle, NULL);
+            pthread_mutex_init(&result.mutex, NULL);
+            return result;
         }
         inline void deinit()
         {
@@ -37,7 +44,7 @@ namespace threading
             }
             return true;
         }
-        inline bool ExitSignalled()
+        inline void ExitSignalled()
         {
             pthread_mutex_unlock(&mutex);
         }
@@ -63,8 +70,15 @@ namespace threading
 
         inline ConditionVariable()
         {
-            InitializeConditionVariable(&handle);
-            InitializeCriticalSection(&criticalSection);
+            handle = {};
+            criticalSection = {};
+        }
+        inline static ConditionVariable init()
+        {
+            ConditionVariable result;
+            InitializeConditionVariable(&result.handle);
+            InitializeCriticalSection(&result.criticalSection);
+            return result;
         }
 
         inline bool AwaitSignalled(i64 timeout)
@@ -78,7 +92,7 @@ namespace threading
             return true;
             
         }
-        inline bool ExitSignalled()
+        inline void ExitSignalled()
         {
             LeaveCriticalSection(&criticalSection);
         }

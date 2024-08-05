@@ -295,6 +295,23 @@ struct string
         result[length - 1] = L'\0';
         return result;
     }
+    inline bool EndsWith(const char* other)
+    {
+        if (this->buffer == NULL || other == NULL)
+        {
+            if (this->buffer == other)
+            {
+                return true;
+            }
+            return false;
+        }
+        usize len = strlen(other) + 1;
+        if (this->length >= len)
+        {
+            return strcmp(this->buffer + this->length - len, other) == 0;
+        }
+        return false;
+    }
 
     inline bool operator==(const char* other)
     {

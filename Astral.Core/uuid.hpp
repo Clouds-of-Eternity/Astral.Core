@@ -8,6 +8,11 @@ struct uuid
 {
     u8 byte[16];
 
+    inline uuid()
+    {
+        ((u64*)byte)[0] = 0;
+        ((u64*)byte)[1] = 0;
+    }
     inline static uuid New(Random* random)
     {
         uuid result;

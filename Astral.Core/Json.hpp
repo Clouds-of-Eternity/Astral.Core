@@ -127,7 +127,7 @@ namespace Json
             {
                 for (usize i = 0; i < this->value.length - 1; i++)
                 {
-                    if ((this->value.buffer[i] == '-' && i > 0) || !isdigit(this->value.buffer[i]))
+                    if (!isdigit(this->value.buffer[i]))
                     {
                         if (this->value.buffer[i] == '.')
                         {
@@ -140,7 +140,12 @@ namespace Json
                                 tokenType = JsonToken_FloatLiteral;
                             }
                         }
-                        else
+                        else if (this->value.buffer[i] == '-' && i > 0)
+                        {
+                            tokenType = JsonToken_StringLiteral;
+                            break;
+                        }
+                        else if (this->value.buffer[i] != '-')
                         {
                             tokenType = JsonToken_StringLiteral;
                             break;
@@ -834,7 +839,7 @@ void Json::JsonElement::DumpJsonToStdout(i32 indents)
                     }
                         printf("%s: ", this->childObjects.buckets[i].entries.ptr[j].key.buffer);
                     this->childObjects.buckets[i].entries.ptr[j].value.DumpJsonToStdout(indents + 1);
-                    if (iterated < this->childObjects.Count - 1)
+                    if (iterated < this->childObjects.count - 1)
                     {
                         printf(",\n");
                     }

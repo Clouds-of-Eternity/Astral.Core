@@ -43,6 +43,12 @@ namespace collections
             this->data = data;
             this->length = itemsCount;
         }
+        Array(T *data, usize itemsCount)
+        {
+            this->allocator = IAllocator{};
+            this->data = data;
+            this->length = itemsCount;
+        }
         void deinit()
         {
             if (data != NULL && allocator.allocFunction != NULL)

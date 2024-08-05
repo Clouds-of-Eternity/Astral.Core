@@ -353,7 +353,7 @@ namespace Maths
 			return option<Matrix4x4>(result);
 		}
 
-		Matrix4x4 operator*(const Matrix4x4 other)
+		Matrix4x4 operator*(const Matrix4x4 &other)
 		{
 #ifdef USE_SSE
 			Matrix4x4 result;
@@ -413,6 +413,7 @@ namespace Maths
 		inline Matrix4x4 operator*=(const Matrix4x4 other)
 		{
 			*this = *this * other;
+			return *this;
 		}
 
 		inline bool operator==(const Matrix4x4 other)

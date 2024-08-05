@@ -1,4 +1,5 @@
 #pragma once
+#define POINT2
 #include "Linxc.h"
 
 namespace Maths
@@ -23,17 +24,26 @@ namespace Maths
             X = val;
             Y = val;
         }
-        inline bool operator==(Vec2 other)
+        inline bool operator==(Point2 other)
         {
             return X == other.X && Y == other.Y;
         }
-        inline bool operator !=(Vec2 other)
+        inline bool operator !=(Point2 other)
         {
             return X != other.X || Y != other.Y;
         }
-        inline Vec2 operator-()
+        inline Point2 operator-()
         {
-            return Vec2((float)(-X), (float)(-Y));
+            return Point2(-X, -Y);
         }
     };
+
+    inline bool Point2Eql(Point2 A, Point2 B)
+    {
+        return A.X == B.X && A.Y == B.Y;
+    }
+    inline u32 Point2Hash(Point2 self)
+    {
+        return (u32)(self.X ^ (self.Y + 0x9e3779b9 + (self.X << 6) + (self.X >> 2)));
+    }
 }

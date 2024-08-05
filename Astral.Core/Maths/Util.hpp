@@ -229,4 +229,33 @@ namespace Maths
 		curAngle += Clamp(targetAngle - curAngle, -maxChange, maxChange);
 		return WrapAngle(curAngle);
 	}
+	inline static Vec2 RotateAbout(Vec2 thisPoint, Vec2 pivot, float s, float c)
+	{
+		if (thisPoint == pivot)
+		{
+			return thisPoint;
+		}
+
+		thisPoint -= pivot;
+		float num = thisPoint.X * c - thisPoint.Y * s;
+		float num2 = thisPoint.X * s + thisPoint.Y * c;
+		thisPoint = Vec2(num + pivot.X, num2 + pivot.Y);
+		return thisPoint;
+	}
+	inline static Vec2 RotateAbout(Vec2 thisPoint, Vec2 pivot, float angle)
+	{
+		if (thisPoint == pivot)
+		{
+			return thisPoint;
+		}
+
+		float s = sinf(angle);
+		float c = cosf(angle);
+		return RotateAbout(thisPoint, pivot, s, c);
+	}
+	inline Vec2 TripleProduct(Vec2 A, Vec2 B, Vec2 C)
+	{
+		float num = A.X * B.Y - A.Y * B.X;
+		return Vec2((0.0f - C.Y) * num, C.X * num);
+	}
 }

@@ -30,19 +30,16 @@ namespace collections
         struct Bucket
         {
             bool initialized;
-            u32 keyHash;
             collections::vector<Entry> entries;
 
             Bucket()
             {
                 initialized = false;
-                keyHash = 0;
                 entries = collections::vector<Entry>();
             }
             Bucket(IAllocator allocator)
             {
                 initialized = false;
-                keyHash = 0;
                 entries = collections::vector<Entry>(allocator);
             }
         };
@@ -55,14 +52,14 @@ namespace collections
         Bucket *buckets;
         usize bucketsCount;
         usize filledBuckets;
-        usize Count;
+        usize count;
 
         hashmap()
         {
             this->allocator = IAllocator{};
             this->hashFunc = NULL;
             this->eqlFunc = NULL;
-            this->Count = 0;
+            this->count = 0;
             this->filledBuckets = 0;
             this->bucketsCount = 32;
             this->buckets = NULL;
@@ -72,7 +69,7 @@ namespace collections
             this->allocator = myAllocator;
             this->hashFunc = hashFunction;
             this->eqlFunc = eqlFunc;
-            this->Count = 0;
+            this->count = 0;
             this->filledBuckets = 0;
             this->bucketsCount = 32;
             this->buckets = (Bucket*)this->allocator.Allocate(this->bucketsCount * sizeof(Bucket));
@@ -107,7 +104,7 @@ namespace collections
                         buckets[i].entries.Clear();
                     }
                 }
-                Count = 0;
+                count = 0;
             }
         }
         void EnsureCapacity()
@@ -131,10 +128,9 @@ namespace collections
                     {
                         for (usize j = 0; j < buckets[i].entries.count; j++)
                         {
-                            u32 newKeyHash = buckets[i].keyHash; // hashFunc(buckets[i].entries.ptr[j].key);
+                            u32 newKeyHash = hashFunc(buckets[i].entries.ptr[j].key);
                             usize newIndex = newKeyHash % newSize;
                             newBuckets[newIndex].initialized = true;
-                            newBuckets[newIndex].keyHash = newKeyHash;
                             newBuckets[newIndex].entries.Add(Entry(buckets[i].entries.ptr[j].key, buckets[i].entries.ptr[j].value));
                         }
                         buckets[i].entries.deinit();
@@ -156,7 +152,6 @@ namespace collections
             if (!buckets[index].initialized)
             {
                 buckets[index].initialized = true;
-                buckets[index].keyHash = hash;
 
                 filledBuckets++;
             }
@@ -168,7 +163,7 @@ namespace collections
                     return &buckets[index].entries.Get(i)->value;
                 }
             }
-            Count++;
+            count++;
 
             Entry newEntry = Entry(key, value);
 
@@ -188,6 +183,8 @@ namespace collections
                     if (eqlFunc(buckets[index].entries.Get(i)->key, key))
                     {
                         buckets[index].entries.RemoveAt_Swap(i);
+
+                        count--;
 
                         return true;
                     }
@@ -299,7 +296,7 @@ namespace collections
                         completed = true;
                         return NULL;
                     }
-                    if (map->buckets[i].initialized)
+                    if (map->buckets[i].initialized && map->buckets[i].entries.count > 0)
                     {
                         j = 0;
                         break;

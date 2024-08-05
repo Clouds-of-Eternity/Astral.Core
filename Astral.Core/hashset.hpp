@@ -177,7 +177,7 @@ namespace collections
                 completed = false;
             }
 
-            Entry* Next()
+            T* Next()
             {
                 if (i >= set->bucketsCount || completed)
                 {
