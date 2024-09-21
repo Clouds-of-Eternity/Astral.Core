@@ -6,9 +6,11 @@
 #include "io.hpp"
 #include "stdio.h"
 #include "Maths/Util.hpp"
+#include "Core/StringBufferInstance.hpp"
 
 namespace Json
 {
+    thread_local extern StringRentalBuffer *stringRentalBuffer;
     enum JsonTokenType
     {
         JsonToken_Invalid,
@@ -35,6 +37,18 @@ namespace Json
         JsonElement_Object,
         JsonElement_Array,
         JsonElement_Property
+    };
+    enum JsonIntegerType
+    {
+        JsonInteger_I64 = -4,
+        JsonInteger_I32 = -3,
+        JsonInteger_I16 = -1,
+        JsonInteger_I8 = -1,
+        JsonInteger_None = 0,
+        JsonInteger_U8 = 1,
+        JsonInteger_U16 = 2,
+        JsonInteger_U32 = 3,
+        JsonInteger_U64 = 4
     };
     struct JsonToken
     {
@@ -77,12 +91,10 @@ namespace Json
     };
     struct JsonElement
     {
-        //union
-        //{
-            collections::hashmap<string, JsonElement> childObjects;
-            collections::Array<JsonElement> arrayElements;
-            string value;
-        //};
+        collections::hashmap<string, JsonElement> childObjects;
+        collections::Array<JsonElement> arrayElements;
+        string value;
+        
         JsonElementType elementType;
 
         inline JsonElement()
@@ -166,7 +178,7 @@ namespace Json
             }
             return tokenType;
         }
-        inline void GetInteger(void* output, i8* type)
+        inline void GetInteger(void* output, JsonIntegerType* type)
         {
             if (elementType != JsonElement_Property)
             {
@@ -189,19 +201,19 @@ namespace Json
                 {
                     i8 i8result = (i8)result * -1;
                     *((i8 *)output) = i8result;
-                    *type = -1;
+                    *type = JsonInteger_I8;
                 }
                 else if (result < I16Max)
                 {
                     i16 i16result = (i16)result * -1;
                     *((i16 *)output) = i16result;
-                    *type = -2;
+                    *type = JsonInteger_I16;
                 }
                 else if (result < I32Max)
                 {
                     i32 i32result = (i32)result * -1;
                     *((i32 *)output) = i32result;
-                    *type = -3;
+                    *type = JsonInteger_I32;
                 }
                 else// if (result > I64Max)
                 {
@@ -211,7 +223,7 @@ namespace Json
                     }
                     i64 i64result = (i64)result * -1;
                     *((i64 *)output) = i64result;
-                    *type = -4;
+                    *type = JsonInteger_I64;
                 }
             }
             else
@@ -220,25 +232,25 @@ namespace Json
                 {
                     u8 u8result = (u8)result;
                     *((u8 *)output) = u8result;
-                    *type = 1;
+                    *type = JsonInteger_U8;
                 }
                 else if (result < U16Max)
                 {
                     u16 u16result = (u16)result;
                     *((u16 *)output) = u16result;
-                    *type = 2;
+                    *type = JsonInteger_U16;
                 }
                 else if (result < U32Max)
                 {
                     u32 u32result = (u32)result;
                     *((u32 *)output) = u32result;
-                    *type = 3;
+                    *type = JsonInteger_U32;
                 }
                 else
                 {
                     u64 u64result = (u64)result;
                     *((u64 *)output) = u64result;
-                    *type = 4;
+                    *type = JsonInteger_U64;
                 }
             }
         }
@@ -415,10 +427,19 @@ namespace Json
             if (this->elementType == JsonElement_Object)
             {
                 IAllocator allocator = GetCAllocator();
-                
-                string propertyName = string(allocator, ptr);
-                JsonElement *result = childObjects.Get(propertyName);
-                propertyName.deinit();
+                JsonElement *result;
+                if (stringRentalBuffer == NULL)
+                {
+                    string propertyName = string(allocator, ptr);
+                    result = childObjects.Get(propertyName);
+                    propertyName.deinit();
+                }
+                else
+                {
+                    string propertyName = stringRentalBuffer->Rent(ptr);
+                    result = childObjects.Get(propertyName);
+                    stringRentalBuffer->Return(propertyName);
+                }
                 return result;
             }
             return NULL;
@@ -461,6 +482,7 @@ namespace Json
         JsonTokenType previousToken;
         collections::vector<JsonTokenType> indentTypes;
         bool shouldIndent;
+        bool isBinary;
 
         inline JsonWriter(IAllocator allocator, FILE *fileStream, bool writerShouldIndent)
         {
@@ -468,6 +490,7 @@ namespace Json
             previousToken = JsonToken_Invalid;
             shouldIndent = writerShouldIndent;
             indentTypes = collections::vector<JsonTokenType>(allocator);
+            isBinary = false;
         }
         inline void SaveAndCloseFile()
         {
@@ -725,6 +748,12 @@ namespace Json
 }
 
 #ifdef ASTRALCORE_JSON_IMPL
+
+namespace Json
+{
+    thread_local StringRentalBuffer *stringRentalBuffer = new StringRentalBuffer(GetCAllocator());
+}
+
 collections::Array<u8> Json::JsonElement::GetAsRawData(IAllocator allocator)
 {
     collections::vector<u8> results = collections::vector<u8>(GetCAllocator());

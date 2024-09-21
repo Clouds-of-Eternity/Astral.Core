@@ -17,7 +17,7 @@ namespace collections
         struct Bucket
         {
             bool initialized;
-            i32 keyHash;
+            u32 keyHash;
             collections::vector<T> entries;
         };
         def_delegate(HashFunc, u32, T);
@@ -30,14 +30,14 @@ namespace collections
         Bucket *buckets;
         usize bucketsCount;
         usize filledBuckets;
-        usize Count;
+        usize count;
 
         hashset()
         {
             this->allocator = IAllocator{};
             this->hashFunc = NULL;
             this->eqlFunc = NULL;
-            this->Count = 0;
+            this->count = 0;
             this->filledBuckets = 0;
             this->bucketsCount = 32;
             this->buckets = NULL;
@@ -47,7 +47,7 @@ namespace collections
             this->allocator = allocator;
             this->hashFunc = hashFunction;
             this->eqlFunc = eqlFunc;
-            this->Count = 0;
+            this->count = 0;
             this->filledBuckets = 0;
             this->bucketsCount = 32;
             this->buckets = (Bucket*)allocator.Allocate(this->bucketsCount * sizeof(Bucket));
@@ -80,12 +80,22 @@ namespace collections
 
                 for (usize i = 0; i < newSize; i++)
                 {
+                    newBuckets[i].entries = collections::vector<T>(this->allocator);
                     newBuckets[i].initialized = false;
                 }
                 for (usize i = 0; i < bucketsCount; i++)
                 {
-                    usize newIndex = buckets[i].keyHash % newSize;
-                    newBuckets[newIndex] = buckets[i];
+                    if (buckets[i].initialized)
+                    {
+                        for (usize j = 0; j < buckets[i].entries.count; j++)
+                        {
+                            u32 newKeyHash = hashFunc(buckets[i].entries.ptr[j]);
+                            usize newIndex = newKeyHash % newSize;
+                            newBuckets[newIndex].initialized = true;
+                            newBuckets[newIndex].entries.Add(buckets[i].entries.ptr[j]);
+                        }
+                        buckets[i].entries.deinit();
+                    }
                 }
 
                 this->allocator.FREEPTR(buckets);
@@ -115,7 +125,7 @@ namespace collections
                     return false;
                 }
             }
-            Count++;
+            count++;
             buckets[index].entries.Add(value);
             return true;
         }
@@ -132,6 +142,7 @@ namespace collections
                     {
                         //buckets[index].entries.Get(i)->value.V~();
                         buckets[index].entries.RemoveAt_Swap(i);
+                        count--;
 
                         return true;
                     }
@@ -160,6 +171,20 @@ namespace collections
                 }
             }
             return false;
+        }
+        void Clear()
+        {
+            if (buckets != NULL)
+            {
+                for (usize i = 0; i < bucketsCount; i++)
+                {
+                    if (buckets[i].initialized)
+                    {
+                        buckets[i].entries.Clear();
+                    }
+                }
+                count = 0;
+            }
         }
 
         struct Iterator
@@ -191,7 +216,7 @@ namespace collections
                         completed = true;
                         return NULL;
                     }
-                    if (set->buckets[i].initialized)
+                    if (set->buckets[i].initialized && set->buckets[i].entries.count > 0)
                     {
                         j = 0;
                         break;

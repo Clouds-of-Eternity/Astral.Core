@@ -21,62 +21,6 @@
 
 namespace io
 {
-    inline string BinaryReadString(IAllocator allocator, FILE *fs)
-    {
-        long currentPos = ftell(fs);
-
-        usize size = 0;
-        while (true)
-        {
-            i32 result = fgetc(fs);
-            if (result != 0 && result != -1)
-            {
-                size++;
-            }
-            else
-                break;
-        }
-        string str = string(allocator, size);
-        fseek(fs, 0, currentPos);
-        fread(str.buffer, 1, size, fs);
-        return str;
-    }
-    inline i32 BinaryReadInt32(FILE *fs)
-    {
-        i32 result;
-        fscanf(fs, "%i", &result);
-        return result;
-    }
-    inline i64 BinaryReadInt64(FILE *fs)
-    {
-        i64 result;
-        fscanf(fs, "%lli", &result);
-        return result;
-    }
-    inline u32 BinaryReadUint32(FILE *fs)
-    {
-        u32 result;
-        fscanf(fs, "%u", &result);
-        return result;
-    }
-    inline u64 BinaryReadUint64(FILE *fs)
-    {
-        u64 result;
-        fscanf(fs, "%llu", &result);
-        return result;
-    }
-    inline float BinaryReadFloat(FILE *fs)
-    {
-        float result;
-        fscanf(fs, "%f", &result);
-        return result;
-    }
-    inline double BinaryReadDouble(FILE *fs)
-    {
-        double result;
-        fscanf(fs, "%d", &result);
-        return result;
-    }
     inline string ReadFile(IAllocator allocator, const char* path, bool isBinary)
     {
         string result = string(allocator);
