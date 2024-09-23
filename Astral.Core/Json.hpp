@@ -6,7 +6,7 @@
 #include "io.hpp"
 #include "stdio.h"
 #include "Maths/Util.hpp"
-#include "Core/StringBufferInstance.hpp"
+#include "StringRental.hpp"
 
 namespace Json
 {
