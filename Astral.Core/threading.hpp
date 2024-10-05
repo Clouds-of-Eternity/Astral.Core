@@ -20,6 +20,8 @@ namespace threading
     void LockThreadLock(ThreadLock lock);
     void UnlockThreadLock(ThreadLock lock);
 
+    void YieldThread();
+
 #ifdef POSIX
 #define THREAD_RESULT void*
 #endif
@@ -88,10 +90,14 @@ namespace threading
     {
         EnterCriticalSection(&variable->criticalSection);
 
-        if (!SleepConditionVariableCS(&variable->handle, &variable->criticalSection, timeout <= 0 ? INFINITE : timeout))
+        if (SleepConditionVariableCS(&variable->handle, &variable->criticalSection, timeout <= 0 ? INFINITE : timeout) == 0)
         {
             LeaveCriticalSection(&variable->criticalSection);
         }
+    }
+    void YieldThread()
+    {
+        SwitchToThread();
     }
 
     ThreadLock CreateThreadLock()
