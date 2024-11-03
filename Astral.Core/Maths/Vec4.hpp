@@ -219,6 +219,10 @@ namespace Maths
             Z *= mult;
             W *= mult;
         }
+        inline Maths::Vec3 ToVector3()
+        {
+            return Maths::Vec3(X, Y, Z);
+        }
 
         inline Vec4 operator-()
         {
