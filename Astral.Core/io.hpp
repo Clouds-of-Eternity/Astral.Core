@@ -10,6 +10,7 @@
 #include <sys/stat.h>   // For stat().
 
 #if WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <io.h>
 #include <Windows.h>
 #define access _access

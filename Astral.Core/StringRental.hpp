@@ -19,10 +19,9 @@ struct StringRentalBuffer
         arena = ArenaAllocator(allocator);
         stringPool = collections::denseset<collections::vector<string>>(arena.AsAllocator(), collections::vector<string>());
     }
-    inline string Rent(text str)
+    inline string Rent(text str, usize lengthNoNullTerminator)
     {
-        usize len = strlen(str);
-
+        usize len = lengthNoNullTerminator;
         //each index of stringPool doubles string length
         //at 0: 16 chars
         //at 1: 32 chars
@@ -50,7 +49,13 @@ struct StringRentalBuffer
         result.length = len + 1; //+1 for the null terminator
         memcpy(result.buffer, str, len);
         result.buffer[len] = '\0';
+
         return result;
+    }
+    inline string Rent(text str)
+    {
+        usize len = strlen(str);
+        return Rent(str, len);
     }
     inline void Return(string str)
     {
