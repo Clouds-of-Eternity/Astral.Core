@@ -113,6 +113,10 @@ namespace collections
         {
             return &ptr[index];
         }
+        inline T& operator[](usize index)
+        {
+            return ptr[index];
+        }
         void RemoveAt_Swap(usize index)
         {
             assert(index >= 0 && index < count);
@@ -207,10 +211,32 @@ namespace collections
         {
             for (usize i = 0; i < from->count; i++)
             {
-                Add(from->ptr[i]);
+                Add(from->data[i]);
             }
             //memcpy(this->ptr, from->ptr, from->count * sizeof(T));
             from->deinit();
+        }
+        void AddAllDeinit(collections::Array<T> *from)
+        {
+            for (usize i = 0; i < from->length; i++)
+            {
+                Add(from->data[i]);
+            }
+            from->deinit();
+        }
+        void AddAll(collections::vector<T> *from)
+        {
+            for (usize i = 0; i < from->count; i++)
+            {
+                Add(from->data[i]);
+            }
+        }
+        void AddAll(collections::Array<T> *from)
+        {
+            for (usize i = 0; i < from->length; i++)
+            {
+                Add(from->data[i]);
+            }
         }
     };
 }

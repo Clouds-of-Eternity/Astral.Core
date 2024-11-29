@@ -107,6 +107,11 @@ struct string
         this->length = newLength;
         return this;
     }
+    inline string *Prepend(string other)
+    {
+        Prepend(other.buffer);
+        return this;
+    }
     inline string *Append(const char *other)
     {
         usize otherLen = strlen(other);

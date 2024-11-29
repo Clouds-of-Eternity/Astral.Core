@@ -89,5 +89,9 @@ namespace collections
             }
             return result;
         }
+        inline T& operator[](usize index)
+        {
+            return data[index];
+        }
     };
 }

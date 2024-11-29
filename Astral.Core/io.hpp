@@ -295,4 +295,34 @@ namespace io
         return results.ToOwnedArrayWith(allocator);
 #endif
     }
+
+    inline collections::Array<string> GetFilesInDirectoryRecursive(IAllocator allocator, const char* dirPath)
+    {
+        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
+        IAllocator alloc = arena.AsAllocator();
+        collections::vector<string> results = collections::vector<string>(alloc);
+        collections::vector<string> foldersToProcess = collections::vector<string>(alloc);
+        foldersToProcess.Add(string(alloc, dirPath));
+
+        while (foldersToProcess.count > 0)
+        {
+            string folder = foldersToProcess.ptr[0];
+            foldersToProcess.RemoveAt_Swap(0);
+
+            collections::Array<string> filesInThisDir = GetFilesInDirectory(alloc, folder.buffer);
+            for (usize i = 0; i < filesInThisDir.length; i++)
+            {
+                results.Add(filesInThisDir[i].Clone(allocator));
+            }
+            collections::Array<string> foldersInThisDir = GetFoldersInDirectory(alloc, folder.buffer);
+            for (usize i = 0; i < foldersInThisDir.length; i++)
+            {
+                foldersToProcess.Add(foldersInThisDir[i]);
+            }
+        }
+        collections::Array<string> finalArray = results.ToClonedArray(allocator);
+        arena.deinit();
+
+        return finalArray;
+    }
 }
