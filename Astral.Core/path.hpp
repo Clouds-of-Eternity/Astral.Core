@@ -132,4 +132,10 @@ namespace path
 
         return string(allocator, path.buffer);
     }
+    inline string GetFileNameDeinit(IAllocator allocator, string path)
+    {
+        string result = GetFileName(allocator, path);
+        path.deinit();
+        return result;
+    }
 }
