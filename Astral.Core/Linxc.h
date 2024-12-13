@@ -40,5 +40,6 @@ typedef unsigned long long u64;
 typedef unsigned long long usize;
 
 typedef const char *text;
+typedef const char *u8text;
 
 #endif
