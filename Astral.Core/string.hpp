@@ -19,6 +19,12 @@ inline const char* digits2(usize value)
         "8081828384858687888990919293949596979899"[value * 2];
 }
 
+#ifdef WINDOWS
+typedef wchar_t char_t;
+#else
+typedef char char_t;
+#endif
+
 struct string
 {
     IAllocator allocator;
@@ -105,6 +111,11 @@ struct string
         }
         this->buffer = newBuffer;
         this->length = newLength;
+        return this;
+    }
+    inline string *Prepend(string other)
+    {
+        Prepend(other.buffer);
         return this;
     }
     inline string *Append(const char *other)
@@ -295,6 +306,31 @@ struct string
         result[length - 1] = L'\0';
         return result;
     }
+    inline char_t* ToOSString(IAllocator allocator)
+    {
+#ifdef WINDOWS
+        return ToWString(allocator);
+#else
+        return Clone(allocator).buffer;
+#endif
+    }
+    inline bool StartsWith(const char* other)
+    {
+        if (this->buffer == NULL || other == NULL)
+        {
+            if (this->buffer == other)
+            {
+                return true;
+            }
+            return false;
+        }
+        usize len = strlen(other);
+        if (len > length)
+        {
+            return false;
+        }
+        return memcmp(this->buffer, other, len) == 0;
+    }
     inline bool EndsWith(const char* other)
     {
         if (this->buffer == NULL || other == NULL)
@@ -344,6 +380,28 @@ struct string
             return this->buffer != other.buffer;
         }
         return strcmp(this->buffer, other.buffer) != 0;
+    }
+    inline string operator+(string other)
+    {
+        string newString = Clone(allocator);
+        newString.Append(other.buffer);
+        return newString;
+    }
+    inline string operator+=(string other)
+    {
+        this->Append(other.buffer);
+        return *this;
+    }
+    inline string operator+(text other)
+    {
+        string newString = Clone(allocator);
+        newString.Append(other);
+        return newString;
+    }
+    inline string operator+=(text other)
+    {
+        this->Append(other);
+        return *this;
     }
 };
 

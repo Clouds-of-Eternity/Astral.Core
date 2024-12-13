@@ -5,18 +5,14 @@
 #define NULL 0
 #endif
 
-#define trait struct
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
-#define impl(name)
-#define IsAttribute
+#define BeginExports()
+#define EndExport()
 
 #ifdef __cplusplus
 #define exportC extern "C"
 #else
 #define exportC
-#define true 1
-#define false 0
-typedef signed char bool;
 #endif
 
 #ifdef WINDOWS

@@ -1,202 +1,232 @@
 #pragma once
 #include "Linxc.h"
 
-#ifdef WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
-#endif
-#ifdef POSIX
-#include "pthreads.h" //to test
-#endif
-
 namespace threading
 {
-#ifdef POSIX
-    struct ConditionVariable
-    {
-        pthread_cond_t handle;
-        pthread_mutex_t mutex;
+    typedef struct ConditionVariableImpl *ConditionVariable;
+    typedef struct ThreadLockImpl *ThreadLock;
 
-        inline ConditionVariable()
-        {
-            handle = {};
-            mutex = {};
-        }
-        inline static ConditionVariable init()
-        {
-            ConditionVariable result;
-            pthread_cond_init(&result.handle, NULL);
-            pthread_mutex_init(&result.mutex, NULL);
-            return result;
-        }
-        inline void deinit()
-        {
-            pthread_mutex_destroy(&mutex);
-            pthread_cond_destroy(&handle);
-        }
+    typedef struct ThreadImpl *Thread;
 
-        inline bool AwaitSignalled(i64 timeout)
-        {
-            pthread_mutex_lock(&mutex);
-            if (pthread_cond_wait(&handle, &mutex) != 0)
-            {
-                return false;
-            }
-            return true;
-        }
-        inline void ExitSignalled()
-        {
-            pthread_mutex_unlock(&mutex);
-        }
-        inline void SetSingleSignalled()
-        {
-            pthread_mutex_lock(&mutex);
-            pthread_cond_signal(&handle);
-            pthread_mutex_unlock(&mutex);
-        }
-        inline void SetAllSignalled()
-        {
-            pthread_mutex_lock(&mutex);
-            pthread_cond_broadcast(&handle);
-            pthread_mutex_unlock(&mutex);
-        }
-    };
-#endif
+    ConditionVariable CreateConditionVariable();
+    void DestroyConditionVariable(ConditionVariable variable);
+    void SetSignalled(ConditionVariable variable);
+    void SetAllSignalled(ConditionVariable variable);
+    void ExitSignalled(ConditionVariable variable);
+    void AwaitSignalled(ConditionVariable variable, u64 timeout);
 
-    struct ConditionVariable
-    {
-        CONDITION_VARIABLE handle;
-        CRITICAL_SECTION criticalSection;
+    ThreadLock CreateThreadLock();
+    void DestroyThreadLock(ThreadLock lock);
+    void LockThreadLock(ThreadLock lock);
+    void UnlockThreadLock(ThreadLock lock);
 
-        inline ConditionVariable()
-        {
-            handle = {};
-            criticalSection = {};
-        }
-        inline static ConditionVariable init()
-        {
-            ConditionVariable result;
-            InitializeConditionVariable(&result.handle);
-            InitializeCriticalSection(&result.criticalSection);
-            return result;
-        }
-
-        inline bool AwaitSignalled(i64 timeout)
-        {
-            EnterCriticalSection(&criticalSection);
-
-            if (!SleepConditionVariableCS(&handle, &criticalSection, timeout <= 0 ? INFINITE : timeout))
-            {
-                return false;
-            }
-            return true;
-            
-        }
-        inline void ExitSignalled()
-        {
-            LeaveCriticalSection(&criticalSection);
-        }
-
-        inline void SetSingleSignalled()
-        {
-            WakeConditionVariable(&handle);
-        }
-        inline void SetAllSignalled()
-        {
-            WakeAllConditionVariable(&handle);
-        }
-        inline void deinit()
-        {
-            DeleteCriticalSection(&criticalSection);
-        }
-    };
-
-#ifdef POSIX
-    struct Mutex
-    {
-        pthread_mutex_t handle;
-
-        inline Mutex()
-        {
-            handle = pthread_mutex_init(&handle, NULL);
-        }
-        inline bool EnterLock()
-        {
-            if (pthread_mutex_lock(&handle) == 0)
-            {
-                return true;
-            }
-            return false;
-        }
-        inline bool ExitLock()
-        {
-            if (pthread_mutex_unlock(&handle) == 0)
-            {
-                return true;
-            }
-            return false;
-        }
-        inline void deinit()
-        {
-            if (handle != NULL)
-                pthread_mutex_destroy(&handle);
-        }
-    };
-#endif
-
-#ifdef WINDOWS
-    struct Mutex
-    {
-        //use a critical section instead of a win32 mutex because they are lighter
-        CRITICAL_SECTION handle;
-
-        inline Mutex()
-        {
-            handle = {};
-        }
-        inline static Mutex init()
-        {
-            Mutex result = Mutex();
-            InitializeCriticalSection(&result.handle);
-            return result;
-        }
-        inline void deinit()
-        {
-            DeleteCriticalSection(&handle);
-        }
-
-        inline bool EnterLock()
-        {
-            EnterCriticalSection(&handle);
-            return true;
-        }
-        inline bool ExitLock()
-        {
-            LeaveCriticalSection(&handle);
-            return true;
-        }
-    };
-#endif
+    void YieldThread();
 
 #ifdef POSIX
 #define THREAD_RESULT void*
-    def_delegate(ThreadFunc, THREAD_RESULT, void*);
-    typedef pthread_t Thread;
-    inline Thread NewThread(ThreadFunc func, void *inputArgs)
-    {
-        Thread threadID;
-        pthread_create(&threadID, NULL, func, inputArgs);
-        return threadID;
-    }
 #endif
-
 #ifdef WINDOWS
 #define THREAD_RESULT unsigned long
-    def_delegate(ThreadFunc, THREAD_RESULT, void*);
-    typedef HANDLE Thread;
-    inline Thread NewThread(ThreadFunc func, void *inputArgs)
-    {
-        return CreateThread(NULL, 0, func, inputArgs, 0, NULL);
-    }
 #endif
+
+    def_delegate(ThreadFunc, THREAD_RESULT, void*);
+    Thread StartThread(ThreadFunc func, void *inputArgs);
+    void ShutdownThread(Thread thread);
 }
+
+#ifdef ASTRALCORE_THREADING_IMPL
+
+#include "stdlib.h"
+
+#ifdef WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include "windows.h"
+
+namespace threading
+{
+    typedef struct ConditionVariableImpl
+    {
+        CONDITION_VARIABLE handle;
+        CRITICAL_SECTION criticalSection;
+    } ConditionVariableImpl;
+    typedef struct ThreadLockImpl
+    {
+        //use a critical section instead of a win32 mutex because they are lighter
+        CRITICAL_SECTION handle;
+    } ThreadLockImpl;
+    typedef struct ThreadImpl
+    {
+        HANDLE handle;
+    } ThreadImpl;
+
+    ConditionVariable CreateConditionVariable()
+    {
+        ConditionVariableImpl result;
+        InitializeConditionVariable(&result.handle);
+        InitializeCriticalSection(&result.criticalSection);
+
+        ConditionVariable ptr = (ConditionVariable)malloc(sizeof(ConditionVariableImpl));
+        *ptr = result;
+        return ptr;
+    }
+    void DestroyConditionVariable(ConditionVariable variable)
+    {
+        DeleteCriticalSection(&variable->criticalSection);
+        free(variable);
+    }
+    void SetSignalled(ConditionVariable variable)
+    {
+        WakeConditionVariable(&variable->handle);
+    }
+    void SetAllSignalled(ConditionVariable variable)
+    {
+        WakeAllConditionVariable(&variable->handle);
+    }
+    void ExitSignalled(ConditionVariable variable)
+    {
+        LeaveCriticalSection(&variable->criticalSection);
+    }
+    void AwaitSignalled(ConditionVariable variable, u64 timeout)
+    {
+        EnterCriticalSection(&variable->criticalSection);
+
+        if (SleepConditionVariableCS(&variable->handle, &variable->criticalSection, timeout <= 0 ? INFINITE : timeout) == 0)
+        {
+            LeaveCriticalSection(&variable->criticalSection);
+        }
+    }
+    void YieldThread()
+    {
+        SwitchToThread();
+    }
+
+    ThreadLock CreateThreadLock()
+    {
+        ThreadLock result = (ThreadLock)malloc(sizeof(ThreadLockImpl));
+        InitializeCriticalSection(&result->handle);
+        return result;
+    }
+    void DestroyThreadLock(ThreadLock lock)
+    {
+        DeleteCriticalSection(&lock->handle);
+        free(lock);
+    }
+    void LockThreadLock(ThreadLock lock)
+    {
+        EnterCriticalSection(&lock->handle);
+    }
+    void UnlockThreadLock(ThreadLock lock)
+    {
+        LeaveCriticalSection(&lock->handle);
+    }
+    
+    Thread StartThread(ThreadFunc func, void *inputArgs)
+    {
+        Thread thread = (Thread)malloc(sizeof(ThreadImpl));
+        thread->handle = CreateThread(NULL, 0, func, inputArgs, 0, NULL);
+        return thread;
+    }
+    void ShutdownThread(Thread thread)
+    {
+        TerminateThread(thread->handle, 0);
+        free(thread);
+    }
+}
+
+#endif
+#ifdef POSIX
+#include "pthreads.h"
+
+namespace threading
+{
+    typedef struct ConditionVariableImpl
+    {
+        pthread_cond_t handle;
+        pthread_mutex_t mutex;
+    } ConditionVariableImpl;
+    typedef struct ThreadLockImpl
+    {
+        pthread_mutex_t handle;
+    } ThreadLockImpl;
+    typedef struct ThreadImpl
+    {
+        pthread_t handle;
+    } ThreadImpl;
+
+    ConditionVariable CreateConditionVariable()
+    {
+        ConditionVariableImpl result;
+        pthread_cond_init(&result->handle, NULL);
+        pthread_mutex_init(&result->mutex, NULL);
+
+        ConditionVariable ptr = (ConditionVariable)malloc(sizeof(ConditionVariableImpl));
+        *ptr = result;
+        return ptr;
+    }
+    void DestroyConditionVariable(ConditionVariable variable)
+    {
+        pthread_mutex_destroy(&variable->mutex);
+        pthread_cond_destroy(&variable->handle);
+        free(variable);
+    }
+    void SetSignalled(ConditionVariable variable)
+    {
+        pthread_mutex_lock(&variable->mutex);
+        pthread_cond_signal(&variable->handle);
+        pthread_mutex_unlock(&variable->mutex);
+    }
+    void SetAllSignalled(ConditionVariable variable)
+    {
+        pthread_mutex_lock(&variable->mutex);
+        pthread_cond_broadcast(&variable->handle);
+        pthread_mutex_unlock(&variable->mutex);
+    }
+    void ExitSignalled(ConditionVariable variable)
+    {
+        pthread_mutex_unlock(&variable->mutex);
+    }
+    void AwaitSignalled(ConditionVariable variable, u64 timeout)
+    {
+        pthread_mutex_lock(&variable->mutex);
+        if (pthread_cond_wait(&variable->handle, &variable->mutex) != 0)
+        {
+            pthread_mutex_unlock(&variable->mutex);
+        }
+    }
+
+    ThreadLock CreateThreadLock()
+    {
+        ThreadLock result = (ThreadLock)malloc(sizeof(ThreadLockImpl));
+        pthread_mutex_init(&result->handle, NULL);
+        return result;
+    }
+    void DestroyThreadLock(ThreadLock lock)
+    {
+        pthread_mutex_destroy(&lock->handle);
+        free(lock);
+    }
+    void LockThreadLock(ThreadLock lock)
+    {
+        pthread_mutex_lock(&lock->handle);
+    }
+    void UnlockThreadLock(ThreadLock lock)
+    {
+        pthread_mutex_unlock(&lock->handle);
+    }
+
+    Thread StartThread(ThreadFunc func, void *inputArgs)
+    {
+        Thread thread = (Thread)malloc(sizeof(ThreadImpl));
+        pthread_create(&thread->handle, NULL, func, inputArgs);
+        return thread;
+    }
+    void ShutdownThread(Thread thread)
+    {
+        pthread_cancel(&thread->handle);
+        free(thread);
+    }
+}
+
+#endif
+
+#endif
