@@ -252,7 +252,7 @@ struct string
         return this;
     }
 
-    inline string *TrimStart(usize trimLength)
+    inline string TrimStart(usize trimLength)
     {
         if (trimLength >= length)
         {
@@ -267,7 +267,7 @@ struct string
             buffer = newBuffer;
             length -= trimLength;
         }
-        return this;
+        return *this;
     }
     inline string CloneTrimStart(IAllocator allocator, usize trimLength)
     {
