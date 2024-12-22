@@ -106,6 +106,14 @@ namespace collections
             T *result = &ptr[index];
             return result;
         }
+        T GetCopyOr(usize index, T valueOnNotFound)
+        {
+            if (index >= capacity)
+            {
+                return valueOnNotFound;
+            }
+            return ptr[index];
+        }
         void Remove(u32 index)
         {
             if (index <= capacity)
