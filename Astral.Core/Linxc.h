@@ -8,6 +8,7 @@
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
 #define BeginExports()
 #define EndExport()
+#define suppressGC
 
 #ifdef __cplusplus
 #define exportC extern "C"
