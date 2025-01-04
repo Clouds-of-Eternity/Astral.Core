@@ -8,6 +8,7 @@
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
 #define BeginExports()
 #define EndExport()
+#define suppressGC
 
 #ifdef __cplusplus
 #define exportC extern "C"
@@ -40,5 +41,6 @@ typedef unsigned long long u64;
 typedef unsigned long long usize;
 
 typedef const char *text;
+typedef const char *u8text;
 
 #endif

@@ -27,15 +27,15 @@ namespace collections
             defaultValue = T{};
             capacity = 0;
         }
-        denseset(IAllocator myAllocator, usize minCapacity)
-        {
-            this->allocator = myAllocator;
-            ptr = NULL;
-            capacity = 0;
-            defaultValue = T{};
-            //capacity = minCapacity;
-            EnsureArrayCapacity(minCapacity);
-        }
+        // denseset(IAllocator myAllocator, usize minCapacity)
+        // {
+        //     this->allocator = myAllocator;
+        //     ptr = NULL;
+        //     capacity = 0;
+        //     defaultValue = T{};
+        //     //capacity = minCapacity;
+        //     EnsureArrayCapacity(minCapacity);
+        // }
         denseset(IAllocator myAllocator, T defaultValue)
         {
             allocator = myAllocator;
@@ -105,6 +105,14 @@ namespace collections
             }
             T *result = &ptr[index];
             return result;
+        }
+        T GetCopyOr(usize index, T valueOnNotFound)
+        {
+            if (index >= capacity)
+            {
+                return valueOnNotFound;
+            }
+            return ptr[index];
         }
         void Remove(u32 index)
         {
