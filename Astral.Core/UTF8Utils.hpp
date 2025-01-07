@@ -1,6 +1,9 @@
 #pragma once
 #include "Linxc.h"
-#include "stdio.h"
+#include "allocators.hpp"
+#include "option.hpp"
+#include <stdio.h>
+#include <string.h>
 
 /// Check if a u32 is a valid UTF8 character. If so, returns the byte in which they are valid starting from.
 inline bool IsValidUTF8(text utf8, usize lengthToCheck)
@@ -120,4 +123,52 @@ inline u8 CharPointToUTF8(u32 charPoint, char *output)
         return 4;
     }
     return 0;
+}
+inline wchar_t *UTF8ToWChar(IAllocator alloc, const char *inputText)
+{
+    wchar_t *maxSizeString = (wchar_t *)alloc.Allocate(4 * strlen(inputText) + 1);
+    usize index = 0;
+    usize i = 0;
+    while (true)
+    {
+        u32 result = UTF8GetCharPoint(inputText, &index);
+        maxSizeString[i] = (wchar_t)result;
+        i++;
+        if (result == 0)
+        {
+            break;
+        }
+    }
+    maxSizeString[i] = 0;
+    return maxSizeString;
+}
+inline u8 *WCharToUTF8(IAllocator alloc, const wchar_t *inputText)
+{
+    usize len = wcslen(inputText);
+    u8 *maxSizeString = (u8 *)alloc.Allocate(len * 4 + 1);
+    usize index = 0;
+    for (usize i = 0; i < len; i++)
+    {
+        char output[4];
+        u8 advance = CharPointToUTF8((u32)inputText[i], output);
+        if (advance == 1)
+        {
+            maxSizeString[index] = output[0];
+        }
+        if (advance == 2)
+        {
+            maxSizeString[index] = output[1];
+        }
+        if (advance == 3)
+        {
+            maxSizeString[index] = output[2];
+        }
+        if (advance == 4)
+        {
+            maxSizeString[index] = output[3];
+        }
+        index += advance;
+    }
+    maxSizeString[index] = '\0';
+    return maxSizeString;
 }
