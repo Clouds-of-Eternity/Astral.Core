@@ -2,6 +2,17 @@
 #include "string.hpp"
 #include "list.hpp"
 #include "UTF8Utils.hpp"
+#include "stdarg.h"
+
+#ifdef STB_SPRINTF_H_INCLUDE
+#ifndef STRINGBUILDER_USE_STB
+#define STRINGBUILDER_USE_STB
+#define vsnprintf stbsp_vsnprintf
+#define vsprintf stbsp_vsprintf
+#define snprintf stbsp_snprintf
+#define sprintf stbsp_sprintf
+#endif
+#endif
 
 struct StringBuilder
 {
@@ -44,6 +55,31 @@ struct StringBuilder
             buffer.Add(text[i]);
             i++;
         }
+    }
+    inline void Appendf(text format, ...)
+    {
+        va_list args;
+        va_start(args, format);
+
+        char chars[256];
+        i32 len = vsnprintf(chars, 256, format, args);
+        buffer.EnsureArrayCapacity(buffer.count + len);
+        memcpy(buffer.ptr, chars, len);
+
+        va_end(args);
+    }
+    inline void AppendfLong(text format, ...)
+    {
+        va_list args;
+        va_list args2;
+        va_start(args, format);
+        va_copy(args2, args);
+        i32 len = vsnprintf(NULL, 0, format, args);
+        buffer.EnsureArrayCapacity(buffer.count + len);
+        vsnprintf(buffer.ptr, len, format, args2);
+        buffer.count += len;
+        va_end(args);
+        va_end(args2);
     }
     inline void AppendStringLine(string text)
     {

@@ -1,13 +1,14 @@
 #pragma once
 #include "vector.hpp"
 #include "io.hpp"
-#include "assert.h"
+#include "UTF8Utils.hpp"
 
 typedef collections::vector<u8> ByteStream;
 
 struct ByteStreamReader
 {
     usize position;
+    usize size;
     u8* stream;
 
     inline ByteStreamReader()
@@ -15,27 +16,50 @@ struct ByteStreamReader
         position = 0;
         stream = NULL;
     }
-    inline ByteStreamReader(usize pos, u8* byteStream)
+    inline ByteStreamReader(u8* byteStream, usize size, usize pos)
     {
         this->position = pos;
+        this->size = size;
         this->stream = byteStream;
     }
     
     template<typename T>
     inline T Read()
     {
-        assert(stream != NULL);
+        if (position + sizeof(T) > size)
+        {
+            return T();
+        }
         T *ptr = (T *)&stream[position];
         position += sizeof(T);
         return *ptr;
     }
+    inline u8 ReadByte()
+    {
+        if (position + 1 > size)
+        {
+            return 0;
+        }
+        return stream[position++];
+    }
+    template<typename T>
+    inline collections::Array<T> ReadArray(IAllocator allocator, usize count)
+    {
+        collections::Array<T> result = collections::Array<T>(allocator, count);
+        memcpy(result.data, &stream[position], sizeof(T) * count);
+        position += sizeof(T) * count;
+        return result;
+    }
     inline string ReadString(IAllocator allocator)
     {
-        assert(stream != NULL);
         usize length = 0;
         while (stream[position + length] != 0)
         {
             length++;
+            if (position + length >= size)
+            {
+                return string();
+            }
         }
         string result = string(allocator, length + 1);
         memcpy(result.buffer, &stream[position], length);
@@ -78,6 +102,27 @@ struct ByteStreamWriter
         bytes.EnsureArrayCapacity(bytes.count + length);
         memset(bytes.ptr + bytes.count, 0, length);
         bytes.count += length;
+    }
+    inline void WriteStringANSItoU8(string str)
+    {
+        for (usize i = 0; i < str.length; i++)
+        {
+            char chars[4];
+            u8 len = CharPointToUTF8(str.buffer[i], chars);
+            WriteArray(chars, len);
+        }
+    }
+    inline void WriteString(string str)
+    {
+        WriteArray(str.buffer, str.length);
+    }
+    inline void WriteText(text str)
+    {
+        usize i = 0;
+        do
+        {
+            WriteByte(str[i++]);
+        } while (str[i] != '\0');
     }
     inline void Clear()
     {
