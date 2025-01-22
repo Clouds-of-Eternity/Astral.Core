@@ -50,6 +50,15 @@ struct ByteStreamReader
         position += sizeof(T) * count;
         return result;
     }
+    inline void ReadByteArray(u8 *out, usize count)
+    {
+        memcpy(out, &stream[position], count);
+        position += count;
+    }
+    inline u32 ReadUTF8()
+    {
+        return UTF8GetCharPoint((text)stream, &position);
+    }
     inline string ReadString(IAllocator allocator)
     {
         usize length = 0;
