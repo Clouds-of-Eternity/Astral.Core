@@ -5,12 +5,12 @@
 
 namespace Json
 {
-    void JsonConvertToBinary(FILE *fs, JsonElement *json);
+    void JsonConvertToBinary(ByteStreamWriter *writer, JsonElement *json);
     void ParseJsonBfmtElement(IAllocator allocator, ByteStreamReader *reader, JsonElement *result);
 
     enum JsonBinaryFieldType
     {
-        JsonBinaryField_Property,
+        JsonBinaryField_Object,
         JsonBinaryField_Array,
         JsonBinaryField_String,
         JsonBinaryField_Float,
@@ -19,7 +19,11 @@ namespace Json
         JsonBinaryField_Int8,
         JsonBinaryField_Int16,
         JsonBinaryField_Int32,
-        JsonBinaryField_Int64
+        JsonBinaryField_Int64,
+        JsonBinaryField_UInt8,
+        JsonBinaryField_UInt16,
+        JsonBinaryField_UInt32,
+        JsonBinaryField_UInt64
     };
 }
 
@@ -28,8 +32,9 @@ namespace Json
 void Json::ParseJsonBfmtElement(IAllocator allocator, ByteStreamReader *reader, JsonElement *result)
 {
     JsonBinaryFieldType fieldType = (JsonBinaryFieldType)reader->Read<u8>();
-    if (fieldType == JsonBinaryField_Property)
+    if (fieldType == JsonBinaryField_Object)
     {
+        result->elementType = JsonElement_Object;
         u32 count = reader->Read<u32>();
 
         *result = JsonElement(collections::hashmap<string, JsonElement>(allocator, &stringHash, &stringEql));
@@ -45,6 +50,7 @@ void Json::ParseJsonBfmtElement(IAllocator allocator, ByteStreamReader *reader, 
     }
     else if (fieldType == JsonBinaryField_Array)
     {
+        result->elementType = JsonElement_Array;
         u32 count = reader->Read<u32>();
 
         *result = JsonElement(collections::Array<JsonElement>(allocator, count));
@@ -57,60 +63,82 @@ void Json::ParseJsonBfmtElement(IAllocator allocator, ByteStreamReader *reader, 
     }
     else
     {
-        result->value = string();
-        result->value.allocator = allocator;
+        result->elementType = JsonElement_Property;
+        result->dataLength = 0;
+        result->data = 0;
         switch (fieldType)
         {
             case JsonBinaryField_Null:
             {
-                result->value = string();
+                result->dataLength = -(i32)JsonToken_NullLiteral;
+                //result->value = string();
                 break;
             }
             case JsonBinaryField_String:
             {
-                result->value = reader->ReadString(allocator);
+                string str = reader->ReadString(allocator);
+                result->data = (u64)str.buffer;
+                result->dataLength = str.length;
                 break;
             }
             case JsonBinaryField_Bool:
             {
-                result->value.length = 1;
-                result->value.buffer = (char *)malloc(1);
-                result->value.buffer[0] = reader->Read<bool>() ? 1 : 0;
+                result->data = (u64)reader->Read<bool>();
+                result->dataLength = -(i32)JsonToken_BoolLiteral;
                 break;
             }
             case JsonBinaryField_Float:
             {
-                result->value.length = 4;
-                result->value.buffer = (char *)malloc(4);
-                *(float *)result->value.buffer = reader->Read<float>();
+                *((float *)&result->data) = reader->Read<float>();
+                result->dataLength = -(i32)JsonToken_FloatLiteral;
                 break;
             }
             case JsonBinaryField_Int8:
             {
-                result->value.length = 1;
-                result->value.buffer = (char *)malloc(1);
-                result->value.buffer[0] = reader->Read<u8>();
+                *((i8 *)&result->data) = reader->Read<i8>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
                 break;
             }
             case JsonBinaryField_Int16:
             {
-                result->value.length = 2;
-                result->value.buffer = (char *)malloc(2);
-                *(u16 *)result->value.buffer = reader->Read<u16>();
+                *((i16 *)&result->data) = reader->Read<i16>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
                 break;
             }
             case JsonBinaryField_Int32:
             {
-                result->value.length = 4;
-                result->value.buffer = (char *)malloc(4);
-                *(u32 *)result->value.buffer = reader->Read<u32>();
+                *((i32 *)&result->data) = reader->Read<i32>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
                 break;
             }
             case JsonBinaryField_Int64:
             {
-                result->value.length = 8;
-                result->value.buffer = (char *)malloc(8);
-                *(u64 *)result->value.buffer = reader->Read<u64>();
+                *((i64 *)&result->data) = reader->Read<i64>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
+                break;
+            }
+            case JsonBinaryField_UInt8:
+            {
+                *((u8 *)&result->data) = reader->Read<u8>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
+                break;
+            }
+            case JsonBinaryField_UInt16:
+            {
+                *((u16 *)&result->data) = reader->Read<u16>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
+                break;
+            }
+            case JsonBinaryField_UInt32:
+            {
+                *((u32 *)&result->data) = reader->Read<u32>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
+                break;
+            }
+            case JsonBinaryField_UInt64:
+            {
+                *((u64 *)&result->data) = reader->Read<u64>();
+                result->dataLength = -(i32)JsonToken_IntegerLiteral;
                 break;
             }
             default:
@@ -119,89 +147,112 @@ void Json::ParseJsonBfmtElement(IAllocator allocator, ByteStreamReader *reader, 
     }
 }
 
-void Json::JsonConvertToBinary(FILE *fs, JsonElement *json)
+void Json::JsonConvertToBinary(ByteStreamWriter *writer, JsonElement *json)
 {
     switch (json->elementType)
     {
-        case JsonElement_Property:
+        case JsonElement_Object:
         {
-            Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Property);
-            Binary_WriteData<u32>(fs, (u32)json->childObjects.count);
+            writer->Write((u8)JsonBinaryField_Object);
+            writer->Write((u32)json->childObjects.count);
             
             auto iterator = json->childObjects.GetIterator();
             foreach (kvp, iterator)
             {
-                Binary_WriteString(fs, kvp->key);
-                JsonConvertToBinary(fs, &kvp->value);
+                writer->WriteString(kvp->key);
+                JsonConvertToBinary(writer, &kvp->value);
             }
             break;
         }
         case JsonElement_Array:
         {
-            Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Array);
-            Binary_WriteData<u32>(fs, (u32)json->arrayElements.length);
+            writer->Write((u8)JsonBinaryField_Array);
+            writer->Write((u32)json->arrayElements.length);
             for (usize i = 0; i < json->arrayElements.length; i++)
             {
-                JsonConvertToBinary(fs, &json->arrayElements.data[i]);
+                JsonConvertToBinary(writer, &json->arrayElements.data[i]);
             }
             break;
         }
-        case JsonElement_Object:
+        case JsonElement_Property:
         {
             Json::JsonTokenType elemType = json->CheckElementType();
             switch (elemType)
             {
                 case JsonToken_StringLiteral:
                 {
-                    Binary_WriteData<u8>(fs, (u8)JsonBinaryField_String);
-                    Binary_WriteString(fs, json->value);
+                    writer->WriteByte((u8)JsonBinaryField_String);
+                    string reassembled = string();
+                    reassembled.buffer = (char *)json->data;
+                    reassembled.length = json->dataLength;
+                    writer->WriteString(reassembled);
+                    //writer->WriteString(json->value);
                     break;
                 }
                 case JsonToken_FloatLiteral:
                 {
-                    Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Float);
-                    Binary_WriteData<float>(fs, json->GetFloat());
+                    writer->WriteByte((u8)JsonBinaryField_Float);
+                    writer->Write(json->GetFloat());
                     break;
                 }
                 case JsonToken_BoolLiteral:
                 {
-                    Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Bool);
-                    Binary_WriteData<bool>(fs, json->GetBool());
+                    writer->WriteByte((u8)JsonBinaryField_Bool);
+                    writer->Write(json->GetBool());
                     break;
                 }
                 case JsonToken_NullLiteral:
                 {
-                    Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Null);
-                    Binary_WriteText(fs, "null");
+                    writer->WriteByte((u8)JsonBinaryField_Null);
+                    break;
+                }
+                case JsonToken_UIntegerLiteral:
+                {
+                    u64 data = json->data;
+                    if (data <= U8Max)
+                    {
+                        writer->WriteByte(JsonBinaryField_UInt8);
+                        writer->Write((u8)data);
+                    }
+                    else if (data <= U16Max)
+                    {
+                        writer->WriteByte(JsonBinaryField_UInt16);
+                        writer->Write((u16)data);
+                    }
+                    else if (data <= U32Max)
+                    {
+                        writer->WriteByte(JsonBinaryField_UInt32);
+                        writer->Write((u32)data);
+                    }
+                    else
+                    {
+                        writer->WriteByte(JsonBinaryField_UInt64);
+                        writer->Write(data);
+                    }
                     break;
                 }
                 case JsonToken_IntegerLiteral:
                 {
-                    i64 output = 0;
-                    Json::JsonIntegerType type;
-                    json->GetInteger(&output, &type);
-                    if (type == Json::JsonInteger_I8 || type == Json::JsonInteger_U8)
+                    i64 data = *(i64 *)&json->data;
+                    if (data <= I8Max && data >= I8Min)
                     {
-                        i8 data = (i8)output;
-                        Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Int8);
-                        Binary_WriteData<i8>(fs, data);
+                        writer->WriteByte(JsonBinaryField_Int8);
+                        writer->Write((i8)data);
                     }
-                    else if (type == Json::JsonInteger_I16 || type == Json::JsonInteger_U16)
+                    else if (data <= I16Max && data >= I16Min)
                     {
-                        i16 data = (i16)output;
-                        Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Int16);
-                        Binary_WriteData<i16>(fs, data);
+                        writer->WriteByte(JsonBinaryField_Int16);
+                        writer->Write((i16)data);
                     }
-                    else if (type == Json::JsonInteger_I32 || type == Json::JsonInteger_U32)
+                    else if (data <= I32Max && data >= I32Min)
                     {
-                        i32 data = (i32)output;
-                        Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Int32);
-                        Binary_WriteData<i32>(fs, data);
+                        writer->WriteByte(JsonBinaryField_Int32);
+                        writer->Write((i32)data);
                     }
                     else
                     {
-                        Binary_WriteData<u8>(fs, (u8)JsonBinaryField_Int64);
-                        Binary_WriteData<i64>(fs, output);
+                        writer->WriteByte(JsonBinaryField_Int64);
+                        writer->Write(data);
                     }
                     break;
                 }

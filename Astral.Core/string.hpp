@@ -643,3 +643,37 @@ inline string ConcatFromCharSlices(IAllocator allocator, CharSlice* strings, usi
     result.length = totalLength;
     return result;
 }
+inline i64 StringToI64(const char* buffer, usize length)
+{
+    i64 result = 0;
+    u32 index = 1;
+    for (i32 i = (i32)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            i64 amount = index * (buffer[i] - (i64)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    if (buffer[0] == '-')
+    {
+        result *= -1;
+    }
+    return result;
+}
+inline u64 StringToU64(const char* buffer, usize length)
+{
+    u64 result = 0;
+    u32 index = 1;
+    for (i32 i = (i32)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            i64 amount = index * (buffer[i] - (u64)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    return result;
+}

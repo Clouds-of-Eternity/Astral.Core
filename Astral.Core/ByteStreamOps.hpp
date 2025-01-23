@@ -128,10 +128,11 @@ struct ByteStreamWriter
     inline void WriteText(text str)
     {
         usize i = 0;
-        do
+        while(str[i] != '\0')
         {
             WriteByte(str[i++]);
-        } while (str[i] != '\0');
+        }
+        WriteByte(0);
     }
     inline void Clear()
     {
