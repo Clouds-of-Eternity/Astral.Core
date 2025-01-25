@@ -76,6 +76,16 @@ struct ByteStreamReader
         position += length + 1;
         return result;
     }
+    /// @brief Advances past a string without reading it
+    inline void PassString()
+    {
+        while (stream[position] != 0)
+        {
+            position++;
+        }
+        //advance past the null terminator
+        position++;
+    }
 };
 struct ByteStreamWriter
 {
