@@ -19,7 +19,6 @@ inline void *LoadMod(const char_t *path)
 inline void *GetFuncPointer(void *h, const char *name)
 {
     void *f = GetProcAddress((HMODULE)h, name);
-    assert(f != NULL);
     return f;
 }
 inline void UnloadMod(void* library)
@@ -45,7 +44,6 @@ inline void *LoadMod(const char_t *path)
 inline void *GetFuncPointer(void *h, const char *name)
 {
     void *f = dlsym(h, name);
-    assert(f != NULL);
     return f;
 }
 inline void UnloadMod(void* library)
