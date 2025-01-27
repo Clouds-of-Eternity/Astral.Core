@@ -13,7 +13,6 @@
 inline void *LoadMod(const char_t *path)
 {
     HMODULE h = LoadLibraryW(path);
-    assert(h != NULL);
     return (void*)h;
 }
 inline void *GetFuncPointer(void *h, const char *name)
@@ -38,7 +37,6 @@ inline void UnloadMod(void* library)
 inline void *LoadMod(const char_t *path)
 {
     void *h = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
-    assert(h != NULL);
     return h;
 }
 inline void *GetFuncPointer(void *h, const char *name)
