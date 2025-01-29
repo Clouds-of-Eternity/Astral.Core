@@ -64,7 +64,8 @@ struct StringBuilder
         char chars[256];
         i32 len = vsnprintf(chars, 256, format, args);
         buffer.EnsureArrayCapacity(buffer.count + len);
-        memcpy(buffer.ptr, chars, len);
+        memcpy(buffer.ptr + buffer.count, chars, len);
+        buffer.count += len;
 
         va_end(args);
     }
@@ -75,10 +76,10 @@ struct StringBuilder
         va_start(args, format);
         va_copy(args2, args);
         i32 len = vsnprintf(NULL, 0, format, args);
-        buffer.EnsureArrayCapacity(buffer.count + len);
-        vsnprintf(buffer.ptr, len, format, args2);
-        buffer.count += len;
         va_end(args);
+        buffer.EnsureArrayCapacity(buffer.count + len);
+        vsnprintf(buffer.ptr + buffer.count, len, format, args2);
+        buffer.count += len;
         va_end(args2);
     }
     inline void AppendStringLine(string text)
