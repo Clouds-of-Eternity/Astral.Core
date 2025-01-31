@@ -2,6 +2,7 @@
 #include <math.h>
 #include "Maths/simd.h"
 #include "Maths/Util.hpp"
+#include "Maths/Vec4.hpp"
 #include "Maths/Quaternion.hpp"
 #include "option.hpp"
 
@@ -37,6 +38,13 @@ namespace Maths
 				float M42;
 				float M43;
 				float M44;
+			};
+			struct
+			{
+				Maths::Vec4 X;
+				Maths::Vec4 Y;
+				Maths::Vec4 Z;
+				Maths::Vec4 W;
 			};
 #ifdef USE_SSE
 			struct
@@ -107,17 +115,22 @@ namespace Maths
 		}
 		inline float GetDeterminant()
 		{
-			float kp_lo = M33 * M44 - M34 * M43;
-			float jp_ln = M32 * M44 - M34 * M42;
-			float jo_kn = M32 * M43 - M33 * M42;
-			float ip_lm = M31 * M44 - M34 * M41;
-			float io_km = M31 * M43 - M33 * M41;
-			float in_jm = M31 * M42 - M32 * M41;
+			float a = X.X, b = X.Y, c = X.Z, d = X.W;
+			float e = Y.X, f = Y.Y, g = Y.Z, h = Y.W;
+			float i = Z.X, j = Z.Y, k = Z.Z, l = Z.W;
+			float m = W.X, n = W.Y, o = W.Z, p = W.W;
 
-			return M11 * (M22 * kp_lo - M23 * jp_ln + M24 * jo_kn) -
-					M21 * (M21 * kp_lo - M23 * ip_lm + M24 * io_km) +
-					M31 * (M21 * jp_ln - M22 * ip_lm + M24 * in_jm) -
-					M41 * (M21 * jo_kn - M22 * io_km + M23 * in_jm);
+			float kp_lo = k * p - l * o;
+			float jp_ln = j * p - l * n;
+			float jo_kn = j * o - k * n;
+			float ip_lm = i * p - l * m;
+			float io_km = i * o - k * m;
+			float in_jm = i * n - j * m;
+
+			return a * (f * kp_lo - g * jp_ln + h * jo_kn) -
+					b * (e * kp_lo - g * ip_lm + h * io_km) +
+					c * (e * jp_ln - f * ip_lm + h * in_jm) -
+					d * (e * jo_kn - f * io_km + g * in_jm);
 		}
 		inline Quaternion ToQuaternion()
 		{
@@ -239,6 +252,29 @@ namespace Maths
 				M21 == 0.0f && M23 == 0.0f && M24 == 0.0f &&
 				M31 == 0.0f && M32 == 0.0f && M34 == 0.0f &&
 				M41 == 0.0f && M42 == 0.0f && M43 == 0.0f;
+		}
+		inline Matrix4x4 Transpose()
+		{
+            Matrix4x4 result;
+
+            result.M11 = M11;
+            result.M12 = M21;
+            result.M13 = M31;
+            result.M14 = M41;
+            result.M21 = M12;
+            result.M22 = M22;
+            result.M23 = M32;
+            result.M24 = M42;
+            result.M31 = M13;
+            result.M32 = M23;
+            result.M33 = M33;
+            result.M34 = M43;
+            result.M41 = M14;
+            result.M42 = M24;
+            result.M43 = M34;
+            result.M44 = M44;
+
+            return result;
 		}
 
 		inline static Matrix4x4 Identity()
@@ -684,6 +720,14 @@ namespace Maths
 			float oneOverW = 1.0f / vec4[3];
 			return Vec3(vec4[0] * oneOverW, vec4[1] * oneOverW, vec4[2] * oneOverW);
         }
+		inline Vec4 Transform(Vec4 vec4)
+		{
+            return Vec4(
+            vec4.X * M11 + vec4.Y * M21 + vec4.Z * M31 + vec4.W * M41,
+            vec4.X * M12 + vec4.Y * M22 + vec4.Z * M32 + vec4.W * M42,
+            vec4.X * M13 + vec4.Y * M23 + vec4.Z * M33 + vec4.W * M43,
+            vec4.X * M14 + vec4.Y * M24 + vec4.Z * M34 + vec4.W * M44);
+		}
 		inline static Matrix4x4 Lerp(const Matrix4x4 A, const Matrix4x4 B, float amount)
 		{
 #ifdef USE_SSE

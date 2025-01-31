@@ -1,6 +1,6 @@
 #pragma once
 #include <math.h>
-#include "Maths/Vec3.hpp"
+#include "Maths/Vec4.hpp"
 #include "Maths/simd.h"
 
 namespace Maths
@@ -105,19 +105,24 @@ namespace Maths
 		}
 		static inline Quaternion FromYawPitchRoll(float yaw, float pitch, float roll)
 		{
-			float sRoll = sinf(roll * 0.5f);
-			float cRoll = cosf(roll * 0.5f);
-			float sPitch = sinf(pitch * 0.5f);
-			float cPitch = cosf(pitch * 0.5f);
-			float sYaw = sinf(yaw * 0.5f);
-			float cYaw = cosf(yaw * 0.5f);
+			Maths::Vec3 sin3 = Maths::Vec3(sinf(roll * 0.5f), sinf(pitch * 0.5f), sinf(yaw * 0.5f));
+			Maths::Vec3 cos3 = Maths::Vec3(cosf(roll * 0.5f), cosf(pitch * 0.5f), cosf(yaw * 0.5f));
 
-			return Quaternion(
-				cYaw * sPitch * cRoll + sYaw * cPitch * sRoll,
-				sYaw * cPitch * cRoll - cYaw * sPitch * sRoll,
-				cYaw * cPitch * sRoll - sYaw * sPitch * cRoll,
-				cYaw * cPitch * cRoll + sYaw * sPitch * sRoll
-			);
+			float sr = sin3.X;
+			float sp = sin3.Y;
+			float sy = sin3.Z;
+			float cr = cos3.X;
+			float cp = cos3.Y;
+			float cy = cos3.Z;
+
+			Quaternion result;
+ 
+            result.X = cy * sp * cr + sy * cp * sr;
+            result.Y = sy * cp * cr - cy * sp * sr;
+            result.Z = cy * cp * sr - sy * sp * cr;
+            result.W = cy * cp * cr + sy * sp * sr;
+ 
+            return result;
 		}
 		static inline float Dot(Quaternion A, Quaternion B)
 		{

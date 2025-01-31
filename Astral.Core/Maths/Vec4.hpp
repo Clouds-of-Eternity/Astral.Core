@@ -2,7 +2,6 @@
 #define VEC4_H
 #include "Maths/Vec2.hpp"
 #include "Maths/Vec3.hpp"
-#include "Maths/Matrix4x4.hpp"
 #include <math.h>
 #include "Maths/simd.h"
 
@@ -227,23 +226,6 @@ namespace Maths
 #else
             return Vec4(-X, -Y, -Z, -W);
 #endif
-        }
-
-        inline Vec4 Transform(Matrix4x4 matrix)
-        {
-            return Vec4(
-            X * matrix.M11 + Y * matrix.M21 + Z * matrix.M31 + W * matrix.M41,
-            X * matrix.M12 + Y * matrix.M22 + Z * matrix.M32 + W * matrix.M42,
-            X * matrix.M13 + Y * matrix.M23 + Z * matrix.M33 + W * matrix.M43,
-            X * matrix.M14 + Y * matrix.M24 + Z * matrix.M34 + W * matrix.M44);
-        }
-        inline Vec4 operator*(Matrix4x4 matrix)
-        {
-            return this->Transform(matrix);
-        }
-        inline Vec4 operator*=(Matrix4x4 matrix)
-        {
-            *this = this->Transform(matrix);
         }
 
         float Length()
