@@ -287,6 +287,45 @@ namespace Maths
 			};
 			return Matrix4x4(&m[0]);
 		}
+		inline static Matrix4x4 CreateFromTransform(Maths::Vec3 position, Maths::Vec3 scale, Maths::Quaternion rotation)
+		{
+			Maths::Matrix4x4 result;
+			float *lm = &result.M11;
+			float tx = position.X;
+            float ty = position.Y;
+            float tz = position.Z;
+
+            float qx = rotation.X;
+            float qy = rotation.Y;
+            float qz = rotation.Z;
+            float qw = rotation.W;
+
+            float sx = scale.X;
+            float sy = scale.Y;
+            float sz = scale.Z;
+
+            lm[0] = (1 - 2 * qy * qy - 2 * qz * qz) * sx;
+            lm[1] = (2 * qx * qy + 2 * qz * qw) * sx;
+            lm[2] = (2 * qx * qz - 2 * qy * qw) * sx;
+            lm[3] = 0.0f;
+
+            lm[4] = (2 * qx * qy - 2 * qz * qw) * sy;
+            lm[5] = (1 - 2 * qx * qx - 2 * qz * qz) * sy;
+            lm[6] = (2 * qy * qz + 2 * qx * qw) * sy;
+            lm[7] = 0.0f;
+
+            lm[8] = (2 * qx * qz + 2 * qy * qw) * sz;
+            lm[9] = (2 * qy * qz - 2 * qx * qw) * sz;
+            lm[10] = (1 - 2 * qx * qx - 2 * qy * qy) * sz;
+            lm[11] = 0.0f;
+
+            lm[12] = tx;
+            lm[13] = ty;
+            lm[14] = tz;
+            lm[15] = 1.0f;
+
+            return result;
+		}
 		inline static Matrix4x4 CreateTranslation(float X, float Y, float Z)
 		{
 			float m[16] = {

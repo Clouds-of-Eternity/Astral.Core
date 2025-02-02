@@ -259,5 +259,17 @@ namespace Maths
 		{
 			return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
 		}
+		inline bool Equals(Quaternion other, float approximation)
+		{
+			float dx = fabsf(other.X - X);
+			float dy = fabsf(other.Y - Y);
+			float dz = fabsf(other.Z - Z);
+			float dw = fabsf(other.W - W);
+			if (dx > approximation || dy > approximation || dz > approximation || dw > approximation)
+			{
+				return false;
+			}
+			return true;
+		}
 	};
 }
