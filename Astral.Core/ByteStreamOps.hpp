@@ -59,6 +59,23 @@ struct ByteStreamReader
     {
         return UTF8GetCharPoint((text)stream, &position);
     }
+    inline string GetString()
+    {
+        usize length = 0;
+        while (stream[position + length] != 0)
+        {
+            length++;
+            if (position + length >= size)
+            {
+                return string();
+            }
+        }
+        string result = string();
+        result.buffer = (char *)&stream[position];
+        result.length = length + 1;
+        position += length + 1;
+        return result;
+    }
     inline string ReadString(IAllocator allocator)
     {
         usize length = 0;
