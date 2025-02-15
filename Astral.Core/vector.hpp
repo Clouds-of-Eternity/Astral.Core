@@ -205,7 +205,7 @@ namespace collections
         }
         collections::Array<T> ToRefArray()
         {
-            return collections::Array<T>(NULL, this->ptr, this->count);
+            return collections::Array<T>(this->ptr, this->count);
         }
         void AddAllDeinit(collections::vector<T> *from)
         {
