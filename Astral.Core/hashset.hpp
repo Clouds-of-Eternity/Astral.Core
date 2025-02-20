@@ -172,6 +172,28 @@ namespace collections
             }
             return false;
         }
+        T *GetInstanceOf(T value)
+        {
+            u32 hash = hashFunc(value);
+            u32 index = hash % bucketsCount;
+
+            if (!buckets[index].initialized)
+            {
+                return false;
+            }
+
+            if (buckets[index].entries.count > 0)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (eqlFunc(value, *buckets[index].entries.Get(i)))
+                    {
+                        return buckets[index].entries.Get(i);
+                    }
+                }
+            }
+            return NULL;
+        }
         void Clear()
         {
             if (buckets != NULL)
