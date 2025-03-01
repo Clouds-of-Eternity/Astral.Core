@@ -45,7 +45,7 @@ namespace Maths
 				Maths::Vec4 Y;
 				Maths::Vec4 Z;
 				Maths::Vec4 W;
-			};
+			} asVec4s;
 #ifdef USE_SSE
 			struct
 			{
@@ -115,10 +115,10 @@ namespace Maths
 		}
 		inline float GetDeterminant()
 		{
-			float a = X.X, b = X.Y, c = X.Z, d = X.W;
-			float e = Y.X, f = Y.Y, g = Y.Z, h = Y.W;
-			float i = Z.X, j = Z.Y, k = Z.Z, l = Z.W;
-			float m = W.X, n = W.Y, o = W.Z, p = W.W;
+			float a = asVec4s.X.X, b = asVec4s.X.Y, c = asVec4s.X.Z, d = asVec4s.X.W;
+			float e = asVec4s.Y.X, f = asVec4s.Y.Y, g = asVec4s.Y.Z, h = asVec4s.Y.W;
+			float i = asVec4s.Z.X, j = asVec4s.Z.Y, k = asVec4s.Z.Z, l = asVec4s.Z.W;
+			float m = asVec4s.W.X, n = asVec4s.W.Y, o = asVec4s.W.Z, p = asVec4s.W.W;
 
 			float kp_lo = k * p - l * o;
 			float jp_ln = j * p - l * n;

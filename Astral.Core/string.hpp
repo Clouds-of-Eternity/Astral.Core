@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "math.h"
 #include "vector.hpp"
+#include <wchar.h>
 
 inline const char* digits2(usize value)
 {

@@ -265,18 +265,18 @@ namespace io
 #else
         collections::vector<string> results = collections::vector<string>(defaultAllocator);
         struct dirent *dir;
-        DIR *d = opendir(dirPath);
-        if (d != NULL) 
+        DIR *srcdir = opendir(dirPath);
+        if (srcdir != NULL) 
         {
-            while ((dir = readdir(d)) != NULL) 
+            while ((dir = readdir(srcdir)) != NULL) 
             {
                 struct stat st;
 
-                if(strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0)
+                if(strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0)
                 {
                     continue;
                 }
-                if (fstatat(dirfd(srcdir), dent->d_name, &st, 0) < 0)
+                if (fstatat(dirfd(srcdir), dir->d_name, &st, 0) < 0)
                 {
                     continue;
                 }
@@ -289,7 +289,7 @@ namespace io
                     results.Add(fullPath);
                 }
             }
-            closedir(d);
+            closedir(srcdir);
         }
 
         return results.ToOwnedArrayWith(allocator);

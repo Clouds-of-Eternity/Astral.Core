@@ -211,7 +211,7 @@ namespace collections
         {
             for (usize i = 0; i < from->count; i++)
             {
-                Add(from->data[i]);
+                Add(from->ptr[i]);
             }
             //memcpy(this->ptr, from->ptr, from->count * sizeof(T));
             from->deinit();
@@ -228,7 +228,7 @@ namespace collections
         {
             for (usize i = 0; i < from->count; i++)
             {
-                Add(from->data[i]);
+                Add(from->ptr[i]);
             }
         }
         void AddAll(collections::Array<T> *from)

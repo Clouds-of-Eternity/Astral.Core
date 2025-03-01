@@ -4,6 +4,7 @@
 #include "option.hpp"
 #include <stdio.h>
 #include <string.h>
+#include <wchar.h>
 
 /// Check if a u32 is a valid UTF8 character. If so, returns the byte in which they are valid starting from.
 inline bool IsValidUTF8(text utf8, usize lengthToCheck)
