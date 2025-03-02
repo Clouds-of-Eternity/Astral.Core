@@ -179,7 +179,7 @@ namespace collections
 
             if (!buckets[index].initialized)
             {
-                return false;
+                return NULL;
             }
 
             if (buckets[index].entries.count > 0)

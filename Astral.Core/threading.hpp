@@ -135,7 +135,7 @@ namespace threading
 
 #endif
 #ifdef POSIX
-#include "pthreads.h"
+#include <pthread.h>
 
 namespace threading
 {
@@ -156,8 +156,8 @@ namespace threading
     ConditionVariable CreateConditionVariable()
     {
         ConditionVariableImpl result;
-        pthread_cond_init(&result->handle, NULL);
-        pthread_mutex_init(&result->mutex, NULL);
+        pthread_cond_init(&result.handle, NULL);
+        pthread_mutex_init(&result.mutex, NULL);
 
         ConditionVariable ptr = (ConditionVariable)malloc(sizeof(ConditionVariableImpl));
         *ptr = result;
@@ -222,7 +222,7 @@ namespace threading
     }
     void ShutdownThread(Thread thread)
     {
-        pthread_cancel(&thread->handle);
+        pthread_cancel(thread->handle);
         free(thread);
     }
 }

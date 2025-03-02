@@ -207,7 +207,7 @@ namespace io
                 continue;
             }
 
-            if (S_ISDIR(st.st_mode))
+            if (!S_ISDIR(st.st_mode))
             {
                 //dircount++
                 string fullPath = string(allocator, dirPath);
@@ -281,7 +281,7 @@ namespace io
                     continue;
                 }
 
-                if (!S_ISDIR(st.st_mode))
+                if (S_ISDIR(st.st_mode))
                 {
                     string fullPath = string(allocator, dirPath);
                     fullPath.Append("/");

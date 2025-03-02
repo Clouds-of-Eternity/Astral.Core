@@ -85,6 +85,7 @@ struct StackAllocatorImpl
             if (stack.nextStack != NULL)
             {
                 stack = *stack.nextStack;
+                stack.nextStack = NULL;
                 baseAllocator.Free(stack.nextStack);
             }
             else
