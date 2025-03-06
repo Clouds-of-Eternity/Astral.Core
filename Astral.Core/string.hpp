@@ -518,18 +518,22 @@ inline string ReplaceChar(IAllocator allocator, const char* input, char toReplac
     usize inputLength = strlen(input) + 1;
     string str = string(allocator);
     char* buffer = (char*)allocator.Allocate(inputLength);
-    str.length = inputLength;
 
+    usize index = 0;
     for (usize i = 0; i < inputLength - 1; i++)
     {
         if (input[i] == toReplace)
         {
-            buffer[i] = replaceWith;
+            if (replaceWith != '\0')
+            {
+                buffer[index++] = replaceWith;
+            }
         }
-        else buffer[i] = input[i];
+        else buffer[index++] = input[i];
     }
     
-    buffer[inputLength - 1] = '\0';
+    buffer[index++] = '\0';
+    str.length = index;
 
     str.buffer = buffer;
     return str;
