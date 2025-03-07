@@ -198,7 +198,7 @@ namespace collections
             {
                 if (eqlFunc(this->ptr[i], value))
                 {
-                    option<usize>(i);
+                    return option<usize>(i);
                 }
             }
             return option<usize>();
