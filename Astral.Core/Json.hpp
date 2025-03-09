@@ -139,6 +139,38 @@ namespace Json
             }
             return JsonToken_StringLiteral;
         }
+        inline i32 GetInt8()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return *(i8 *)&data;
+        }
+        inline u32 GetUint8()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return *(u8 *)&data;
+        }
+        inline i32 GetInt16()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return *(i16 *)&data;
+        }
+        inline u32 GetUint16()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return *(u16 *)&data;
+        }
         inline i32 GetInt32()
         {
             if (elementType != JsonElement_Property)
@@ -154,6 +186,22 @@ namespace Json
                 return 0;
             }
             return *(u32 *)&data;
+        }
+        inline i32 GetInt64()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return *(i64 *)&data;
+        }
+        inline u32 GetUint64()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return data;
         }
         inline bool GetBool()
         {
@@ -171,19 +219,28 @@ namespace Json
             }
             if (dataLength == -(i32)JsonToken_IntegerLiteral)
             {
-                return (float)*(i32 *)&data;
+                return (float)*(i64 *)&data;
             }
             else if (dataLength == -(i32)JsonToken_UIntegerLiteral)
             {
-                return (float)*(u32 *)&data;
+                return (float)*(u64 *)&data;
             }
-            return *(float *)&data;
+            double asDouble = *(double *)&data;
+            return (float)asDouble;
         }
         inline double GetDouble()
         {
             if (elementType != JsonElement_Property)
             {
                 return 0.0;
+            }
+            if (dataLength == -(i32)JsonToken_IntegerLiteral)
+            {
+                return (double)*(i64 *)&data;
+            }
+            else if (dataLength == -(i32)JsonToken_UIntegerLiteral)
+            {
+                return (double)*(u64 *)&data;
             }
             return *(double *)&data;
         }
@@ -851,7 +908,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             *result = JsonElement();
 
-            *((i32 *)&result->data) = (i32)StringToI64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
+            *((i64 *)&result->data) = StringToI64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
             result->dataLength = -(i32)JsonToken_IntegerLiteral;
 
             tokenizer->Next();
@@ -861,7 +918,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             *result = JsonElement();
 
-            *((u32 *)&result->data) = (u32)StringToU64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
+            result->data = StringToU64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
             result->dataLength = -(i32)JsonToken_UIntegerLiteral;
 
             tokenizer->Next();
@@ -872,7 +929,8 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             *result = JsonElement();
 
             string rented = tokenizer->RentString(peekNext);
-            *((float *)&result->data) = atof(rented.buffer);
+            double db = atof(rented.buffer);
+            *((double *)&result->data) = db;
             Json::stringRentalBuffer->Return(rented);
 
             result->dataLength = -(i32)JsonToken_FloatLiteral;
