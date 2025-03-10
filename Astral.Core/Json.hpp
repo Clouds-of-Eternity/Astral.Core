@@ -139,7 +139,7 @@ namespace Json
             }
             return JsonToken_StringLiteral;
         }
-        inline i32 GetInt8()
+        inline i8 GetInt8()
         {
             if (elementType != JsonElement_Property)
             {
@@ -147,7 +147,7 @@ namespace Json
             }
             return *(i8 *)&data;
         }
-        inline u32 GetUint8()
+        inline u8 GetUint8()
         {
             if (elementType != JsonElement_Property)
             {
@@ -155,7 +155,7 @@ namespace Json
             }
             return *(u8 *)&data;
         }
-        inline i32 GetInt16()
+        inline i16 GetInt16()
         {
             if (elementType != JsonElement_Property)
             {
@@ -163,7 +163,7 @@ namespace Json
             }
             return *(i16 *)&data;
         }
-        inline u32 GetUint16()
+        inline u16 GetUint16()
         {
             if (elementType != JsonElement_Property)
             {
@@ -187,7 +187,7 @@ namespace Json
             }
             return *(u32 *)&data;
         }
-        inline i32 GetInt64()
+        inline i64 GetInt64()
         {
             if (elementType != JsonElement_Property)
             {
@@ -195,7 +195,7 @@ namespace Json
             }
             return *(i64 *)&data;
         }
-        inline u32 GetUint64()
+        inline u64 GetUint64()
         {
             if (elementType != JsonElement_Property)
             {
