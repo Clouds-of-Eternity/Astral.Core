@@ -117,6 +117,14 @@ namespace collections
         {
             return ptr[index];
         }
+        inline T Pop()
+        {
+            if (count == 0)
+            {
+                return T{};
+            }
+            return ptr[count--];
+        }
         void RemoveAt_Swap(usize index)
         {
             assert(index >= 0 && index < count);
