@@ -116,6 +116,10 @@ struct StackAllocator
     }
     inline void deinit()
     {
+        if (ptr == NULL)
+        {
+            return;
+        }
         IAllocator baseAllocator = ptr->baseAllocator;
         ptr->deinit();
         baseAllocator.Free(ptr);
