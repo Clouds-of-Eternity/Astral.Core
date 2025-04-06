@@ -259,6 +259,19 @@ namespace Maths
 			output[1] = Y / sinf(output[3] * 0.5f);
 			output[2] = Z / sinf(output[3] * 0.5f);
 		}
+		inline Vec4 Transform(Vec4 pos)
+		{
+			Quaternion conjugated = Conjugate(*this);
+			Quaternion temp = Concat(conjugated, Quaternion(pos.X, pos.Y, pos.Z, pos.W));
+			temp = Concat(temp, *this);
+			return Vec4(temp.X, temp.Y, temp.Z, temp.W);
+		}
+		inline Vec3 Transform(Vec3 pos)
+		{
+			Vec4 vec4 = Transform(Vec4(pos, 1.0));
+			float oneOverW = 1.0f / vec4.W;
+			return Vec3(vec4.X * oneOverW, vec4.Y * oneOverW, vec4.Z * oneOverW);
+		}
 		inline Quaternion operator*(Quaternion other)
 		{
 			return Mult(other);
