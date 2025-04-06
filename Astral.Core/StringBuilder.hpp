@@ -29,7 +29,7 @@ struct StringBuilder
         this->allocator = allocator;
         buffer = collections::list<char>(allocator);
     }
-    inline void Append(text text)
+    inline StringBuilder &Append(text text)
     {
         usize i = 0;
         while (text[i] != '\0')
@@ -37,17 +37,20 @@ struct StringBuilder
             buffer.Add(text[i]);
             i++;
         }
+        return *this;
     }
-    inline void AppendString(const string str)
+    inline StringBuilder &AppendString(const string str)
     {
         this->Append(str.buffer);
+        return *this;
     }
-    inline void AppendDeinit(string str)
+    inline StringBuilder &AppendDeinit(string str)
     {
         this->Append(str.buffer);
         str.deinit();
+        return *this;
     }
-    inline void AppendLine(text text)
+    inline StringBuilder &AppendLine(text text)
     {
         usize i = 0;
         while (text[i] != '\0')
@@ -55,8 +58,9 @@ struct StringBuilder
             buffer.Add(text[i]);
             i++;
         }
+        return *this;
     }
-    inline void Appendf(text format, ...)
+    inline StringBuilder &Appendf(text format, ...)
     {
         va_list args;
         va_start(args, format);
@@ -68,8 +72,9 @@ struct StringBuilder
         buffer.count += len;
 
         va_end(args);
+        return *this;
     }
-    inline void AppendfLong(text format, ...)
+    inline StringBuilder &AppendfLong(text format, ...)
     {
         va_list args;
         va_list args2;
@@ -81,16 +86,19 @@ struct StringBuilder
         vsnprintf(buffer.ptr + buffer.count, len, format, args2);
         buffer.count += len;
         va_end(args2);
+        return *this;
     }
-    inline void AppendStringLine(string text)
+    inline StringBuilder& AppendStringLine(string text)
     {
         this->AppendLine(text.buffer);
+        return *this;
     }
-    inline void AppendChar(char character)
+    inline StringBuilder &AppendChar(char character)
     {
         this->buffer.Add(character);
+        return *this;
     }
-    inline void AppendChar32(u32 char32)
+    inline StringBuilder &AppendChar32(u32 char32)
     {
         char *ptr = (char *)&char32;
         char startingByte = ptr[0];
@@ -116,6 +124,7 @@ struct StringBuilder
             this->buffer.Add(ptr[2]);
             this->buffer.Add(ptr[3]);
         }
+        return *this;
     }
     inline usize InsertChar32At(u32 char32, usize at)
     {
