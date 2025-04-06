@@ -115,7 +115,7 @@ namespace Maths
         }
         inline float LengthSquared()
         {
-            return X * X + Y * Y + Z * Z;
+            return Dot(*this, *this);
         }
         inline void Normalize()
         {
@@ -151,10 +151,13 @@ namespace Maths
         }
         static inline float Distance(Vec3 A, Vec3 B)
         {
-            float dx = B.X - A.X;
-            float dy = B.Y - A.Y;
-            float dz = B.Z - A.Z;
-            return sqrtf(dx * dx + dy * dy + dz * dz);
+            Vec3 diff = B - A;
+            return sqrtf(Dot(diff, diff));
+        }
+        static inline float DistanceSquared(Vec3 A, Vec3 B)
+        {
+            Vec3 diff = B - A;
+            return Dot(diff, diff);
         }
         static inline Vec3 Lerp(Vec3 A, Vec3 B, float amount)
         {

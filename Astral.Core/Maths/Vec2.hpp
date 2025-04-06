@@ -120,7 +120,7 @@ namespace Maths
             float dy = B.Y - A.Y;
             return sqrtf(dx * dx + dy * dy);
         }
-        static inline float DistanceSquare(Vec2 A, Vec2 B)
+        static inline float DistanceSquared(Vec2 A, Vec2 B)
         {
             float dx = B.X - A.X;
             float dy = B.Y - A.Y;

@@ -124,6 +124,30 @@ namespace Maths
  
             return result;
 		}
+		static inline Quaternion CreateLookAt(Vec3 sourcePoint, Vec3 destPoint)
+		{
+			Maths::Quaternion quaternion;
+			Vec3 forwardVector = (destPoint - sourcePoint).Normalized();
+
+            float dot = Vec3::Dot(Vec3(0.0f, 0.0f, 1.0f), forwardVector);
+
+            if (fabsf(dot - (-1.0f)) < 0.001f)
+            {
+                quaternion = Quaternion(0.0f, -1.0f, 0.0f, 3.1415927f);
+				return quaternion;
+            }
+            if (fabsf(dot - (1.0f)) < 0.001f)
+            {
+				quaternion = Identity();
+				return quaternion;
+			}
+
+            float rotAngle = (float)acosf(dot);
+            Vec3 rotAxis = Vec3::Cross(Vec3(0.0f, 0.0f, 1.0f), forwardVector);
+            rotAxis = rotAxis.Normalized();
+            quaternion = FromAxisAngle(rotAxis, rotAngle);
+			return quaternion;
+		}
 		static inline float Dot(Quaternion A, Quaternion B)
 		{
 			return A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
