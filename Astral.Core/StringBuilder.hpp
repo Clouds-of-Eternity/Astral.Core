@@ -82,8 +82,8 @@ struct StringBuilder
         va_copy(args2, args);
         i32 len = vsnprintf(NULL, 0, format, args);
         va_end(args);
-        buffer.EnsureArrayCapacity(buffer.count + len);
-        vsnprintf(buffer.ptr + buffer.count, len, format, args2);
+        buffer.EnsureArrayCapacity(buffer.count + len + 1);
+        vsnprintf(buffer.ptr + buffer.count, len + 1, format, args2);
         buffer.count += len;
         va_end(args2);
         return *this;
