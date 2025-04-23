@@ -78,6 +78,20 @@ namespace collections
                 this->buckets[i] = Bucket(this->allocator);
             }
         }
+        hashmap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc, u32 bucketsCount)
+        {
+            this->allocator = myAllocator;
+            this->hashFunc = hashFunction;
+            this->eqlFunc = eqlFunc;
+            this->count = 0;
+            this->filledBuckets = 0;
+            this->bucketsCount = bucketsCount;
+            this->buckets = (Bucket*)this->allocator.Allocate(this->bucketsCount * sizeof(Bucket));
+            for (usize i = 0; i < this->bucketsCount; i++)
+            {
+                this->buckets[i] = Bucket(this->allocator);
+            }
+        }
         void deinit()
         {
             if (buckets != NULL)

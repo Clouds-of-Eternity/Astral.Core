@@ -5,7 +5,8 @@
 #include "array.hpp"
 #include <stdio.h>
 #include "vector.hpp"
-#include "ArenaAllocator.hpp"
+#include "StackAllocator.hpp"
+#include "scope.hpp"
 
 #include <sys/stat.h>   // For stat().
 
@@ -85,7 +86,7 @@ namespace io
 
     inline void RecursiveCreateDirectories(const char* finalDirPath)
     {
-        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
+        StackAllocator arena = StackAllocator(GetCAllocator(), KiB_SIZE * 16, StackOverflowPolicy_NewPage);
         IAllocator alloc = arena.AsAllocator();
 
         collections::Array<string> paths = SplitString(alloc, finalDirPath, '/');
@@ -113,7 +114,7 @@ namespace io
 
     inline FILE* CreateDirectoriesAndFile(const char* path)
     {
-        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
+        StackAllocator arena = StackAllocator(GetCAllocator(), KiB_SIZE * 16, StackOverflowPolicy_NewPage);
         IAllocator alloc = arena.AsAllocator();
         collections::Array<string> paths = SplitString(alloc, path, '/');
         if (paths.length <= 1) //C:/ is not a valid file
@@ -150,7 +151,10 @@ namespace io
 
     inline collections::Array<string> GetFilesInDirectory(IAllocator allocator, const char *dirPath)
     {
-        IAllocator defaultAllocator = GetCAllocator();
+        StackAllocator stackAlloc = StackAllocator(GetCAllocator(), KiB_SIZE * 16, StackOverflowPolicy_NewPage);
+        Scope(StackAllocator, stackAlloc);
+
+        IAllocator tempAllocator = stackAlloc.AsAllocator();
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
@@ -163,22 +167,21 @@ namespace io
             return collections::Array<string>();
         }
 
-        collections::vector<string> results = collections::vector<string>(defaultAllocator);
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
             {
                 //printf("%s\n", &findFileResult.cFileName[0]);
-                string replaced = ReplaceChar(defaultAllocator, &findFileResult.cFileName[0], '\\', '/');
+                string replaced = ReplaceChar(tempAllocator, &findFileResult.cFileName[0], '\\', '/');
 
-                string fullPath = string(allocator, dirPath);
+                string fullPath = string(tempAllocator, dirPath);
                 fullPath.Append("/");
                 fullPath.Append(replaced.buffer);
                 if (!io::DirectoryExists(fullPath.buffer))
                 {
-                    results.Add(fullPath);
+                    results.Add(fullPath.Clone(allocator));
                 }
-                replaced.deinit();
             }
             if (!FindNextFileA(handle, &findFileResult))
             {
@@ -190,7 +193,7 @@ namespace io
 
         return results.ToOwnedArrayWith(allocator);
 #else
-        collections::vector<string> results = collections::vector<string>(GetCAllocator());
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
 
         struct dirent *dent;
         DIR *srcdir = opendir(dirPath);
@@ -210,10 +213,10 @@ namespace io
             if (!S_ISDIR(st.st_mode))
             {
                 //dircount++
-                string fullPath = string(allocator, dirPath);
+                string fullPath = string(tempAllocator, dirPath);
                 fullPath.Append("/");
                 fullPath.Append(dent->d_name);
-                results.Add(fullPath);
+                results.Add(fullPath.Clone(allocator));
             }
         }
 
@@ -223,7 +226,10 @@ namespace io
 
     inline collections::Array<string> GetFoldersInDirectory(IAllocator allocator, const char *dirPath)
     {
-        IAllocator defaultAllocator = GetCAllocator();
+        StackAllocator stackAlloc = StackAllocator(GetCAllocator(), KiB_SIZE * 32, StackOverflowPolicy_NewPage);
+        Scope(StackAllocator, stackAlloc);
+
+        IAllocator tempAllocator = stackAlloc.AsAllocator();
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
@@ -236,22 +242,21 @@ namespace io
             return collections::Array<string>();
         }
 
-        collections::vector<string> results = collections::vector<string>(defaultAllocator);
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
             {
                 //printf("%s\n", &findFileResult.cFileName[0]);
-                string replaced = ReplaceChar(allocator, &findFileResult.cFileName[0], '\\', '/');
+                string replaced = ReplaceChar(tempAllocator, &findFileResult.cFileName[0], '\\', '/');
 
-                string fullPath = string(defaultAllocator, dirPath);
+                string fullPath = string(tempAllocator, dirPath);
                 fullPath.Append("/");
                 fullPath.Append(replaced.buffer);
                 if (io::DirectoryExists(fullPath.buffer))
                 {
-                    results.Add(fullPath);
+                    results.Add(fullPath.Clone(allocator));
                 }
-                replaced.deinit();
             }
             if (!FindNextFileA(handle, &findFileResult))
             {
@@ -263,7 +268,7 @@ namespace io
 
         return results.ToOwnedArrayWith(allocator);
 #else
-        collections::vector<string> results = collections::vector<string>(defaultAllocator);
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
         struct dirent *dir;
         DIR *srcdir = opendir(dirPath);
         if (srcdir != NULL) 
@@ -283,10 +288,10 @@ namespace io
 
                 if (S_ISDIR(st.st_mode))
                 {
-                    string fullPath = string(allocator, dirPath);
+                    string fullPath = string(tempAllocator, dirPath);
                     fullPath.Append("/");
                     fullPath.Append(dir->d_name);
-                    results.Add(fullPath);
+                    results.Add(fullPath.Clone(GetCAllocator()));
                 }
             }
             closedir(srcdir);
@@ -298,7 +303,7 @@ namespace io
 
     inline collections::Array<string> GetFilesInDirectoryRecursive(IAllocator allocator, const char* dirPath)
     {
-        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
+        StackAllocator arena = StackAllocator(GetCAllocator(), KiB_SIZE * 32, StackOverflowPolicy_NewPage);
         IAllocator alloc = arena.AsAllocator();
         collections::vector<string> results = collections::vector<string>(alloc);
         collections::vector<string> foldersToProcess = collections::vector<string>(alloc);

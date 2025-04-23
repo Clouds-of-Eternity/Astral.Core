@@ -39,6 +39,31 @@ struct StringBuilder
         }
         return *this;
     }
+    inline StringBuilder &AppendReplace(text text, const char *charsToReplace, char replaceWith)
+    {
+        usize charsToReplaceLength = strlen(charsToReplace);
+        usize i = 0;
+        while (text[i] != '\0')
+        {
+            u32 c = 0;
+            while (c < charsToReplaceLength)
+            {
+                if (text[i] == charsToReplace[c])
+                {
+                    buffer.Add(replaceWith);
+                    i++;
+                    c = 0;
+                }
+                else
+                {
+                    c++;
+                }
+            }
+            buffer.Add(text[i]);
+            i++;
+        }
+        return *this;
+    }
     inline StringBuilder &AppendString(const string str)
     {
         this->Append(str.buffer);

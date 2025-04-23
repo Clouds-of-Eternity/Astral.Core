@@ -1003,7 +1003,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         }
         case JsonToken_LBrace:
         {
-            *result = JsonElement(collections::hashmap<string, JsonElement>(allocator, &stringHash, &stringEql));
+            *result = JsonElement(collections::hashmap<string, JsonElement>(allocator, &stringHash, &stringEql, 8));
             tokenizer->Next();
 
             collections::vector<JsonElement> childObjectsOrdered = collections::vector<JsonElement>(GetCAllocator());
