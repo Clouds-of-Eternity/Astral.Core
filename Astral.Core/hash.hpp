@@ -158,13 +158,13 @@ inline u32 Murmur3Seeded(const u8* ptr, u64 len, u32 seed)
         const u32 offset = len & 0xfffffffc;
         const u32 rest = len & 3;
         if (rest == 3) {
-            k1 ^= *((u32*)&ptr[offset + 2]) << 16;
+            k1 ^= (u32)(ptr[offset + 2]) << 16;
         }
         if (rest >= 2) {
-            k1 ^= *((u32*)&ptr[offset + 1]) << 8;
+            k1 ^= (u32)(ptr[offset + 1]) << 8;
         }
         if (rest >= 1) {
-            k1 ^= *((u32 *)&ptr[offset]);
+            k1 ^= (u32)(ptr[offset]);
             k1 *= c1;
             k1 = Maths::rotl32(k1, 15);
             k1 *= c2;
