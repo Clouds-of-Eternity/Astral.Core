@@ -123,7 +123,7 @@ namespace collections
             {
                 return T{};
             }
-            return ptr[count--];
+            return ptr[--count];
         }
         void RemoveAt_Swap(usize index)
         {
