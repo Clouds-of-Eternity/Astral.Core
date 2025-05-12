@@ -160,3 +160,8 @@ inline bool UuidEql(uuid A, uuid B)
 {
     return A.Equals(B);
 }
+
+#define UUID_STRINGIFY(uuidVarName, resultVarName) \
+    char resultVarName[37];                        \
+    resultVarName[36] = 0;                         \
+    uuidVarName.GetAsString(resultVarName);
