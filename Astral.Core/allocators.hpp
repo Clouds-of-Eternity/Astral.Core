@@ -2,6 +2,9 @@
 #include "Linxc.h"
 #include <stdlib.h>
 
+#define KiB_SIZE 1024
+#define MiB_SIZE (KiB_SIZE * 1024)
+
 def_delegate(allocFunc, void *, void *, usize);
 def_delegate(freeFunc, void, void *, void *);
 

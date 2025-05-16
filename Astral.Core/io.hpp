@@ -5,7 +5,7 @@
 #include "array.hpp"
 #include <stdio.h>
 #include "vector.hpp"
-#include "StackAllocator.hpp"
+#include "ArenaAllocator.hpp"
 #include "scope.hpp"
 
 #include <sys/stat.h>   // For stat().
@@ -86,7 +86,7 @@ namespace io
 
     inline void RecursiveCreateDirectories(const char* finalDirPath)
     {
-        StackAllocator arena = StackAllocator(GetCAllocator(), KiB_SIZE * 16, StackOverflowPolicy_NewPage);
+        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
         IAllocator alloc = arena.AsAllocator();
 
         collections::Array<string> paths = SplitString(alloc, finalDirPath, '/');
@@ -114,7 +114,7 @@ namespace io
 
     inline FILE* CreateDirectoriesAndFile(const char* path)
     {
-        StackAllocator arena = StackAllocator(GetCAllocator(), KiB_SIZE * 16, StackOverflowPolicy_NewPage);
+        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
         IAllocator alloc = arena.AsAllocator();
         collections::Array<string> paths = SplitString(alloc, path, '/');
         if (paths.length <= 1) //C:/ is not a valid file
@@ -151,10 +151,11 @@ namespace io
 
     inline collections::Array<string> GetFilesInDirectory(IAllocator allocator, const char *dirPath)
     {
-        StackAllocator stackAlloc = StackAllocator(GetCAllocator(), KiB_SIZE * 16, StackOverflowPolicy_NewPage);
-        Scope(StackAllocator, stackAlloc);
+        //this
+        ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
+        Scope(ArenaAllocator, arenaAlloc);
 
-        IAllocator tempAllocator = stackAlloc.AsAllocator();
+        IAllocator tempAllocator = arenaAlloc.AsAllocator();
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
@@ -226,10 +227,10 @@ namespace io
 
     inline collections::Array<string> GetFoldersInDirectory(IAllocator allocator, const char *dirPath)
     {
-        StackAllocator stackAlloc = StackAllocator(GetCAllocator(), KiB_SIZE * 32, StackOverflowPolicy_NewPage);
-        Scope(StackAllocator, stackAlloc);
+        ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
+        Scope(ArenaAllocator, arenaAlloc);
 
-        IAllocator tempAllocator = stackAlloc.AsAllocator();
+        IAllocator tempAllocator = arenaAlloc.AsAllocator();
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
@@ -303,7 +304,7 @@ namespace io
 
     inline collections::Array<string> GetFilesInDirectoryRecursive(IAllocator allocator, const char* dirPath)
     {
-        StackAllocator arena = StackAllocator(GetCAllocator(), KiB_SIZE * 32, StackOverflowPolicy_NewPage);
+        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
         IAllocator alloc = arena.AsAllocator();
         collections::vector<string> results = collections::vector<string>(alloc);
         collections::vector<string> foldersToProcess = collections::vector<string>(alloc);

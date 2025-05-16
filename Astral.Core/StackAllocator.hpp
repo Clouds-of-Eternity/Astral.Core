@@ -2,9 +2,6 @@
 #include "allocators.hpp"
 #include <assert.h>
 
-#define KiB_SIZE 1024
-#define MiB_SIZE (KiB_SIZE * 1024)
-
 inline void *StackAllocator_Allocate(void *instance, usize bytes);
 inline void StackAllocator_Free(void *instance, void *ptr);
 
