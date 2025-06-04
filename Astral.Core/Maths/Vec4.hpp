@@ -303,8 +303,10 @@ namespace Maths
         {
             return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
         }
-	};
 
-    //typedef Maths_Vec4 Vec4;
-
+        inline Maths::Vec3 ToVector3()
+        {
+            return Maths::Vec3(X, Y, Z);
+        }
+    };
 }

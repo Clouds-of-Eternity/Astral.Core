@@ -125,29 +125,11 @@ struct StringBuilder
     }
     inline StringBuilder &AppendChar32(u32 char32)
     {
-        char *ptr = (char *)&char32;
-        char startingByte = ptr[0];
-        if ((startingByte >> 7) == 0)
+        char outputs[4];
+        u8 advance = CharPointToUTF8(char32, outputs);
+        for (u8 i = 0; i < advance; i++)
         {
-            this->buffer.Add(ptr[0]);
-        }
-        else if ((startingByte >> 5) == 0b110)
-        {
-            this->buffer.Add(ptr[0]);
-            this->buffer.Add(ptr[1]);
-        }
-        else if ((startingByte >> 4) == 0b1110)
-        {
-            this->buffer.Add(ptr[0]);
-            this->buffer.Add(ptr[1]);
-            this->buffer.Add(ptr[2]);
-        }
-        else if ((startingByte >> 3) == 0b11110)
-        {
-            this->buffer.Add(ptr[0]);
-            this->buffer.Add(ptr[1]);
-            this->buffer.Add(ptr[2]);
-            this->buffer.Add(ptr[3]);
+            AppendChar(outputs[i]);
         }
         return *this;
     }
