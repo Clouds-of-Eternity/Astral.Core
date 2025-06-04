@@ -23,6 +23,36 @@
 
 namespace io
 {
+    inline long GetFileSize(FILE* ptr)
+    {
+        // TODO (Chris): Assert
+        if (ptr == NULL)
+        {
+            return -1L;
+        }
+
+        long current_pos = ftell(ptr);
+
+        if (fseek(ptr, 0, SEEK_END) != 0)
+        {
+            return -1L;
+        }
+        
+        long size = ftell(ptr);
+        if (size == -1L) 
+        {
+            return -1L;
+        }
+        
+        // Set back old pos
+        if (fseek(ptr, current_pos, SEEK_SET) != 0)
+        {
+            return -1L;
+        }
+
+        return size;
+    }
+
     inline string ReadFile(IAllocator allocator, const char* path, bool isBinary)
     {
         string result = string(allocator);
@@ -30,12 +60,7 @@ namespace io
         FILE *fs = fopen(path, isBinary ? "rb" : "r");
         if (fs != NULL)
         {
-            usize size = 0;
-            while (fgetc(fs) != EOF)
-            {
-                size += 1;
-            }
-            fseek(fs, 0, SEEK_SET);
+            usize size = GetFileSize(fs);
 
             char* buffer = (char*)allocator.Allocate(size + 1);
             if (buffer != NULL)

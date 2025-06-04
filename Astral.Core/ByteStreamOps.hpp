@@ -133,6 +133,23 @@ struct ByteStreamWriter
     {
         bytes.Add(byte);
     }
+
+    inline void WriteFile(FILE* file)
+    {
+        assert(file);
+
+        constexpr u32 READ_BUFFER_SIZE = 4096;
+        u8* readBuffer = (u8*)(bytes.allocator.Allocate(READ_BUFFER_SIZE));
+        u32 bytesRead = 0;
+
+        while ((bytesRead = fread(readBuffer, 1, READ_BUFFER_SIZE, file)) > 0) 
+        {
+            WriteArray(readBuffer, bytesRead);
+        }
+
+        bytes.allocator.Free(readBuffer);
+    }
+
     inline void WriteEmpty(usize length)
     {
         bytes.EnsureArrayCapacity(bytes.count + length);
