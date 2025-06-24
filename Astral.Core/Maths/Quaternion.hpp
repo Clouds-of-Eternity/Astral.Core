@@ -126,27 +126,24 @@ namespace Maths
 		}
 		static inline Quaternion CreateLookAt(Vec3 sourcePoint, Vec3 destPoint)
 		{
-			Maths::Quaternion quaternion;
-			Vec3 forwardVector = (destPoint - sourcePoint).Normalized();
+			Maths::Vec3 dir = (destPoint - sourcePoint).Normalized();
 
-            float dot = Vec3::Dot(Vec3(0.0f, 0.0f, 1.0f), forwardVector);
+			const Maths::Vec3 forward = Maths::Vec3(1.0f, 0.0f, 0.0f);
 
-            if (fabsf(dot - (-1.0f)) < 0.001f)
-            {
-                quaternion = Quaternion(0.0f, -1.0f, 0.0f, 3.1415927f);
-				return quaternion;
-            }
-            if (fabsf(dot - (1.0f)) < 0.001f)
-            {
-				quaternion = Identity();
-				return quaternion;
+			float dot = Maths::Vec3::Dot(forward, dir);
+			Maths::Vec3 rotAxis;
+			if (dot >= 0.999f)
+			{
+				rotAxis = Maths::Vec3(0.0f, 0.0f, 1.0f);
 			}
+			else if (dot <= -0.999f)
+			{
+				rotAxis = Maths::Vec3(0.0f, 0.0f, -1.0f);
+			}
+			else rotAxis = Maths::Vec3::Cross(forward, dir).Normalized();
+			float rotation = acosf(dot);
 
-            float rotAngle = (float)acosf(dot);
-            Vec3 rotAxis = Vec3::Cross(Vec3(0.0f, 0.0f, 1.0f), forwardVector);
-            rotAxis = rotAxis.Normalized();
-            quaternion = FromAxisAngle(rotAxis, rotAngle);
-			return quaternion;
+			return Maths::Quaternion::FromAxisAngle(rotAxis, rotation);
 		}
 		static inline float Dot(Quaternion A, Quaternion B)
 		{
