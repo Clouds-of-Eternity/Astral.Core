@@ -73,29 +73,13 @@ namespace Maths
 	{
 		return atan2f(BY - AY, BX - AX);
 	}
-	i32 inline Sign(float A)
+	inline i32 Sign(i32 value)
 	{
-		if (A < 0.0f)
-		{
-			return -1;
-		}
-		else if (A > 0.0f)
-		{
-			return 1;
-		}
-		return 0;
+		return (0 < value) - (value < 0);
 	}
-	i32 inline Sign(i32 A)
+	inline i32 Sign(float value)
 	{
-		if (A < 0)
-		{
-			return -1;
-		}
-		else if (A > 0)
-		{
-			return 1;
-		}
-		return 0;
+		return (0.0f < value) - (value < 0.0f);
 	}
 	float inline QuadraticStep(float A, float B, float amount)
 	{

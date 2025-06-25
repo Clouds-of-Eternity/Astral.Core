@@ -207,16 +207,27 @@ namespace Maths
         }
         inline Vec4 operator/(float other)
         {
+#ifdef USE_SSE
+            __m128 val = _mm_set_ps1(other);
+            val = _mm_div_ps(this->asM128, val);
+            return Vec4(val);
+#else
             float mult = 1.0f / other;
             return Vec4(X * mult, Y * mult, Z * mult, W * mult);
+#endif
         }
         inline void operator/=(float other)
         {
+#ifdef USE_SSE
+            __m128 val = _mm_set_ps1(other);
+            asM128 = _mm_div_ps(this->asM128, val);
+#else
             float mult = 1.0f / other;
             X *= mult;
             Y *= mult;
             Z *= mult;
             W *= mult;
+#endif
         }
 
         inline Vec4 operator-()
@@ -266,18 +277,6 @@ namespace Maths
         {
             return A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
         }
-
-        /*static inline Vec4 Cross(Vec4 A, Vec4 B)
-        {
-            __m128 tmp0, tmp1, tmp2, tmp3, result;
-            tmp0 = _mm_shuffle_ps(A.asM128, A.asM128, _MM_SHUFFLE(3, 0, 2, 1));
-            tmp1 = _mm_shuffle_ps(B.asM128, B.asM128, _MM_SHUFFLE(3, 1, 0, 2));
-            tmp2 = _mm_shuffle_ps(A.asM128, A.asM128, _MM_SHUFFLE(3, 1, 0, 2));
-            tmp3 = _mm_shuffle_ps(B.asM128, B.asM128, _MM_SHUFFLE(3, 0, 2, 1));
-            result = _mm_mul_ps(tmp0, tmp1);
-            result = _mm_sub_ps(result, _mm_mul_ps(tmp2, tmp3));//sseMSub(tmp2, tmp3, result);
-            return Vec4(result);
-        }*/
         
         static inline Vec4 Min(Vec4 A, Vec4 B)
         {
@@ -297,11 +296,23 @@ namespace Maths
         }
         inline bool operator==(Vec4 other)
         {
+            #ifdef USE_SSE
+            __m128 compareResult = _mm_cmpeq_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) == 0b1111;
+            #else
+
             return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+            #endif
         }
         inline bool operator!=(Vec4 other)
         {
+            #ifdef USE_SSE
+            __m128 compareResult = _mm_cmpeq_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) != 0b1111;
+            #else
+
             return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
+            #endif
         }
 
         inline Maths::Vec3 ToVector3()

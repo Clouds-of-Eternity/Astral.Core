@@ -49,12 +49,12 @@ namespace Maths
 #ifdef USE_SSE
 			struct
 			{
-				__m128 row1;
-				__m128 row2;
-				__m128 row3;
-				__m128 row4;
+				__m128 m128_row1;
+				__m128 m128_row2;
+				__m128 m128_row3;
+				__m128 m128_row4;
 			};
-#else
+#endif
 			struct
 			{
 				float row1[4];
@@ -62,7 +62,6 @@ namespace Maths
 				float row3[4];
 				float row4[4];
 			};
-#endif
 		};
 
 		Matrix4x4()
@@ -72,11 +71,10 @@ namespace Maths
 		Matrix4x4(float fill)
 		{
 #ifdef USE_SSE
-			__m128 asM128 = _mm_set_ps1(fill);
-			row1 = asM128;
-			row2 = asM128;
-			row3 = asM128;
-			row4 = asM128;
+			m128_row1 = _mm_set_ps1(fill);
+			m128_row2 = _mm_set_ps1(fill);
+			m128_row3 = _mm_set_ps1(fill);
+			m128_row4 = _mm_set_ps1(fill);
 #else
 			M11 = M12 = M13 = M14 = fill;
 			M21 = M22 = M23 = M24 = fill;
@@ -87,10 +85,10 @@ namespace Maths
 		Matrix4x4(float* m)
 		{
 #ifdef USE_SSE
-			row1 = _mm_load_ps(m);//_mm_set_ps(m[0], m[1], m[2], m[3]);
-			row2 = _mm_load_ps(m + 4);//_mm_set_ps(m[4], m[5], m[6], m[7]);
-			row3 = _mm_load_ps(m + 8);//_mm_set_ps(m[8], m[9], m[10], m[11]);
-			row4 = _mm_load_ps(m + 12);//_mm_set_ps(m[12], m[13], m[14], m[15]);
+			m128_row1 = _mm_load_ps(m);//_mm_set_ps(m[0], m[1], m[2], m[3]);
+			m128_row2 = _mm_load_ps(m + 4);//_mm_set_ps(m[4], m[5], m[6], m[7]);
+			m128_row3 = _mm_load_ps(m + 8);//_mm_set_ps(m[8], m[9], m[10], m[11]);
+			m128_row4 = _mm_load_ps(m + 12);//_mm_set_ps(m[12], m[13], m[14], m[15]);
 #else
 			M11 = m[0];
 			M12 = m[1];
@@ -669,33 +667,26 @@ namespace Maths
 			return result;
 		}
 
+#ifdef USE_SSE
+		static inline __m128 lincomb_SSE(const __m128 &a, const Matrix4x4 &B)
+		{
+			__m128 result;
+			result = _mm_mul_ps(_mm_shuffle_ps(a, a, 0x00), B.m128_row1);
+			result = _mm_add_ps(result, _mm_mul_ps(_mm_shuffle_ps(a, a, 0x55), B.m128_row2));
+			result = _mm_add_ps(result, _mm_mul_ps(_mm_shuffle_ps(a, a, 0xaa), B.m128_row3));
+			result = _mm_add_ps(result, _mm_mul_ps(_mm_shuffle_ps(a, a, 0xff), B.m128_row4));
+			return result;
+		}
+#endif
 		inline Matrix4x4 operator*(const Matrix4x4 &other)
 		{
 #ifdef USE_SSE
-			Matrix4x4 result;
-			const __m128 BCx = other.row1;
-			const __m128 BCy = other.row2;
-			const __m128 BCz = other.row3;
-			const __m128 BCw = other.row4;
-
-			float *leftRowPointer = &M11;
-			float *resultRowPointer = &result.M11;
-
-			for (unsigned int i = 0; i < 4; ++i, leftRowPointer += 4, resultRowPointer += 4) {
-				__m128 ARx = _mm_set1_ps(leftRowPointer[0]);
-				__m128 ARy = _mm_set1_ps(leftRowPointer[1]);
-				__m128 ARz = _mm_set1_ps(leftRowPointer[2]);
-				__m128 ARw = _mm_set1_ps(leftRowPointer[3]);
-
-				__m128 X = _mm_mul_ps(ARx, BCx); // ARx * BCx;
-				__m128 Y = _mm_mul_ps(ARy, BCy);
-				__m128 Z = _mm_mul_ps(ARz, BCz);
-				__m128 W = _mm_mul_ps(ARw, BCw);
-
-				__m128 R = _mm_add_ps(_mm_add_ps(X, Y), _mm_add_ps(Z, W)); // X + Y + Z + W;
-				_mm_store_ps(resultRowPointer, R);
-			}
-			return result;
+			Maths::Matrix4x4 m;
+			m.m128_row1 = lincomb_SSE(m128_row1, other);
+			m.m128_row2 = lincomb_SSE(m128_row2, other);
+			m.m128_row3 = lincomb_SSE(m128_row3, other);
+			m.m128_row4 = lincomb_SSE(m128_row4, other);
+			return m;
 #else
 			Matrix4x4 m;
 
@@ -774,23 +765,23 @@ namespace Maths
 			Matrix4x4 m;
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row1, sub);
-				m.row1 = _mm_add_ps(_mm_mul_ps(B.row1, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row1, sub);
+				m.m128_row1 = _mm_add_ps(_mm_mul_ps(B.m128_row1, amountAsM128), mul);
 			}
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row2, sub);
-				m.row2 = _mm_add_ps(_mm_mul_ps(B.row2, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row2, sub);
+				m.m128_row2 = _mm_add_ps(_mm_mul_ps(B.m128_row2, amountAsM128), mul);
 			}
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row3, sub);
-				m.row3 = _mm_add_ps(_mm_mul_ps(B.row3, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row3, sub);
+				m.m128_row3 = _mm_add_ps(_mm_mul_ps(B.m128_row3, amountAsM128), mul);
 			}
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row4, sub);
-				m.row4 = _mm_add_ps(_mm_mul_ps(B.row4, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row4, sub);
+				m.m128_row4 = _mm_add_ps(_mm_mul_ps(B.m128_row4, amountAsM128), mul);
 			}
 			return m;
 #else

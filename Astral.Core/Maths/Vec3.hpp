@@ -3,6 +3,8 @@
 #include "Maths/Vec2.hpp"
 #include <math.h>
 
+#include "Maths/simd.h"
+
 namespace Maths
 {
     struct Vec3
@@ -37,7 +39,17 @@ namespace Maths
         }
         inline Vec3 operator+(Vec3 other)
         {
+#ifdef USE_SSE
+            float floats[4];
+
+            __m128 A = _mm_set_ps(0.0f, Z, Y, X);
+            __m128 B = _mm_set_ps(0.0f, other.Z, other.Y, other.X);
+            A = _mm_add_ps(A, B);
+            _mm_store_ps(floats, A);
+            return *(Vec3 *)(floats);
+#else
             return Vec3(X + other.X, Y + other.Y, Z + other.Z);
+            #endif
         }
         inline void operator+=(Vec3 other)
         {
