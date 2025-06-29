@@ -132,11 +132,11 @@ namespace Maths
 
 			float dot = Maths::Vec3::Dot(forward, dir);
 			Maths::Vec3 rotAxis;
-			if (dot >= 0.999f)
+			if (dot == 1.0f)
 			{
 				rotAxis = Maths::Vec3(0.0f, 0.0f, 1.0f);
 			}
-			else if (dot <= -0.999f)
+			else if (dot == -1.0f)
 			{
 				rotAxis = Maths::Vec3(0.0f, 0.0f, -1.0f);
 			}
