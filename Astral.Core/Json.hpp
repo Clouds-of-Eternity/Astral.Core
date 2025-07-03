@@ -131,7 +131,7 @@ namespace Json
             dataLength = -(i32)JsonToken_LBracket;
         }
         
-        inline JsonTokenType CheckElementType()
+        inline JsonTokenType CheckValueType()
         {
             if (dataLength < 0)
             {
@@ -707,7 +707,7 @@ collections::Array<u8> Json::JsonElement::GetAsRawData(IAllocator allocator)
     }
     else if (this->elementType == JsonElement_Property)
     {
-        Json::JsonTokenType tokenType = this->CheckElementType();
+        Json::JsonTokenType tokenType = this->CheckValueType();
         //have to check the string to know if it's a integer, float or string
         if (tokenType == JsonToken_BoolLiteral)
         {

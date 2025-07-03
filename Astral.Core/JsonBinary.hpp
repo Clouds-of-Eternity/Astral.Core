@@ -176,7 +176,7 @@ void Json::JsonConvertToBinary(ByteStreamWriter *writer, JsonElement *json)
         }
         case JsonElement_Property:
         {
-            Json::JsonTokenType elemType = json->CheckElementType();
+            Json::JsonTokenType elemType = json->CheckValueType();
             switch (elemType)
             {
                 case JsonToken_StringLiteral:
