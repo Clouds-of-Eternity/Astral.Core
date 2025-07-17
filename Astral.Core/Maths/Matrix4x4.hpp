@@ -739,17 +739,6 @@ namespace Maths
 				M41 != other.M41 || M42 != other.M42 || M43 != other.M43 || M44 != other.M44);
 		}
 
-        inline Vec3 Transform(Vec3 vec3)
-        {
-			float vec4[4] = {
-            vec3.X * M11 + vec3.Y * M21 + vec3.Z * M31 + M41,
-            vec3.X * M12 + vec3.Y * M22 + vec3.Z * M32 + M42,
-            vec3.X * M13 + vec3.Y * M23 + vec3.Z * M33 + M43,
-            vec3.X * M14 + vec3.Y * M24 + vec3.Z * M34 + M44
-			};
-			float oneOverW = 1.0f / vec4[3];
-			return Vec3(vec4[0] * oneOverW, vec4[1] * oneOverW, vec4[2] * oneOverW);
-        }
 		inline Vec4 Transform(Vec4 vec4)
 		{
             return Vec4(
@@ -757,6 +746,12 @@ namespace Maths
             vec4.X * M12 + vec4.Y * M22 + vec4.Z * M32 + vec4.W * M42,
             vec4.X * M13 + vec4.Y * M23 + vec4.Z * M33 + vec4.W * M43,
             vec4.X * M14 + vec4.Y * M24 + vec4.Z * M34 + vec4.W * M44);
+		}
+        inline Vec3 Transform(Vec3 vec3)
+        {
+			Maths::Vec4 asVec4 = Maths::Vec4(vec3, 1.0f);
+			asVec4 = Transform(asVec4);
+			return Vec3(asVec4.X / asVec4.W, asVec4.Y / asVec4.W, asVec4.Z / asVec4.W);
 		}
 		inline static Matrix4x4 Lerp(const Matrix4x4 A, const Matrix4x4 B, float amount)
 		{

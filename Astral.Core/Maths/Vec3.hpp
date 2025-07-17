@@ -155,11 +155,11 @@ namespace Maths
         }
         static inline Vec3 Max(Vec3 A, Vec3 B)
         {
-            return Vec3(A.X > B.X ? A.X : B.X, A.Y > B.Y ? A.Y : B.Y, A.Z > B.Z ? A.Z : B.Z);
+            return Vec3(fmaxf(A.X, B.X), fmaxf(A.Y, B.Y), fmaxf(A.Z, B.Z));
         }
         static inline Vec3 Min(Vec3 A, Vec3 B)
         {
-            return Vec3(A.X < B.X ? A.X : B.X, A.Y < B.Y ? A.Y : B.Y, A.Z < B.Z ? A.Z : B.Z);
+            return Vec3(fminf(A.X, B.X), fminf(A.Y, B.Y), fminf(A.Z, B.Z));
         }
         static inline float Distance(Vec3 A, Vec3 B)
         {
