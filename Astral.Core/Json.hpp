@@ -1,17 +1,14 @@
-#pragma once
+#ifndef JSON2_HPP
+#define JSON2_HPP
+
 #include "string.hpp"
 #include "allocators.hpp"
 #include "ctype.h"
-#include "hashmap.hpp"
-#include "io.hpp"
 #include "stdio.h"
-#include "Maths/Util.hpp"
-#include "StringRental.hpp"
 #include "ByteStreamOps.hpp"
 
 namespace Json
 {
-    thread_local extern StringRentalBuffer *stringRentalBuffer;
     enum JsonTokenType
     {
         JsonToken_Invalid,
@@ -68,13 +65,20 @@ namespace Json
             }
             return string(allocator, fileContents + token.startIndex, token.endIndex - token.startIndex);
         }
-        inline string RentString(JsonToken token)
+        inline u32 GetAsString(JsonToken token, char* output, u32 maxLength)
         {
+            u32 copyLength;
             if (token.tokenType == JsonToken_StringLiteral)
             {
-                return stringRentalBuffer->Rent(fileContents + token.startIndex + 1, token.endIndex - token.startIndex - 2);
+                copyLength = token.endIndex - token.startIndex - 2;
+                memcpy(output, &fileContents[token.startIndex + 1], copyLength < maxLength ? copyLength : maxLength);
             }
-            return stringRentalBuffer->Rent(fileContents + token.startIndex, token.endIndex - token.startIndex);
+            else
+            {
+                copyLength = token.endIndex - token.startIndex;
+                memcpy(output, &fileContents[token.startIndex], copyLength < maxLength ? copyLength : maxLength);
+            }
+            return copyLength;
         }
         inline JsonToken PeekNext()
         {
@@ -87,10 +91,10 @@ namespace Json
         }
         JsonToken Next();
     };
+    struct JsonProperty;
     struct JsonElement
     {
-        collections::hashmap<string, JsonElement> childObjects;
-        collections::Array<JsonElement> arrayElements;
+        collections::Array<JsonProperty> arrayElements;
         u64 data;
         //negative numbers = typed data
         //positive numbers = length of string
@@ -102,8 +106,7 @@ namespace Json
         {
             data = 0;
             dataLength = 0;
-            childObjects = collections::hashmap<string, JsonElement>();
-            arrayElements = collections::Array<JsonElement>();
+            arrayElements = collections::Array<JsonProperty>();
             elementType = JsonElement_Property;
         }
         inline JsonElement(string stringValue)
@@ -111,24 +114,7 @@ namespace Json
             data = (u64)stringValue.buffer;
             dataLength = (i32)stringValue.length;
             elementType = JsonElement_Property;
-            childObjects = collections::hashmap<string, JsonElement>();
-            arrayElements = collections::Array<JsonElement>();
-        }
-        inline JsonElement(collections::hashmap<string, JsonElement> thisChildObjects)
-        {
-            this->childObjects = thisChildObjects;
-            this->arrayElements = collections::Array<JsonElement>();
-            elementType = JsonElement_Object;
-            data = 0;
-            dataLength = -(i32)JsonToken_LBrace;
-        }
-        inline JsonElement(collections::Array<JsonElement> childElements)
-        {
-            this->arrayElements = childElements;
-            this->childObjects = collections::hashmap<string, JsonElement>();
-            elementType = JsonElement_Array;
-            data = 0;
-            dataLength = -(i32)JsonToken_LBracket;
+            arrayElements = collections::Array<JsonProperty>();
         }
         
         inline JsonTokenType CheckValueType()
@@ -244,39 +230,6 @@ namespace Json
             }
             return *(double *)&data;
         }
-        #ifdef VEC2_H
-        inline Maths::Vec2 GetVec2()
-        {
-            if (elementType != JsonElement_Array)
-            {
-                return Maths::Vec2(0.0f);
-            }
-            Maths::Vec2 result = Maths::Vec2(arrayElements.data[0].GetFloat(), arrayElements.data[1].GetFloat());
-            return result;
-        }
-        #endif
-        #ifdef VEC3_H
-        inline Maths::Vec3 GetVec3()
-        {
-            if (elementType != JsonElement_Array)
-            {
-                return Maths::Vec3(0.0f);
-            }
-            Maths::Vec3 result = Maths::Vec3(arrayElements.data[0].GetFloat(), arrayElements.data[1].GetFloat(), arrayElements.data[2].GetFloat());
-            return result;
-        }
-        #endif
-        #ifdef VEC4_H
-        inline Maths::Vec4 GetVec4()
-        {
-            if (elementType != JsonElement_Array)
-            {
-                return Maths::Vec4(0.0f);
-            }
-            Maths::Vec4 result = Maths::Vec4(arrayElements.data[0].GetFloat(), arrayElements.data[1].GetFloat(), arrayElements.data[2].GetFloat(), arrayElements.data[3].GetFloat());
-            return result;
-        }
-        #endif
         inline string GetString(IAllocator allocator)
         {
             if (dataLength < 0)
@@ -340,45 +293,23 @@ namespace Json
             u8 *asPtr = (u8*)&result;
             for (usize i = 0; i < this->arrayElements.length; i++)
             {
-                u8 byte = (u8)this->arrayElements.data[i].GetUint32();
+                u8 byte = (u8)this->arrayElements.data[i].value.GetUint32();
                 asPtr[i] = byte;
             }
             return result;
         }
-        inline JsonElement *GetProperty(string propertyName)
-        {
-            if (this->elementType == JsonElement_Object)
-            {
-                return childObjects.Get(propertyName);
-            }
-            return NULL;
-        }
-        inline JsonElement *GetProperty(const char* ptr)
-        {
-            if (this->elementType == JsonElement_Object)
-            {
-                IAllocator allocator = GetCAllocator();
-                JsonElement *result;
-                if (stringRentalBuffer == NULL)
-                {
-                    string propertyName = string(allocator, ptr);
-                    result = childObjects.Get(propertyName);
-                    propertyName.deinit();
-                }
-                else
-                {
-                    string propertyName = stringRentalBuffer->Rent(ptr);
-                    result = childObjects.Get(propertyName);
-                    stringRentalBuffer->Return(propertyName);
-                }
-                return result;
-            }
-            return NULL;
-        }
+        JsonElement *GetProperty(string propertyName);
+        JsonElement *GetProperty(text propertyName);
+
         /// @brief Parses all child objects recursively, collecting their properties 
         /// and aggregating them into raw byte data
         /// @return the Json object as raw data
         collections::Array<u8> GetAsRawData(IAllocator allocator);
+    };
+    struct JsonProperty
+    {
+        string key;
+        JsonElement value;
     };
     bool ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, JsonElement *result);
     inline usize ParseJsonDocument(IAllocator allocator, string contents, JsonElement* result)
@@ -389,21 +320,6 @@ namespace Json
             return tokenizer.currentLine;
         }
         return 0;
-    }
-    inline usize ReadJsonFile(IAllocator allocator, string fileFullPath, JsonElement* result)
-    {
-        IAllocator cAllocator = GetCAllocator();
-        string fileContents = io::ReadFile(cAllocator, fileFullPath.buffer, false);
-        if (fileContents.buffer == NULL)
-        {
-            return false;
-        }
-
-        usize parseResult = ParseJsonDocument(allocator, fileContents, result);
-
-        fileContents.deinit();
-
-        return parseResult;
     }
 
     struct JsonWriter
@@ -681,11 +597,36 @@ namespace Json
 
 #ifdef ASTRALCORE_JSON_IMPL
 
-namespace Json
+Json::JsonElement *Json::JsonElement::GetProperty(text propertyName)
 {
-    thread_local StringRentalBuffer *stringRentalBuffer = new StringRentalBuffer(GetCAllocator());
+    if (this->elementType == JsonElement_Object)
+    {
+        for (u32 i = 0; i < arrayElements.length; i++)
+        {
+            if (arrayElements[i].key == propertyName)
+            {
+                return &arrayElements[i].value;
+            }
+        }
+        //return childObjects.Get(propertyName);
+    }
+    return NULL;
 }
-
+Json::JsonElement *Json::JsonElement::GetProperty(string propertyName)
+{
+    if (this->elementType == JsonElement_Object)
+    {
+        for (u32 i = 0; i < arrayElements.length; i++)
+        {
+            if (arrayElements[i].key == propertyName)
+            {
+                return &arrayElements[i].value;
+            }
+        }
+        //return childObjects.Get(propertyName);
+    }
+    return NULL;
+}
 collections::Array<u8> Json::JsonElement::GetAsRawData(IAllocator allocator)
 {
     ByteStreamWriter writer = ByteStreamWriter(GetCAllocator());
@@ -693,7 +634,7 @@ collections::Array<u8> Json::JsonElement::GetAsRawData(IAllocator allocator)
     {
         for (usize i = 0; i < arrayElements.length; i++)
         {
-            collections::Array<u8> toAppend = arrayElements.data[i].GetAsRawData(GetCAllocator());
+            collections::Array<u8> toAppend = arrayElements.data[i].value.GetAsRawData(GetCAllocator());
             if (toAppend.data != NULL)
             {
                 for (usize c = 0; c < toAppend.length; c++)
@@ -741,7 +682,7 @@ Json::JsonToken Json::JsonTokenizer::Next()
     JsonToken result;
     result.tokenType = JsonToken_Invalid;
 
-    while (fileContents[currentIndex] == ' ' || fileContents[currentIndex] == '\n' || fileContents[currentIndex] == '\r')
+    while (fileContents[currentIndex] == ' ' || fileContents[currentIndex] == '\t' || fileContents[currentIndex] == '\n' || fileContents[currentIndex] == '\r')
     {
         if (fileContents[currentIndex] == '\n')
         {
@@ -928,10 +869,11 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             *result = JsonElement();
 
-            string rented = tokenizer->RentString(peekNext);
-            double db = atof(rented.buffer);
+            char floatLiteralStr[32];
+            u32 copied = tokenizer->GetAsString(peekNext, floatLiteralStr, 31);
+            floatLiteralStr[copied] = '\0';
+            double db = atof(floatLiteralStr);
             *((double *)&result->data) = db;
-            Json::stringRentalBuffer->Return(rented);
 
             result->dataLength = -(i32)JsonToken_FloatLiteral;
 
@@ -958,20 +900,20 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             IAllocator cAllocator = GetCAllocator();
 
-            collections::vector<JsonElement> arrayMembers = collections::vector<JsonElement>(cAllocator);
+            collections::vector<JsonProperty> arrayMembers = collections::vector<JsonProperty>(cAllocator);
             tokenizer->Next();
             //empty array
             if (tokenizer->PeekNext().tokenType == JsonToken_RBracket)
             {
                 tokenizer->Next();
-
             }
             else
             {
                 while(true)
                 {
-                    JsonElement arrayMember;
-                    if (!ParseJsonElement(allocator, tokenizer, &arrayMember))
+                    JsonProperty arrayMember;
+                    arrayMember.key = string();
+                    if (!ParseJsonElement(allocator, tokenizer, &arrayMember.value))
                     {
                         //printf("Unable to parse array member\n");
                         arrayMembers.deinit();
@@ -998,15 +940,18 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
                 }
             }
 
-            *result = JsonElement(arrayMembers.ToOwnedArrayWith(allocator));
+            result->arrayElements = arrayMembers.ToOwnedArrayWith(allocator);
+            result->elementType = JsonElement_Array;
+            result->data = 0;
+            result->dataLength = -(i32)JsonToken_LBracket;
             return true;
         }
         case JsonToken_LBrace:
         {
-            *result = JsonElement(collections::hashmap<string, JsonElement>(allocator, &stringHash, &stringEql, 8));
+            *result = JsonElement();
             tokenizer->Next();
 
-            collections::vector<JsonElement> childObjectsOrdered = collections::vector<JsonElement>(GetCAllocator());
+            collections::vector<JsonProperty> childObjectsOrdered = collections::vector<JsonProperty>(GetCAllocator());
 
             while (true)
             {
@@ -1019,19 +964,18 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
                 {
                     return false;
                 }
-                string propertyName = tokenizer->GetString(allocator, propertyNameToken); // string(allocator, tokenizer->fileContents + propertyNameToken.startIndex + 1, propertyNameToken.endIndex - 1 - propertyNameToken.startIndex - 1);
 
                 if (tokenizer->Next().tokenType != JsonToken_Colon)
                 {
                     return false;
                 }
 
-                JsonElement subElementResult;
-                if (!ParseJsonElement(allocator, tokenizer, &subElementResult))
+                JsonProperty subElementResult;
+                if (!ParseJsonElement(allocator, tokenizer, &subElementResult.value))
                 {
                     return false;
                 }
-                result->childObjects.Add(propertyName, subElementResult);
+                subElementResult.key = tokenizer->GetString(allocator, propertyNameToken);
                 childObjectsOrdered.Add(subElementResult);
 
                 if (tokenizer->PeekNext().tokenType == JsonToken_Comma)
@@ -1041,6 +985,9 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
                 }
             }
             result->arrayElements = childObjectsOrdered.ToOwnedArrayWith(allocator);
+            result->elementType = JsonElement_Object;
+            result->data = 0;
+            result->dataLength = -(i32)JsonToken_LBrace;
             return true;
         }
         default:
@@ -1049,4 +996,5 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         }
     }
 }
+#endif
 #endif
