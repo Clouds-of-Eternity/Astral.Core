@@ -32,6 +32,8 @@ namespace threading
     def_delegate(ThreadFunc, THREAD_RESULT, void*);
     Thread StartThread(ThreadFunc func, void *inputArgs);
     void ShutdownThread(Thread thread);
+
+    i32 GetCPUCount();
 }
 
 #ifdef ASTRALCORE_THREADING_IMPL
@@ -131,6 +133,12 @@ namespace threading
         TerminateThread(thread->handle, 0);
         free(thread);
     }
+    i32 GetCPUCount()
+    {
+        SYSTEM_INFO sysInfo;
+        GetSystemInfo(&sysInfo);
+        return sysInfo.dwNumberOfProcessors;
+    }
 }
 
 #endif
@@ -225,6 +233,15 @@ namespace threading
         pthread_cancel(thread->handle);
         free(thread);
     }
+
+    #ifndef BSD
+    i32 GetCPUCount()
+    {
+        return sysconf(_SC_NPROCESSORS_ONLN);
+    }
+    #else
+    #error "GetCPUCount() not implemented for BSD devices"
+    #endif
 }
 
 #endif
