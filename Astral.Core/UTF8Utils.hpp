@@ -42,11 +42,11 @@ inline option<u32> UTF8GetCharPointAt(text utf8, usize index)
     char startingByte = utf8[index];
     if ((startingByte & 0b11111000) == 0b11110000)
     {
-        result = ((startingByte & 0b00000111) << 6 + 6 + 6) | ((utf8[index + 1] & 0b00111111) << 6 + 6) | ((utf8[index + 2] & 0b00111111) << 6) | ((utf8[index + 3] & 0b00111111));
+        result = ((startingByte & 0b00000111) << (6 + 6 + 6)) | ((utf8[index + 1] & 0b00111111) << (6 + 6)) | ((utf8[index + 2] & 0b00111111) << 6) | ((utf8[index + 3] & 0b00111111));
     }
     else if ((startingByte & 0b11110000) == 0b11100000)
     {
-        result = ((startingByte & 0b00001111) << 6 + 6) | ((utf8[index + 1] & 0b00111111) << 6) | ((utf8[index + 2] & 0b00111111));
+        result = ((startingByte & 0b00001111) << (6 + 6)) | ((utf8[index + 1] & 0b00111111) << 6) | ((utf8[index + 2] & 0b00111111));
     }
     else if ((startingByte & 0b11100000) == 0b11000000)
     {
@@ -94,12 +94,12 @@ inline u32 UTF8GetCharPoint(text utf8, usize *index)
     char startingByte = utf8[*index];
     if ((startingByte & 0b11111000) == 0b11110000)
     {
-        result = ((startingByte & 0b00000111) << 6 + 6 + 6) | ((utf8[*index + 1] & 0b00111111) << 6 + 6) | ((utf8[*index + 2] & 0b00111111) << 6) | ((utf8[*index + 3] & 0b00111111));
+        result = ((startingByte & 0b00000111) << (6 + 6 + 6)) | ((utf8[*index + 1] & 0b00111111) << (6 + 6)) | ((utf8[*index + 2] & 0b00111111) << 6) | ((utf8[*index + 3] & 0b00111111));
         *index += 4;
     }
     else if ((startingByte & 0b11110000) == 0b11100000)
     {
-        result = ((startingByte & 0b00001111) << 6 + 6) | ((utf8[*index + 1] & 0b00111111) << 6) | ((utf8[*index + 2] & 0b00111111));
+        result = ((startingByte & 0b00001111) << (6 + 6)) | ((utf8[*index + 1] & 0b00111111) << 6) | ((utf8[*index + 2] & 0b00111111));
         *index += 3;
     }
     else if ((startingByte & 0b11100000) == 0b11000000)
