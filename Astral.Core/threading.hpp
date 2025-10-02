@@ -144,6 +144,7 @@ namespace threading
 #endif
 #ifdef POSIX
 #include <pthread.h>
+#include <unistd.h>
 
 namespace threading
 {
