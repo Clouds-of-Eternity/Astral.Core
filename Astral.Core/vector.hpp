@@ -156,6 +156,19 @@ namespace collections
             }
             count -= numRemoves;
         }
+        collections::vector<T> Clone(IAllocator newAllocator)
+        {
+            if (this->ptr == NULL)
+            {
+                return collections::vector<T>(newAllocator);
+            }
+            collections::vector<T> result = collections::vector<T>(newAllocator, count);
+            for (u32 i = 0; i < count; i++)
+            {
+                result.Add(ptr[i]);
+            }
+            return result;
+        }
         collections::Array<T> ToClonedArray(IAllocator newAllocator)
         {
             if (this->ptr == NULL)
