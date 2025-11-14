@@ -289,11 +289,17 @@ namespace Json
         template<typename T>
         inline T GetBytesAsT()
         {
+            struct JsonPropertyImpl
+            {
+                string name;
+                JsonElement value;
+            };
             T result = T(); //invoke default constructor
             u8 *asPtr = (u8*)&result;
+            JsonPropertyImpl *asImpl = (JsonPropertyImpl *)this->arrayElements.data;
             for (usize i = 0; i < this->arrayElements.length; i++)
             {
-                u8 byte = (u8)this->arrayElements.data[i].value.GetUint32();
+                u8 byte = (u8)asImpl[i].value.GetUint32();
                 asPtr[i] = byte;
             }
             return result;

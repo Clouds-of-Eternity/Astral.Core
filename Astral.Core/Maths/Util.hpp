@@ -8,28 +8,28 @@
 constexpr float Degree2Radian = 3.1415927f / 180.0f;
 constexpr float Radian2Degree = 180.0f / 3.1415927f;
 
-#define LERP(A, B, amount) A + (B - A) * amount
-#define FloatMin -3.40282347E+38f
-#define FloatMax 3.40282347E+38f
-#define U64Min 0
-#define U64Max 18446744073709551615llu
-#define U32Min 0
-#define U32Max 4294967295
-#define U16Min 0
-#define U16Max 65535
-#define U8Min 0
-#define U8Max 255
-#define I64Min -9223372036854775808ll
-#define I64Max 9223372036854775807ll
-#define I32Min -2147483648
-#define I32Max 2147483647
-#define I16Min -32768
-#define I16Max 32767
-#define I8Min -128
-#define I8Max 127
+#define AC_LERP(A, B, amount) A + (B - A) * amount
+#define AC_FloatMin -3.40282347E+38f
+#define AC_FloatMax 3.40282347E+38f
+#define AC_U64Min 0
+#define AC_U64Max 18446744073709551615llu
+#define AC_U32Min 0
+#define AC_U32Max 4294967295
+#define AC_U16Min 0
+#define AC_U16Max 65535
+#define AC_U8Min 0
+#define AC_U8Max 255
+#define AC_I64Min -9223372036854775808ll
+#define AC_I64Max 9223372036854775807ll
+#define AC_I32Min -2147483648
+#define AC_I32Max 2147483647
+#define AC_I16Min -32768
+#define AC_I16Max 32767
+#define AC_I8Min -128
+#define AC_I8Max 127
 
-#define MAX(a, b) ((a > b) ? a : b)
-#define MIN(a, b) ((a < b) ? a : b)
+#define AC_MAX(a, b) ((a > b) ? a : b)
+#define AC_MIN(a, b) ((a < b) ? a : b)
 
 namespace Maths
 {

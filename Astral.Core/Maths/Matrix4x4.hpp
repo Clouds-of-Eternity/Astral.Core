@@ -782,25 +782,25 @@ namespace Maths
 #else
 			Matrix4x4 m;
 
-			m.row1[0] = LERP(A.row1[0], B.row1[0], amount);
-			m.row1[1] = LERP(A.row1[1], B.row1[1], amount);
-			m.row1[2] = LERP(A.row1[2], B.row1[2], amount);
-			m.row1[3] = LERP(A.row1[3], B.row1[3], amount);
+			m.row1[0] = AC_LERP(A.row1[0], B.row1[0], amount);
+			m.row1[1] = AC_LERP(A.row1[1], B.row1[1], amount);
+			m.row1[2] = AC_LERP(A.row1[2], B.row1[2], amount);
+			m.row1[3] = AC_LERP(A.row1[3], B.row1[3], amount);
 
-			m.row2[0] = LERP(A.row2[0], B.row2[0], amount);
-			m.row2[1] = LERP(A.row2[1], B.row2[1], amount);
-			m.row2[2] = LERP(A.row2[2], B.row2[2], amount);
-			m.row2[3] = LERP(A.row2[3], B.row2[3], amount);
+			m.row2[0] = AC_LERP(A.row2[0], B.row2[0], amount);
+			m.row2[1] = AC_LERP(A.row2[1], B.row2[1], amount);
+			m.row2[2] = AC_LERP(A.row2[2], B.row2[2], amount);
+			m.row2[3] = AC_LERP(A.row2[3], B.row2[3], amount);
 
-			m.row3[0] = LERP(A.row3[0], B.row3[0], amount);
-			m.row3[1] = LERP(A.row3[1], B.row3[1], amount);
-			m.row3[2] = LERP(A.row3[2], B.row3[2], amount);
-			m.row3[3] = LERP(A.row3[3], B.row3[3], amount);
+			m.row3[0] = AC_LERP(A.row3[0], B.row3[0], amount);
+			m.row3[1] = AC_LERP(A.row3[1], B.row3[1], amount);
+			m.row3[2] = AC_LERP(A.row3[2], B.row3[2], amount);
+			m.row3[3] = AC_LERP(A.row3[3], B.row3[3], amount);
 
-			m.row4[0] = LERP(A.row4[0], B.row4[0], amount);
-			m.row4[1] = LERP(A.row4[1], B.row4[1], amount);
-			m.row4[2] = LERP(A.row4[2], B.row4[2], amount);
-			m.row4[3] = LERP(A.row4[3], B.row4[3], amount);
+			m.row4[0] = AC_LERP(A.row4[0], B.row4[0], amount);
+			m.row4[1] = AC_LERP(A.row4[1], B.row4[1], amount);
+			m.row4[2] = AC_LERP(A.row4[2], B.row4[2], amount);
+			m.row4[3] = AC_LERP(A.row4[3], B.row4[3], amount);
 
 			return m;
 #endif
