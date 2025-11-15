@@ -115,7 +115,7 @@ void TimSort(T* array, usize arrayLength, i8(*comparator)(T&, T&))
 
     //Sort the subarrays using insertion sort
     for (i64 i = 0; i < arrayLength; i += SUBARRAY_SIZE)
-        InsertionSort<T>(array, i, MIN(i + SUBARRAY_SIZE - 1, arrayLength - 1), comparator);
+        InsertionSort<T>(array, i, AC_MIN(i + SUBARRAY_SIZE - 1, arrayLength - 1), comparator);
 
     if (arrayLength <= SUBARRAY_SIZE)
         return;
@@ -126,7 +126,7 @@ void TimSort(T* array, usize arrayLength, i8(*comparator)(T&, T&))
         for (i64 left = 0; left < arrayLength; left += 2 * size)
         {
             i64 mid = left + size - 1;
-            i64 right = MIN(left + (2 * size) - 1, arrayLength - 1);
+            i64 right = AC_MIN(left + (2 * size) - 1, arrayLength - 1);
 
             //Sanity check for if the left subarray is the final subarray
             //'mid' ends up being greater than 'count' if this were the case, which causes problems in
