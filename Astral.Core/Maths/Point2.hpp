@@ -36,6 +36,43 @@ namespace Maths
         {
             return Point2(-X, -Y);
         }
+
+        inline Point2 operator+(Point2 B)
+        {
+            return Point2(X + B.X, Y + B.Y);
+        }
+        inline void operator+=(Point2 B)
+        {
+            X += B.X;
+            Y += B.Y;
+        }
+        inline Point2 operator-(Point2 B)
+        {
+            return Point2(X - B.X, Y - B.Y);
+        }
+        inline void operator-=(Point2 B)
+        {
+            X -= B.X;
+            Y -= B.Y;
+        }
+        inline Point2 operator*(Point2 B)
+        {
+            return Point2(X * B.X, Y * B.Y);
+        }
+        inline void operator*=(Point2 B)
+        {
+            X *= B.X;
+            Y *= B.Y;
+        }
+        inline Point2 operator/(Point2 B)
+        {
+            return Point2(X / B.X, Y / B.Y);
+        }
+        inline void operator/=(Point2 B)
+        {
+            X /= B.X;
+            Y /= B.Y;
+        }
     };
 
     inline bool Point2Eql(Point2 A, Point2 B)
