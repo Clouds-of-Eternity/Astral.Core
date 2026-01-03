@@ -438,15 +438,17 @@ namespace Maths
 		}
 		inline static Matrix4x4 CreateLookAt(Vec3 cameraPosition, Vec3 cameraTarget, Vec3 up)
 		{
-			Vec3 zAxis = (cameraPosition - cameraTarget).Normalized();
+			Vec3 zAxis = -cameraTarget; //(cameraTarget - cameraPosition).Normalized();
 			Vec3 xAxis = Vec3::Cross(up, zAxis).Normalized();
 			Vec3 yAxis = Vec3::Cross(zAxis, xAxis);
+
+			Vec3 cmPos = Vec3(Vec3::Dot(xAxis, -cameraPosition), Vec3::Dot(yAxis, -cameraPosition), Vec3::Dot(zAxis, -cameraPosition));
 
 			float m[16] = {
 				xAxis.X, yAxis.X, zAxis.X, 0.0f,
 				xAxis.Y, yAxis.Y, zAxis.Y, 0.0f,
 				xAxis.Z, yAxis.Z, zAxis.Z, 0.0f,
-				-Vec3::Dot(xAxis, cameraPosition), -Vec3::Dot(yAxis, cameraPosition), -Vec3::Dot(zAxis, cameraPosition), 1.0f
+				cmPos.X, cmPos.Y, cmPos.Z, 1.0f
 			};
 			return Matrix4x4(m);
 		}

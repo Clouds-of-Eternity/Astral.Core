@@ -70,6 +70,14 @@ inline bool i32Eql(i32 A, i32 B)
 {
     return A == B;
 }
+inline u32 U64Hash(u64 value)
+{
+    return value % U32Max;
+}
+inline bool U64Eql(u64 A, u64 B)
+{
+    return A == B;
+}
 
 inline bool IsLittleEndian()
 {
