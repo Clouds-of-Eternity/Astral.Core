@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "vector.hpp"
 #include "ArenaAllocator.hpp"
+#include "scope.hpp"
 
 #include <sys/stat.h>   // For stat().
 
@@ -22,6 +23,36 @@
 
 namespace io
 {
+    inline long GetFileSize(FILE* ptr)
+    {
+        // TODO (Chris): Assert
+        if (ptr == NULL)
+        {
+            return -1L;
+        }
+
+        long current_pos = ftell(ptr);
+
+        if (fseek(ptr, 0, SEEK_END) != 0)
+        {
+            return -1L;
+        }
+        
+        long size = ftell(ptr);
+        if (size == -1L) 
+        {
+            return -1L;
+        }
+        
+        // Set back old pos
+        if (fseek(ptr, current_pos, SEEK_SET) != 0)
+        {
+            return -1L;
+        }
+
+        return size;
+    }
+
     inline string ReadFile(IAllocator allocator, const char* path, bool isBinary)
     {
         string result = string(allocator);
@@ -29,12 +60,7 @@ namespace io
         FILE *fs = fopen(path, isBinary ? "rb" : "r");
         if (fs != NULL)
         {
-            usize size = 0;
-            while (fgetc(fs) != EOF)
-            {
-                size += 1;
-            }
-            fseek(fs, 0, SEEK_SET);
+            usize size = GetFileSize(fs);
 
             char* buffer = (char*)allocator.Allocate(size + 1);
             if (buffer != NULL)
@@ -150,7 +176,11 @@ namespace io
 
     inline collections::Array<string> GetFilesInDirectory(IAllocator allocator, const char *dirPath)
     {
-        IAllocator defaultAllocator = GetCAllocator();
+        //this
+        ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
+        Scope(ArenaAllocator, arenaAlloc);
+
+        IAllocator tempAllocator = arenaAlloc.AsAllocator();
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
@@ -163,22 +193,21 @@ namespace io
             return collections::Array<string>();
         }
 
-        collections::vector<string> results = collections::vector<string>(defaultAllocator);
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
             {
                 //printf("%s\n", &findFileResult.cFileName[0]);
-                string replaced = ReplaceChar(defaultAllocator, &findFileResult.cFileName[0], '\\', '/');
+                string replaced = ReplaceChar(tempAllocator, &findFileResult.cFileName[0], '\\', '/');
 
-                string fullPath = string(allocator, dirPath);
+                string fullPath = string(tempAllocator, dirPath);
                 fullPath.Append("/");
                 fullPath.Append(replaced.buffer);
                 if (!io::DirectoryExists(fullPath.buffer))
                 {
-                    results.Add(fullPath);
+                    results.Add(fullPath.Clone(allocator));
                 }
-                replaced.deinit();
             }
             if (!FindNextFileA(handle, &findFileResult))
             {
@@ -190,7 +219,7 @@ namespace io
 
         return results.ToOwnedArrayWith(allocator);
 #else
-        collections::vector<string> results = collections::vector<string>(GetCAllocator());
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
 
         struct dirent *dent;
         DIR *srcdir = opendir(dirPath);
@@ -207,13 +236,13 @@ namespace io
                 continue;
             }
 
-            if (S_ISDIR(st.st_mode))
+            if (!S_ISDIR(st.st_mode))
             {
                 //dircount++
-                string fullPath = string(allocator, dirPath);
+                string fullPath = string(tempAllocator, dirPath);
                 fullPath.Append("/");
                 fullPath.Append(dent->d_name);
-                results.Add(fullPath);
+                results.Add(fullPath.Clone(allocator));
             }
         }
 
@@ -223,7 +252,10 @@ namespace io
 
     inline collections::Array<string> GetFoldersInDirectory(IAllocator allocator, const char *dirPath)
     {
-        IAllocator defaultAllocator = GetCAllocator();
+        ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
+        Scope(ArenaAllocator, arenaAlloc);
+
+        IAllocator tempAllocator = arenaAlloc.AsAllocator();
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
@@ -236,22 +268,21 @@ namespace io
             return collections::Array<string>();
         }
 
-        collections::vector<string> results = collections::vector<string>(defaultAllocator);
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
             {
                 //printf("%s\n", &findFileResult.cFileName[0]);
-                string replaced = ReplaceChar(allocator, &findFileResult.cFileName[0], '\\', '/');
+                string replaced = ReplaceChar(tempAllocator, &findFileResult.cFileName[0], '\\', '/');
 
-                string fullPath = string(defaultAllocator, dirPath);
+                string fullPath = string(tempAllocator, dirPath);
                 fullPath.Append("/");
                 fullPath.Append(replaced.buffer);
                 if (io::DirectoryExists(fullPath.buffer))
                 {
-                    results.Add(fullPath);
+                    results.Add(fullPath.Clone(allocator));
                 }
-                replaced.deinit();
             }
             if (!FindNextFileA(handle, &findFileResult))
             {
@@ -263,33 +294,33 @@ namespace io
 
         return results.ToOwnedArrayWith(allocator);
 #else
-        collections::vector<string> results = collections::vector<string>(defaultAllocator);
+        collections::vector<string> results = collections::vector<string>(tempAllocator);
         struct dirent *dir;
-        DIR *d = opendir(dirPath);
-        if (d != NULL) 
+        DIR *srcdir = opendir(dirPath);
+        if (srcdir != NULL) 
         {
-            while ((dir = readdir(d)) != NULL) 
+            while ((dir = readdir(srcdir)) != NULL) 
             {
                 struct stat st;
 
-                if(strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0)
+                if(strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0)
                 {
                     continue;
                 }
-                if (fstatat(dirfd(srcdir), dent->d_name, &st, 0) < 0)
+                if (fstatat(dirfd(srcdir), dir->d_name, &st, 0) < 0)
                 {
                     continue;
                 }
 
-                if (!S_ISDIR(st.st_mode))
+                if (S_ISDIR(st.st_mode))
                 {
-                    string fullPath = string(allocator, dirPath);
+                    string fullPath = string(tempAllocator, dirPath);
                     fullPath.Append("/");
                     fullPath.Append(dir->d_name);
-                    results.Add(fullPath);
+                    results.Add(fullPath.Clone(GetCAllocator()));
                 }
             }
-            closedir(d);
+            closedir(srcdir);
         }
 
         return results.ToOwnedArrayWith(allocator);

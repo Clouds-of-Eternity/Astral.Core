@@ -32,6 +32,8 @@ namespace threading
     def_delegate(ThreadFunc, THREAD_RESULT, void*);
     Thread StartThread(ThreadFunc func, void *inputArgs);
     void ShutdownThread(Thread thread);
+
+    i32 GetCPUCount();
 }
 
 #ifdef ASTRALCORE_THREADING_IMPL
@@ -131,11 +133,18 @@ namespace threading
         TerminateThread(thread->handle, 0);
         free(thread);
     }
+    i32 GetCPUCount()
+    {
+        SYSTEM_INFO sysInfo;
+        GetSystemInfo(&sysInfo);
+        return sysInfo.dwNumberOfProcessors;
+    }
 }
 
 #endif
 #ifdef POSIX
-#include "pthreads.h"
+#include <pthread.h>
+#include <unistd.h>
 
 namespace threading
 {
@@ -156,8 +165,8 @@ namespace threading
     ConditionVariable CreateConditionVariable()
     {
         ConditionVariableImpl result;
-        pthread_cond_init(&result->handle, NULL);
-        pthread_mutex_init(&result->mutex, NULL);
+        pthread_cond_init(&result.handle, NULL);
+        pthread_mutex_init(&result.mutex, NULL);
 
         ConditionVariable ptr = (ConditionVariable)malloc(sizeof(ConditionVariableImpl));
         *ptr = result;
@@ -222,9 +231,18 @@ namespace threading
     }
     void ShutdownThread(Thread thread)
     {
-        pthread_cancel(&thread->handle);
+        pthread_cancel(thread->handle);
         free(thread);
     }
+
+    #ifndef BSD
+    i32 GetCPUCount()
+    {
+        return sysconf(_SC_NPROCESSORS_ONLN);
+    }
+    #else
+    #error "GetCPUCount() not implemented for BSD devices"
+    #endif
 }
 
 #endif

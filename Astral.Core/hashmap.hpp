@@ -78,6 +78,20 @@ namespace collections
                 this->buckets[i] = Bucket(this->allocator);
             }
         }
+        hashmap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc, u32 bucketsCount)
+        {
+            this->allocator = myAllocator;
+            this->hashFunc = hashFunction;
+            this->eqlFunc = eqlFunc;
+            this->count = 0;
+            this->filledBuckets = 0;
+            this->bucketsCount = bucketsCount;
+            this->buckets = (Bucket*)this->allocator.Allocate(this->bucketsCount * sizeof(Bucket));
+            for (usize i = 0; i < this->bucketsCount; i++)
+            {
+                this->buckets[i] = Bucket(this->allocator);
+            }
+        }
         void deinit()
         {
             if (buckets != NULL)
@@ -182,6 +196,28 @@ namespace collections
                 {
                     if (eqlFunc(buckets[index].entries.Get(i)->key, key))
                     {
+                        buckets[index].entries.RemoveAt_Swap(i);
+
+                        count--;
+
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        bool RemoveAndDeinitKey(K key)
+        {
+            u32 hash = hashFunc(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (eqlFunc(buckets[index].entries.Get(i)->key, key))
+                    {
+                        buckets[index].entries[i].key.deinit();
                         buckets[index].entries.RemoveAt_Swap(i);
 
                         count--;

@@ -71,7 +71,7 @@ struct Random
     {
         assert(maxValue > 0.0f);
         u64 next = Next();
-        float result = next / ((float)U64Max / maxValue);
+        float result = next / ((float)AC_U64Max / maxValue);
         return result;
     }
     float NextFloatRange(float minValue, float maxValue)
@@ -79,7 +79,7 @@ struct Random
         assert(minValue < maxValue);
         float diff = fabsf(maxValue - minValue);
         u64 next = Next();
-        float result = next / ((float)U64Max / diff);
+        float result = next / ((float)AC_U64Max / diff);
         return minValue + result;
     }
 };

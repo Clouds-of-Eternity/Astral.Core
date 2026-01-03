@@ -1,9 +1,14 @@
+#pragma once
+#include "vector.hpp"
 #include "io.hpp"
-#include "assert.h"
+#include "UTF8Utils.hpp"
+
+typedef collections::vector<u8> ByteStream;
 
 struct ByteStreamReader
 {
     usize position;
+    usize size;
     u8* stream;
 
     inline ByteStreamReader()
@@ -11,27 +16,76 @@ struct ByteStreamReader
         position = 0;
         stream = NULL;
     }
-    inline ByteStreamReader(usize pos, u8* byteStream)
+    inline ByteStreamReader(u8* byteStream, usize size, usize pos)
     {
         this->position = pos;
+        this->size = size;
         this->stream = byteStream;
     }
     
     template<typename T>
     inline T Read()
     {
-        assert(stream != NULL);
+        if (position + sizeof(T) > size)
+        {
+            return T();
+        }
         T *ptr = (T *)&stream[position];
         position += sizeof(T);
         return *ptr;
     }
-    inline string ReadString(IAllocator allocator)
+    inline u8 ReadByte()
     {
-        assert(stream != NULL);
+        if (position + 1 > size)
+        {
+            return 0;
+        }
+        return stream[position++];
+    }
+    template<typename T>
+    inline collections::Array<T> ReadArray(IAllocator allocator, usize count)
+    {
+        collections::Array<T> result = collections::Array<T>(allocator, count);
+        memcpy(result.data, &stream[position], sizeof(T) * count);
+        position += sizeof(T) * count;
+        return result;
+    }
+    inline void ReadByteArray(u8 *out, usize count)
+    {
+        memcpy(out, &stream[position], count);
+        position += count;
+    }
+    inline u32 ReadUTF8()
+    {
+        return UTF8GetCharPoint((text)stream, &position);
+    }
+    inline string GetString()
+    {
         usize length = 0;
         while (stream[position + length] != 0)
         {
             length++;
+            if (position + length >= size)
+            {
+                return string();
+            }
+        }
+        string result = string();
+        result.buffer = (char *)&stream[position];
+        result.length = length + 1;
+        position += length + 1;
+        return result;
+    }
+    inline string ReadString(IAllocator allocator)
+    {
+        usize length = 0;
+        while (stream[position + length] != 0)
+        {
+            length++;
+            if (position + length >= size)
+            {
+                return string();
+            }
         }
         string result = string(allocator, length + 1);
         memcpy(result.buffer, &stream[position], length);
@@ -39,9 +93,97 @@ struct ByteStreamReader
         position += length + 1;
         return result;
     }
+    /// @brief Advances past a string without reading it
+    inline void PassString()
+    {
+        while (stream[position] != 0)
+        {
+            position++;
+        }
+        //advance past the null terminator
+        position++;
+    }
 };
 struct ByteStreamWriter
 {
-    usize position;
-    
+    ByteStream bytes;
+
+    inline ByteStreamWriter()
+    {
+        bytes = ByteStream();
+    }
+    inline ByteStreamWriter(IAllocator allocator)
+    {
+        bytes = ByteStream(allocator);
+    }
+    template<typename T>
+    inline void Write(T instance)
+    {
+        bytes.EnsureArrayCapacity(bytes.count + sizeof(T));
+        *((T *)&bytes.ptr[bytes.count]) = instance;
+        bytes.count += sizeof(T);
+    }
+    inline void WriteArray(const void *data, usize length)
+    {
+        bytes.EnsureArrayCapacity(bytes.count + length);
+        memcpy(bytes.ptr + bytes.count, data, length);
+        bytes.count += length;
+    }
+    inline void WriteByte(u8 byte)
+    {
+        bytes.Add(byte);
+    }
+
+    inline void WriteFile(FILE* file)
+    {
+        assert(file);
+
+        constexpr u32 READ_BUFFER_SIZE = 4096;
+        u8* readBuffer = (u8*)(bytes.allocator.Allocate(READ_BUFFER_SIZE));
+        u32 bytesRead = 0;
+
+        while ((bytesRead = fread(readBuffer, 1, READ_BUFFER_SIZE, file)) > 0) 
+        {
+            WriteArray(readBuffer, bytesRead);
+        }
+
+        bytes.allocator.Free(readBuffer);
+    }
+
+    inline void WriteEmpty(usize length)
+    {
+        bytes.EnsureArrayCapacity(bytes.count + length);
+        memset(bytes.ptr + bytes.count, 0, length);
+        bytes.count += length;
+    }
+    inline void WriteStringANSItoU8(string str)
+    {
+        for (usize i = 0; i < str.length; i++)
+        {
+            char chars[4];
+            u8 len = CharPointToUTF8(str.buffer[i], chars);
+            WriteArray(chars, len);
+        }
+    }
+    inline void WriteString(string str)
+    {
+        WriteArray(str.buffer, str.length);
+    }
+    inline void WriteText(text str)
+    {
+        usize i = 0;
+        while(str[i] != '\0')
+        {
+            WriteByte(str[i++]);
+        }
+        WriteByte(0);
+    }
+    inline void Clear()
+    {
+        bytes.Clear();
+    }
+    inline void deinit()
+    {
+        bytes.deinit();
+    }
 };

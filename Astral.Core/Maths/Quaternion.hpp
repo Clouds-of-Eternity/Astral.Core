@@ -1,6 +1,6 @@
 #pragma once
 #include <math.h>
-#include "Maths/Vec3.hpp"
+#include "Maths/Vec4.hpp"
 #include "Maths/simd.h"
 
 namespace Maths
@@ -105,19 +105,45 @@ namespace Maths
 		}
 		static inline Quaternion FromYawPitchRoll(float yaw, float pitch, float roll)
 		{
-			float sRoll = sinf(roll * 0.5f);
-			float cRoll = cosf(roll * 0.5f);
-			float sPitch = sinf(pitch * 0.5f);
-			float cPitch = cosf(pitch * 0.5f);
-			float sYaw = sinf(yaw * 0.5f);
-			float cYaw = cosf(yaw * 0.5f);
+			Maths::Vec3 sin3 = Maths::Vec3(sinf(roll * 0.5f), sinf(pitch * 0.5f), sinf(yaw * 0.5f));
+			Maths::Vec3 cos3 = Maths::Vec3(cosf(roll * 0.5f), cosf(pitch * 0.5f), cosf(yaw * 0.5f));
 
-			return Quaternion(
-				cYaw * sPitch * cRoll + sYaw * cPitch * sRoll,
-				sYaw * cPitch * cRoll - cYaw * sPitch * sRoll,
-				cYaw * cPitch * sRoll - sYaw * sPitch * cRoll,
-				cYaw * cPitch * cRoll + sYaw * sPitch * sRoll
-			);
+			float sr = sin3.X;
+			float sp = sin3.Y;
+			float sy = sin3.Z;
+			float cr = cos3.X;
+			float cp = cos3.Y;
+			float cy = cos3.Z;
+
+			Quaternion result;
+ 
+            result.X = cy * sp * cr + sy * cp * sr;
+            result.Y = sy * cp * cr - cy * sp * sr;
+            result.Z = cy * cp * sr - sy * sp * cr;
+            result.W = cy * cp * cr + sy * sp * sr;
+ 
+            return result;
+		}
+		static inline Quaternion CreateLookAt(Vec3 sourcePoint, Vec3 destPoint)
+		{
+			Maths::Vec3 dir = (destPoint - sourcePoint).Normalized();
+
+			const Maths::Vec3 forward = Maths::Vec3(1.0f, 0.0f, 0.0f);
+
+			float dot = Maths::Vec3::Dot(forward, dir);
+			Maths::Vec3 rotAxis;
+			if (dot == 1.0f)
+			{
+				rotAxis = Maths::Vec3(0.0f, 0.0f, 1.0f);
+			}
+			else if (dot == -1.0f)
+			{
+				rotAxis = Maths::Vec3(0.0f, 0.0f, -1.0f);
+			}
+			else rotAxis = Maths::Vec3::Cross(forward, dir).Normalized();
+			float rotation = acosf(dot);
+
+			return Maths::Quaternion::FromAxisAngle(rotAxis, rotation);
 		}
 		inline Maths::Vec3 Transform(Maths::Vec3 value)
 		{
@@ -251,6 +277,19 @@ namespace Maths
 			output[1] = Y / sinf(output[3] * 0.5f);
 			output[2] = Z / sinf(output[3] * 0.5f);
 		}
+		inline Vec4 Transform(Vec4 pos)
+		{
+			Quaternion conjugated = Conjugate(*this);
+			Quaternion temp = Concat(conjugated, Quaternion(pos.X, pos.Y, pos.Z, pos.W));
+			temp = Concat(temp, *this);
+			return Vec4(temp.X, temp.Y, temp.Z, temp.W);
+		}
+		inline Vec3 Transform(Vec3 pos)
+		{
+			Vec4 vec4 = Transform(Vec4(pos, 1.0));
+			float oneOverW = 1.0f / vec4.W;
+			return Vec3(vec4.X * oneOverW, vec4.Y * oneOverW, vec4.Z * oneOverW);
+		}
 		inline Quaternion operator*(Quaternion other)
 		{
 			return Mult(other);
@@ -274,6 +313,18 @@ namespace Maths
 		inline bool operator!=(Quaternion other)
 		{
 			return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
+		}
+		inline bool Equals(Quaternion other, float approximation)
+		{
+			float dx = fabsf(other.X - X);
+			float dy = fabsf(other.Y - Y);
+			float dz = fabsf(other.Z - Z);
+			float dw = fabsf(other.W - W);
+			if (dx > approximation || dy > approximation || dz > approximation || dw > approximation)
+			{
+				return false;
+			}
+			return true;
 		}
 	};
 }

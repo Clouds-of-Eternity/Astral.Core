@@ -3,6 +3,8 @@
 #include "Maths/Vec2.hpp"
 #include <math.h>
 
+#include "Maths/simd.h"
+
 namespace Maths
 {
     struct Vec3
@@ -37,7 +39,17 @@ namespace Maths
         }
         inline Vec3 operator+(Vec3 other)
         {
+#ifdef USE_SSE
+            float floats[4];
+
+            __m128 A = _mm_set_ps(0.0f, Z, Y, X);
+            __m128 B = _mm_set_ps(0.0f, other.Z, other.Y, other.X);
+            A = _mm_add_ps(A, B);
+            _mm_store_ps(floats, A);
+            return *(Vec3 *)(floats);
+#else
             return Vec3(X + other.X, Y + other.Y, Z + other.Z);
+            #endif
         }
         inline void operator+=(Vec3 other)
         {
@@ -115,7 +127,7 @@ namespace Maths
         }
         inline float LengthSquared()
         {
-            return X * X + Y * Y + Z * Z;
+            return Dot(*this, *this);
         }
         inline void Normalize()
         {
@@ -143,18 +155,21 @@ namespace Maths
         }
         static inline Vec3 Max(Vec3 A, Vec3 B)
         {
-            return Vec3(A.X > B.X ? A.X : B.X, A.Y > B.Y ? A.Y : B.Y, A.Z > B.Z ? A.Z : B.Z);
+            return Vec3(fmaxf(A.X, B.X), fmaxf(A.Y, B.Y), fmaxf(A.Z, B.Z));
         }
         static inline Vec3 Min(Vec3 A, Vec3 B)
         {
-            return Vec3(A.X < B.X ? A.X : B.X, A.Y < B.Y ? A.Y : B.Y, A.Z < B.Z ? A.Z : B.Z);
+            return Vec3(fminf(A.X, B.X), fminf(A.Y, B.Y), fminf(A.Z, B.Z));
         }
         static inline float Distance(Vec3 A, Vec3 B)
         {
-            float dx = B.X - A.X;
-            float dy = B.Y - A.Y;
-            float dz = B.Z - A.Z;
-            return sqrtf(dx * dx + dy * dy + dz * dz);
+            Vec3 diff = B - A;
+            return sqrtf(Dot(diff, diff));
+        }
+        static inline float DistanceSquared(Vec3 A, Vec3 B)
+        {
+            Vec3 diff = B - A;
+            return Dot(diff, diff);
         }
         static inline Vec3 Lerp(Vec3 A, Vec3 B, float amount)
         {

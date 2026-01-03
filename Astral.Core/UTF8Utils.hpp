@@ -1,6 +1,10 @@
 #pragma once
 #include "Linxc.h"
-#include "stdio.h"
+#include "allocators.hpp"
+#include "option.hpp"
+#include <stdio.h>
+#include <string.h>
+#include <wchar.h>
 
 /// Check if a u32 is a valid UTF8 character. If so, returns the byte in which they are valid starting from.
 inline bool IsValidUTF8(text utf8, usize lengthToCheck)
@@ -34,32 +38,82 @@ inline bool IsValidUTF8(text utf8, usize lengthToCheck)
 }
 inline option<u32> UTF8GetCharPointAt(text utf8, usize index)
 {
-    u32 result = 0;
+    u32 result;
+    char startingByte = utf8[index];
+    if ((startingByte & 0b11111000) == 0b11110000)
+    {
+        result = ((startingByte & 0b00000111) << (6 + 6 + 6)) | ((utf8[index + 1] & 0b00111111) << (6 + 6)) | ((utf8[index + 2] & 0b00111111) << 6) | ((utf8[index + 3] & 0b00111111));
+    }
+    else if ((startingByte & 0b11110000) == 0b11100000)
+    {
+        result = ((startingByte & 0b00001111) << (6 + 6)) | ((utf8[index + 1] & 0b00111111) << 6) | ((utf8[index + 2] & 0b00111111));
+    }
+    else if ((startingByte & 0b11100000) == 0b11000000)
+    {
+        result = ((startingByte & 0b00011111) << 6) | (utf8[index + 1] & 0b00111111);
+    }
+    else if ((startingByte >> 7) == 0)
+    {
+        result = startingByte;
+    }
+    else
+        return option<u32>();
+    return option<u32>(result);
+    /*u32 result = 0;
     //is single byte
     char startingByte = utf8[index];
     if ((startingByte >> 7) == 0)
     {
         result = startingByte & 0b01111111;
     }
-    else if ((startingByte >> 5) == 0b110)
+    else if ((startingByte & 0b11100000) == 0b11000000)
     {
-        result = ((startingByte & 0b00011111) << 5) | (utf8[index + 1] & 0b00111111);
+        //-15703 = (u16)49833
+        result = (startingByte & 0b00011111) | 0b11000000;
+        result = (result << 8) | ((utf8[index + 1] & 0b00111111) | 0b10000000);
     }
-    else if ((startingByte >> 4) == 0b1110)
+    else if ((startingByte & 0b11110000) == 0b11100000)
     {
-        result = ((startingByte & 0b00011111) << 10) | ((utf8[index + 1] & 0b00111111) << 6) | (utf8[index + 2] & 0b00111111);
+        result = (startingByte & 0b00001111) | 0b11100000;
+        result = (result << 16) | (((utf8[index + 1] & 0b00111111) | 0b10000000) << 8) | ((utf8[index + 2] & 0b00111111) | 0b10000000);
     }
-    else if ((startingByte >> 3) == 0b11110)
+    else if ((startingByte & 0b11111000) == 0b11110000)
     {
-        result = ((startingByte & 0b00011111) << 15) | ((utf8[index + 1] & 0b00111111) << 12) | ((utf8[index + 2] & 0b00111111) << 6) | (utf8[index + 3] & 0b00111111);
+        result = (startingByte & 0b00000111) | 0b11110000;
+        result = (result << 24) | (((utf8[index + 1] & 0b00111111) | 0b10000000) << 16) | (((utf8[index + 2] & 0b00111111) | 0b10000000) << 8) | ((utf8[index + 3] & 0b00111111) | 0b10000000);
     }
     else
+    {
         return option<u32>();
-    return option<u32>(result);
+    }
+    return option<u32>(result);*/
 }
 inline u32 UTF8GetCharPoint(text utf8, usize *index)
 {
-    u32 result = 0;
+    u32 result;
+    char startingByte = utf8[*index];
+    if ((startingByte & 0b11111000) == 0b11110000)
+    {
+        result = ((startingByte & 0b00000111) << (6 + 6 + 6)) | ((utf8[*index + 1] & 0b00111111) << (6 + 6)) | ((utf8[*index + 2] & 0b00111111) << 6) | ((utf8[*index + 3] & 0b00111111));
+        *index += 4;
+    }
+    else if ((startingByte & 0b11110000) == 0b11100000)
+    {
+        result = ((startingByte & 0b00001111) << (6 + 6)) | ((utf8[*index + 1] & 0b00111111) << 6) | ((utf8[*index + 2] & 0b00111111));
+        *index += 3;
+    }
+    else if ((startingByte & 0b11100000) == 0b11000000)
+    {
+        result = ((startingByte & 0b00011111) << 6) | (utf8[*index + 1] & 0b00111111);
+        *index += 2;
+    }
+    else if ((startingByte >> 7) == 0)
+    {
+        result = startingByte;
+        *index += 1;
+    }
+    return result;
+    /*u32 result = 0;
     //is single byte
     char startingByte = utf8[*index];
     if ((startingByte >> 7) == 0)
@@ -67,22 +121,25 @@ inline u32 UTF8GetCharPoint(text utf8, usize *index)
         result = startingByte & 0b01111111;
         *index += 1;
     }
-    else if ((startingByte >> 5) == 0b110)
+    else if ((startingByte & 0b11100000) == 0b11000000)
     {
-        result = ((startingByte & 0b00011111) << 5) | (utf8[*index + 1] & 0b00111111);
+        result = (startingByte & 0b00011111) | 0b11000000;
+        result = (result << 8) | ((utf8[*index + 1] & 0b00111111) | 0b10000000);
         *index += 2;
     }
-    else if ((startingByte >> 4) == 0b1110)
+    else if ((startingByte & 0b11110000) == 0b11100000)
     {
-        result = ((startingByte & 0b00011111) << 10) | ((utf8[*index + 1] & 0b00111111) << 6) | (utf8[*index + 2] & 0b00111111);
+        result = (startingByte & 0b00001111) | 0b11100000;
+        result = (result << 16) | (((utf8[*index + 1] & 0b00111111) | 0b10000000) << 8) | ((utf8[*index + 2] & 0b00111111) | 0b10000000);
         *index += 3;
     }
-    else if ((startingByte >> 3) == 0b11110)
+    else if ((startingByte & 0b11111000) == 0b11110000)
     {
-        result = ((startingByte & 0b00011111) << 15) | ((utf8[*index + 1] & 0b00111111) << 12) | ((utf8[*index + 2] & 0b00111111) << 6) | (utf8[*index + 3] & 0b00111111);
+        result = (startingByte & 0b00000111) | 0b11110000;
+        result = (result << 24) | (((utf8[*index + 1] & 0b00111111) | 0b10000000) << 16) | (((utf8[*index + 2] & 0b00111111) | 0b10000000) << 8) | ((utf8[*index + 3] & 0b00111111) | 0b10000000);
         *index += 4;
     }
-    return result;
+    return result;*/
 }
 inline void ByteToBits(u8 byte, char* results)
 {
@@ -120,4 +177,52 @@ inline u8 CharPointToUTF8(u32 charPoint, char *output)
         return 4;
     }
     return 0;
+}
+inline wchar_t *UTF8ToWChar(IAllocator alloc, const char *inputText)
+{
+    wchar_t *maxSizeString = (wchar_t *)alloc.Allocate(4 * strlen(inputText) + 1);
+    usize index = 0;
+    usize i = 0;
+    while (true)
+    {
+        u32 result = UTF8GetCharPoint(inputText, &index);
+        maxSizeString[i] = (wchar_t)result;
+        i++;
+        if (result == 0)
+        {
+            break;
+        }
+    }
+    maxSizeString[i] = 0;
+    return maxSizeString;
+}
+inline u8 *WCharToUTF8(IAllocator alloc, const wchar_t *inputText)
+{
+    usize len = wcslen(inputText);
+    u8 *maxSizeString = (u8 *)alloc.Allocate(len * 4 + 1);
+    usize index = 0;
+    for (usize i = 0; i < len; i++)
+    {
+        char output[4];
+        u8 advance = CharPointToUTF8((u32)inputText[i], output);
+        if (advance == 1)
+        {
+            maxSizeString[index] = output[0];
+        }
+        if (advance == 2)
+        {
+            maxSizeString[index] = output[1];
+        }
+        if (advance == 3)
+        {
+            maxSizeString[index] = output[2];
+        }
+        if (advance == 4)
+        {
+            maxSizeString[index] = output[3];
+        }
+        index += advance;
+    }
+    maxSizeString[index] = '\0';
+    return maxSizeString;
 }

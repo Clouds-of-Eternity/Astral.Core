@@ -100,7 +100,7 @@ inline u64 ByteSwapU64(u64 num)
     num = (num & 0x00FF00FF00FF00FFllu) << 8  | (num & 0xFF00FF00FF00FF00llu) >> 8;
     return num;
 }
-inline u64 Murmur2Seeded(u8* ptr, u64 len, u64 seed)
+inline u64 Murmur2Seeded(const u8* ptr, u64 len, u64 seed)
 {
     u64 m = 0xc6a4a7935bd1e995llu;
     u64 h1 = seed ^ (len * m);
@@ -136,11 +136,11 @@ inline u64 Murmur2Seeded(u8* ptr, u64 len, u64 seed)
     h1 ^= h1 >> 47;
     return h1;
 }
-inline u64 Murmur2(u8* ptr, u64 len)
+inline u64 Murmur2(const u8* ptr, u64 len)
 {
     return Murmur2Seeded(ptr, len, 0xc70f6907llu);
 }
-inline u32 Murmur3Seeded(u8* ptr, u64 len, u32 seed)
+inline u32 Murmur3Seeded(const u8* ptr, u64 len, u32 seed)
 {
     const u32 c1 = 0xcc9e2d51;
     const u32 c2 = 0x1b873593;
@@ -166,13 +166,13 @@ inline u32 Murmur3Seeded(u8* ptr, u64 len, u32 seed)
         const u32 offset = len & 0xfffffffc;
         const u32 rest = len & 3;
         if (rest == 3) {
-            k1 ^= *((u32*)&ptr[offset + 2]) << 16;
+            k1 ^= (u32)(ptr[offset + 2]) << 16;
         }
         if (rest >= 2) {
-            k1 ^= *((u32*)&ptr[offset + 1]) << 8;
+            k1 ^= (u32)(ptr[offset + 1]) << 8;
         }
         if (rest >= 1) {
-            k1 ^= *((u32 *)&ptr[offset]);
+            k1 ^= (u32)(ptr[offset]);
             k1 *= c1;
             k1 = Maths::rotl32(k1, 15);
             k1 *= c2;
@@ -187,7 +187,7 @@ inline u32 Murmur3Seeded(u8* ptr, u64 len, u32 seed)
     h1 ^= h1 >> 16;
     return h1;
 }
-inline u32 Murmur3(u8* ptr, u64 len)
+inline u32 Murmur3(const u8* ptr, u64 len)
 {
     return Murmur3Seeded(ptr, len, 0xc70f6907);
 }

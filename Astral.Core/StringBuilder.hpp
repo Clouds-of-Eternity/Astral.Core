@@ -2,6 +2,17 @@
 #include "string.hpp"
 #include "list.hpp"
 #include "UTF8Utils.hpp"
+#include "stdarg.h"
+
+#ifdef STB_SPRINTF_H_INCLUDE
+#ifndef STRINGBUILDER_USE_STB
+#define STRINGBUILDER_USE_STB
+#define vsnprintf stbsp_vsnprintf
+#define vsprintf stbsp_vsprintf
+#define snprintf stbsp_snprintf
+#define sprintf stbsp_sprintf
+#endif
+#endif
 
 struct StringBuilder
 {
@@ -18,7 +29,7 @@ struct StringBuilder
         this->allocator = allocator;
         buffer = collections::list<char>(allocator);
     }
-    inline void Append(text text)
+    inline StringBuilder &Append(text text)
     {
         usize i = 0;
         while (text[i] != '\0')
@@ -26,17 +37,45 @@ struct StringBuilder
             buffer.Add(text[i]);
             i++;
         }
+        return *this;
     }
-    inline void AppendString(const string str)
+    inline StringBuilder &AppendReplace(text text, const char *charsToReplace, char replaceWith)
+    {
+        usize charsToReplaceLength = strlen(charsToReplace);
+        usize i = 0;
+        while (text[i] != '\0')
+        {
+            u32 c = 0;
+            while (c < charsToReplaceLength)
+            {
+                if (text[i] == charsToReplace[c])
+                {
+                    buffer.Add(replaceWith);
+                    i++;
+                    c = 0;
+                }
+                else
+                {
+                    c++;
+                }
+            }
+            buffer.Add(text[i]);
+            i++;
+        }
+        return *this;
+    }
+    inline StringBuilder &AppendString(const string str)
     {
         this->Append(str.buffer);
+        return *this;
     }
-    inline void AppendDeinit(string str)
+    inline StringBuilder &AppendDeinit(string str)
     {
         this->Append(str.buffer);
         str.deinit();
+        return *this;
     }
-    inline void AppendLine(text text)
+    inline StringBuilder &AppendLine(text text)
     {
         usize i = 0;
         while (text[i] != '\0')
@@ -44,41 +83,55 @@ struct StringBuilder
             buffer.Add(text[i]);
             i++;
         }
+        return *this;
     }
-    inline void AppendStringLine(string text)
+    inline StringBuilder &Appendf(text format, ...)
+    {
+        va_list args;
+        va_start(args, format);
+
+        char chars[256];
+        i32 len = vsnprintf(chars, 256, format, args);
+        buffer.EnsureArrayCapacity(buffer.count + len);
+        memcpy(buffer.ptr + buffer.count, chars, len);
+        buffer.count += len;
+
+        va_end(args);
+        return *this;
+    }
+    inline StringBuilder &AppendfLong(text format, ...)
+    {
+        va_list args;
+        va_list args2;
+        va_start(args, format);
+        va_copy(args2, args);
+        i32 len = vsnprintf(NULL, 0, format, args);
+        va_end(args);
+        buffer.EnsureArrayCapacity(buffer.count + len + 1);
+        vsnprintf(buffer.ptr + buffer.count, len + 1, format, args2);
+        buffer.count += len;
+        va_end(args2);
+        return *this;
+    }
+    inline StringBuilder& AppendStringLine(string text)
     {
         this->AppendLine(text.buffer);
+        return *this;
     }
-    inline void AppendChar(char character)
+    inline StringBuilder &AppendChar(char character)
     {
         this->buffer.Add(character);
+        return *this;
     }
-    inline void AppendChar32(u32 char32)
+    inline StringBuilder &AppendChar32(u32 char32)
     {
-        char *ptr = (char *)&char32;
-        char startingByte = ptr[0];
-        if ((startingByte >> 7) == 0)
+        char outputs[4];
+        u8 advance = CharPointToUTF8(char32, outputs);
+        for (u8 i = 0; i < advance; i++)
         {
-            this->buffer.Add(ptr[0]);
+            AppendChar(outputs[i]);
         }
-        else if ((startingByte >> 5) == 0b110)
-        {
-            this->buffer.Add(ptr[0]);
-            this->buffer.Add(ptr[1]);
-        }
-        else if ((startingByte >> 4) == 0b1110)
-        {
-            this->buffer.Add(ptr[0]);
-            this->buffer.Add(ptr[1]);
-            this->buffer.Add(ptr[2]);
-        }
-        else if ((startingByte >> 3) == 0b11110)
-        {
-            this->buffer.Add(ptr[0]);
-            this->buffer.Add(ptr[1]);
-            this->buffer.Add(ptr[2]);
-            this->buffer.Add(ptr[3]);
-        }
+        return *this;
     }
     inline usize InsertChar32At(u32 char32, usize at)
     {

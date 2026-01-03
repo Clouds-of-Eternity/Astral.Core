@@ -1,21 +1,20 @@
-#pragma once
+#ifndef JSON2_HPP
+#define JSON2_HPP
+
 #include "string.hpp"
 #include "allocators.hpp"
 #include "ctype.h"
-#include "hashmap.hpp"
-#include "io.hpp"
 #include "stdio.h"
-#include "Maths/Util.hpp"
-#include "StringRental.hpp"
+#include "ByteStreamOps.hpp"
 
 namespace Json
 {
-    thread_local extern StringRentalBuffer *stringRentalBuffer;
     enum JsonTokenType
     {
         JsonToken_Invalid,
         JsonToken_StringLiteral,
         JsonToken_IntegerLiteral,
+        JsonToken_UIntegerLiteral,
         JsonToken_FloatLiteral,
         JsonToken_BoolLiteral,
         JsonToken_NullLiteral,
@@ -37,18 +36,6 @@ namespace Json
         JsonElement_Object,
         JsonElement_Array,
         JsonElement_Property
-    };
-    enum JsonIntegerType
-    {
-        JsonInteger_I64 = -4,
-        JsonInteger_I32 = -3,
-        JsonInteger_I16 = -1,
-        JsonInteger_I8 = -1,
-        JsonInteger_None = 0,
-        JsonInteger_U8 = 1,
-        JsonInteger_U16 = 2,
-        JsonInteger_U32 = 3,
-        JsonInteger_U64 = 4
     };
     struct JsonToken
     {
@@ -78,6 +65,21 @@ namespace Json
             }
             return string(allocator, fileContents + token.startIndex, token.endIndex - token.startIndex);
         }
+        inline u32 GetAsString(JsonToken token, char* output, u32 maxLength)
+        {
+            u32 copyLength;
+            if (token.tokenType == JsonToken_StringLiteral)
+            {
+                copyLength = token.endIndex - token.startIndex - 2;
+                memcpy(output, &fileContents[token.startIndex + 1], copyLength < maxLength ? copyLength : maxLength);
+            }
+            else
+            {
+                copyLength = token.endIndex - token.startIndex;
+                memcpy(output, &fileContents[token.startIndex], copyLength < maxLength ? copyLength : maxLength);
+            }
+            return copyLength;
+        }
         inline JsonToken PeekNext()
         {
             usize initialLine = currentLine;
@@ -89,170 +91,71 @@ namespace Json
         }
         JsonToken Next();
     };
+    struct JsonProperty;
     struct JsonElement
     {
-        collections::hashmap<string, JsonElement> childObjects;
-        collections::Array<JsonElement> arrayElements;
-        string value;
-        
+        collections::Array<JsonProperty> arrayElements;
+        u64 data;
+        //negative numbers = typed data
+        //positive numbers = length of string
+        i32 dataLength;
+
         JsonElementType elementType;
 
         inline JsonElement()
         {
-            this->value = string();
+            data = 0;
+            dataLength = 0;
+            arrayElements = collections::Array<JsonProperty>();
             elementType = JsonElement_Property;
         }
         inline JsonElement(string stringValue)
         {
-            this->value = stringValue;
+            data = (u64)stringValue.buffer;
+            dataLength = (i32)stringValue.length;
             elementType = JsonElement_Property;
-        }
-        inline JsonElement(collections::hashmap<string, JsonElement> thisChildObjects)
-        {
-            this->childObjects = thisChildObjects;
-            elementType = JsonElement_Object;
-        }
-        inline JsonElement(collections::Array<JsonElement> childElements)
-        {
-            this->arrayElements = childElements;
-            elementType = JsonElement_Array;
+            arrayElements = collections::Array<JsonProperty>();
         }
         
-        inline JsonTokenType CheckElementType()
+        inline JsonTokenType CheckValueType()
         {
-            JsonTokenType tokenType = JsonToken_IntegerLiteral;
-
-            if (this->elementType == JsonElement_Array)
+            if (dataLength < 0)
             {
-                return JsonToken_LBracket;
+                return (JsonTokenType)(-dataLength);
             }
-            if (this->elementType == JsonElement_Object)
-            {
-                return JsonToken_LBrace;
-            }
-            //this is not possible unless we are a string "" so
-            if (this->value.length == 0)
-            {
-                return JsonToken_StringLiteral;
-            }
-            else
-            {
-                for (usize i = 0; i < this->value.length - 1; i++)
-                {
-                    if (!isdigit(this->value.buffer[i]))
-                    {
-                        if (this->value.buffer[i] == '.')
-                        {
-                            if (tokenType == JsonToken_FloatLiteral)
-                            {
-                                tokenType = JsonToken_StringLiteral;
-                            }
-                            else
-                            {
-                                tokenType = JsonToken_FloatLiteral;
-                            }
-                        }
-                        else if (this->value.buffer[i] == '-' && i > 0)
-                        {
-                            tokenType = JsonToken_StringLiteral;
-                            break;
-                        }
-                        else if (this->value.buffer[i] != '-')
-                        {
-                            tokenType = JsonToken_StringLiteral;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (tokenType == JsonToken_StringLiteral)
-            {
-                if (value == "true" || value == "false")
-                {
-                    tokenType = JsonToken_BoolLiteral;
-                }
-                else if (value == "null")
-                {
-                    tokenType = JsonToken_NullLiteral;
-                }
-            }
-            return tokenType;
+            return JsonToken_StringLiteral;
         }
-        inline void GetInteger(void* output, JsonIntegerType* type)
+        inline i8 GetInt8()
         {
             if (elementType != JsonElement_Property)
             {
-                return;
+                return 0;
             }
-            u64 result = 0;
-            u64 index = 1;
-            for (i64 i = value.length - 1; i >= 0; i--)
+            return *(i8 *)&data;
+        }
+        inline u8 GetUint8()
+        {
+            if (elementType != JsonElement_Property)
             {
-                if (value.buffer[i] >= '0' && value.buffer[i] <= '9')
-                {
-                    u64 amount = index * (value.buffer[i] - (u64)'0');
-                    result += amount;
-                    index *= 10;
-                }
+                return 0;
             }
-            if (value.buffer[0] == '-')
+            return *(u8 *)&data;
+        }
+        inline i16 GetInt16()
+        {
+            if (elementType != JsonElement_Property)
             {
-                if (result < I8Max)
-                {
-                    i8 i8result = (i8)result * -1;
-                    *((i8 *)output) = i8result;
-                    *type = JsonInteger_I8;
-                }
-                else if (result < I16Max)
-                {
-                    i16 i16result = (i16)result * -1;
-                    *((i16 *)output) = i16result;
-                    *type = JsonInteger_I16;
-                }
-                else if (result < I32Max)
-                {
-                    i32 i32result = (i32)result * -1;
-                    *((i32 *)output) = i32result;
-                    *type = JsonInteger_I32;
-                }
-                else// if (result > I64Max)
-                {
-                    if (result > I64Max)
-                    {
-                        result = I64Max;
-                    }
-                    i64 i64result = (i64)result * -1;
-                    *((i64 *)output) = i64result;
-                    *type = JsonInteger_I64;
-                }
+                return 0;
             }
-            else
+            return *(i16 *)&data;
+        }
+        inline u16 GetUint16()
+        {
+            if (elementType != JsonElement_Property)
             {
-                if (result < U8Max)
-                {
-                    u8 u8result = (u8)result;
-                    *((u8 *)output) = u8result;
-                    *type = JsonInteger_U8;
-                }
-                else if (result < U16Max)
-                {
-                    u16 u16result = (u16)result;
-                    *((u16 *)output) = u16result;
-                    *type = JsonInteger_U16;
-                }
-                else if (result < U32Max)
-                {
-                    u32 u32result = (u32)result;
-                    *((u32 *)output) = u32result;
-                    *type = JsonInteger_U32;
-                }
-                else
-                {
-                    u64 u64result = (u64)result;
-                    *((u64 *)output) = u64result;
-                    *type = JsonInteger_U64;
-                }
+                return 0;
             }
+            return *(u16 *)&data;
         }
         inline i32 GetInt32()
         {
@@ -260,24 +163,7 @@ namespace Json
             {
                 return 0;
             }
-
-            i32 result = 0;
-            i32 index = 1;
-            for (i64 i = value.length - 1; i >= 0; i--)
-            {
-                if (value.buffer[i] >= '0' && value.buffer[i] <= '9')
-                {
-                    i32 amount = index * (value.buffer[i] - (i32)'0');
-                    result += amount;
-                    index *= 10;
-                }
-                else if (value.buffer[i] == '-' && i == 0)
-                {
-                    result *= -1;
-                }
-            }
-
-            return result;
+            return *(i32 *)&data;
         }
         inline u32 GetUint32()
         {
@@ -285,20 +171,23 @@ namespace Json
             {
                 return 0;
             }
-
-            u32 result = 0;
-            u32 index = 1;
-            for (i64 i = value.length - 1; i >= 0; i--)
+            return *(u32 *)&data;
+        }
+        inline i64 GetInt64()
+        {
+            if (elementType != JsonElement_Property)
             {
-                if (value.buffer[i] >= '0' && value.buffer[i] <= '9')
-                {
-                    u32 amount = index * (value.buffer[i] - (u32)'0');
-                    result += amount;
-                    index *= 10;
-                }
+                return 0;
             }
-
-            return result;
+            return *(i64 *)&data;
+        }
+        inline u64 GetUint64()
+        {
+            if (elementType != JsonElement_Property)
+            {
+                return 0;
+            }
+            return data;
         }
         inline bool GetBool()
         {
@@ -306,12 +195,7 @@ namespace Json
             {
                 return false;
             }
-
-            if (value == "true")
-            {
-                return true;
-            }
-            return false;
+            return (bool)data;
         }
         inline float GetFloat()
         {
@@ -319,9 +203,16 @@ namespace Json
             {
                 return 0.0f;
             }
-            double result = atof(value.buffer);
-
-            return (float)result;
+            if (dataLength == -(i32)JsonToken_IntegerLiteral)
+            {
+                return (float)*(i64 *)&data;
+            }
+            else if (dataLength == -(i32)JsonToken_UIntegerLiteral)
+            {
+                return (float)*(u64 *)&data;
+            }
+            double asDouble = *(double *)&data;
+            return (float)asDouble;
         }
         inline double GetDouble()
         {
@@ -329,70 +220,48 @@ namespace Json
             {
                 return 0.0;
             }
-            double result = atof(value.buffer);
-
-            return result;
-        }
-        #ifdef VEC2_H
-        inline Maths::Vec2 GetVec2()
-        {
-            if (elementType != JsonElement_Array)
+            if (dataLength == -(i32)JsonToken_IntegerLiteral)
             {
-                return Maths::Vec2(0.0f);
+                return (double)*(i64 *)&data;
             }
-            Maths::Vec2 result = Maths::Vec2(arrayElements.data[0].GetFloat(), arrayElements.data[1].GetFloat());
-            return result;
-        }
-        #endif
-        #ifdef VEC3_H
-        inline Maths::Vec3 GetVec3()
-        {
-            if (elementType != JsonElement_Array)
+            else if (dataLength == -(i32)JsonToken_UIntegerLiteral)
             {
-                return Maths::Vec3(0.0f);
+                return (double)*(u64 *)&data;
             }
-            Maths::Vec3 result = Maths::Vec3(arrayElements.data[0].GetFloat(), arrayElements.data[1].GetFloat(), arrayElements.data[2].GetFloat());
-            return result;
+            return *(double *)&data;
         }
-        #endif
-        #ifdef VEC4_H
-        inline Maths::Vec4 GetVec4()
-        {
-            if (elementType != JsonElement_Array)
-            {
-                return Maths::Vec4(0.0f);
-            }
-            Maths::Vec4 result = Maths::Vec4(arrayElements.data[0].GetFloat(), arrayElements.data[1].GetFloat(), arrayElements.data[2].GetFloat(), arrayElements.data[3].GetFloat());
-            return result;
-        }
-        #endif
         inline string GetString(IAllocator allocator)
         {
+            if (dataLength < 0)
+            {
+                return string();
+            }
             collections::vector<CharSlice> charSlices = collections::vector<CharSlice>(GetCAllocator());
             usize start = 0;
-            for (usize i = 0; i < value.length - 1; i++)
+            char *buffer = (char *)data;
+            for (usize i = 0; i < dataLength - 1; i++)
             {
-                if (value.buffer[i] == '\\' && i < value.length - 2)
+                if (buffer[i] == '\\' && i < dataLength - 2)
                 {
-                    if (value.buffer[i + 1] == '\"')
+                    if (buffer[i + 1] == '\"')
                     {
-                        charSlices.Add(CharSlice(value.buffer + start, i - start));
+                        charSlices.Add(CharSlice(buffer + start, i - start));
                         charSlices.Add(CharSlice("\""));
                         i++;
                         start = i + 1;
                     }
-                    else if (value.buffer[i + 1] == 'n')
+                    else if (buffer[i + 1] == 'n')
                     {
-                        charSlices.Add(CharSlice(value.buffer + start, i - start));
+                        charSlices.Add(CharSlice(buffer + start, i - start));
                         charSlices.Add(CharSlice("\n"));
                         i++;
                         start = i + 1;
                     }
                 }
             }
-            if (start < value.length - 1)
+            if (start < dataLength - 1)
             {
-                charSlices.Add(CharSlice(value.buffer + start, value.length - 1 - start));
+                charSlices.Add(CharSlice(buffer + start, dataLength - 1 - start));
             }
             string result = ConcatFromCharSlices(allocator, charSlices.ptr, charSlices.count);
             charSlices.deinit();
@@ -400,55 +269,53 @@ namespace Json
         }
         inline string GetStringRaw(IAllocator allocator)
         {
-            return string(allocator, value.buffer);
+            if (dataLength < 0)
+            {
+                return string();
+            }
+            return string(allocator, (char *)data);
+        }
+        inline string AsString()
+        {
+            if (dataLength <= 0)
+            {
+                return string();
+            }
+            string str = string();
+            str.buffer = (char *)data;
+            str.length = dataLength;
+            return str;
         }
         template<typename T>
         inline T GetBytesAsT()
         {
+            struct JsonPropertyImpl
+            {
+                string name;
+                JsonElement value;
+            };
             T result = T(); //invoke default constructor
             u8 *asPtr = (u8*)&result;
+            JsonPropertyImpl *asImpl = (JsonPropertyImpl *)this->arrayElements.data;
             for (usize i = 0; i < this->arrayElements.length; i++)
             {
-                u8 byte = (u8)this->arrayElements.data[i].GetUint32();
+                u8 byte = (u8)asImpl[i].value.GetUint32();
                 asPtr[i] = byte;
             }
             return result;
         }
-        inline JsonElement *GetProperty(string propertyName)
-        {
-            if (this->elementType == JsonElement_Object)
-            {
-                return childObjects.Get(propertyName);
-            }
-            return NULL;
-        }
-        inline JsonElement *GetProperty(const char* ptr)
-        {
-            if (this->elementType == JsonElement_Object)
-            {
-                IAllocator allocator = GetCAllocator();
-                JsonElement *result;
-                if (stringRentalBuffer == NULL)
-                {
-                    string propertyName = string(allocator, ptr);
-                    result = childObjects.Get(propertyName);
-                    propertyName.deinit();
-                }
-                else
-                {
-                    string propertyName = stringRentalBuffer->Rent(ptr);
-                    result = childObjects.Get(propertyName);
-                    stringRentalBuffer->Return(propertyName);
-                }
-                return result;
-            }
-            return NULL;
-        }
+        JsonElement *GetProperty(string propertyName);
+        JsonElement *GetProperty(text propertyName);
+
         /// @brief Parses all child objects recursively, collecting their properties 
         /// and aggregating them into raw byte data
         /// @return the Json object as raw data
         collections::Array<u8> GetAsRawData(IAllocator allocator);
-        void DumpJsonToStdout(i32 indents);
+    };
+    struct JsonProperty
+    {
+        string key;
+        JsonElement value;
     };
     bool ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, JsonElement *result);
     inline usize ParseJsonDocument(IAllocator allocator, string contents, JsonElement* result)
@@ -459,21 +326,6 @@ namespace Json
             return tokenizer.currentLine;
         }
         return 0;
-    }
-    inline usize ReadJsonFile(IAllocator allocator, string fileFullPath, JsonElement* result)
-    {
-        IAllocator cAllocator = GetCAllocator();
-        string fileContents = io::ReadFile(cAllocator, fileFullPath.buffer, false);
-        if (fileContents.buffer == NULL)
-        {
-            return false;
-        }
-
-        usize parseResult = ParseJsonDocument(allocator, fileContents, result);
-
-        fileContents.deinit();
-
-        return parseResult;
     }
 
     struct JsonWriter
@@ -525,6 +377,7 @@ namespace Json
             || previousToken == JsonToken_LBracket
             || previousToken == JsonToken_RBrace
             || previousToken == JsonToken_BoolLiteral
+            || previousToken == JsonToken_UIntegerLiteral
             || previousToken == JsonToken_IntegerLiteral
             || previousToken == JsonToken_FloatLiteral
             || previousToken == JsonToken_NullLiteral
@@ -555,14 +408,15 @@ namespace Json
         inline bool WritePropertyName(const char* chars)
         {
             if (
-            previousToken == JsonToken_LBrace || 
-            previousToken == JsonToken_RBrace ||
-            previousToken == JsonToken_RBracket ||
-            previousToken == JsonToken_BoolLiteral || 
-            previousToken == JsonToken_IntegerLiteral || 
-            previousToken == JsonToken_FloatLiteral || 
-            previousToken == JsonToken_NullLiteral || 
-            previousToken == JsonToken_StringLiteral)
+            previousToken == JsonToken_LBrace
+            || previousToken == JsonToken_RBrace
+            || previousToken == JsonToken_RBracket
+            || previousToken == JsonToken_BoolLiteral 
+            || previousToken == JsonToken_UIntegerLiteral
+            || previousToken == JsonToken_IntegerLiteral 
+            || previousToken == JsonToken_FloatLiteral 
+            || previousToken == JsonToken_NullLiteral 
+            || previousToken == JsonToken_StringLiteral)
             {
                 if (previousToken != JsonToken_LBrace)
                 {
@@ -602,7 +456,7 @@ namespace Json
             if (previousToken == JsonToken_PropertyName)
             {
                 fprintf(stream, ": %llu", value);
-                previousToken = JsonToken_IntegerLiteral;
+                previousToken = JsonToken_UIntegerLiteral;
                 return true;
             }
             else if (LatestIndentType() == JsonToken_LBracket)
@@ -612,7 +466,7 @@ namespace Json
                     fprintf(stream, ", ");
                 }
                 fprintf(stream, "%llu", value);
-                previousToken = JsonToken_IntegerLiteral;
+                previousToken = JsonToken_UIntegerLiteral;
                 return true;
             }
             return false;
@@ -749,24 +603,50 @@ namespace Json
 
 #ifdef ASTRALCORE_JSON_IMPL
 
-namespace Json
+Json::JsonElement *Json::JsonElement::GetProperty(text propertyName)
 {
-    thread_local StringRentalBuffer *stringRentalBuffer = new StringRentalBuffer(GetCAllocator());
+    if (this->elementType == JsonElement_Object)
+    {
+        for (u32 i = 0; i < arrayElements.length; i++)
+        {
+            if (arrayElements[i].key == propertyName)
+            {
+                return &arrayElements[i].value;
+            }
+        }
+        //return childObjects.Get(propertyName);
+    }
+    return NULL;
 }
-
+Json::JsonElement *Json::JsonElement::GetProperty(string propertyName)
+{
+    if (this->elementType == JsonElement_Object)
+    {
+        for (u32 i = 0; i < arrayElements.length; i++)
+        {
+            if (arrayElements[i].key == propertyName)
+            {
+                return &arrayElements[i].value;
+            }
+        }
+        //return childObjects.Get(propertyName);
+    }
+    return NULL;
+}
 collections::Array<u8> Json::JsonElement::GetAsRawData(IAllocator allocator)
 {
-    collections::vector<u8> results = collections::vector<u8>(GetCAllocator());
+    ByteStreamWriter writer = ByteStreamWriter(GetCAllocator());
     if (this->elementType == JsonElement_Object)
     {
         for (usize i = 0; i < arrayElements.length; i++)
         {
-            collections::Array<u8> toAppend = arrayElements.data[i].GetAsRawData(GetCAllocator());
+            collections::Array<u8> toAppend = arrayElements.data[i].value.GetAsRawData(GetCAllocator());
             if (toAppend.data != NULL)
             {
                 for (usize c = 0; c < toAppend.length; c++)
                 {
-                    results.Add(toAppend.data[c]);
+                    writer.WriteByte(toAppend.data[c]);
+                    //results.Add(toAppend.data[c]);
                 }
                 toAppend.deinit();
             }
@@ -774,122 +654,41 @@ collections::Array<u8> Json::JsonElement::GetAsRawData(IAllocator allocator)
     }
     else if (this->elementType == JsonElement_Property)
     {
+        Json::JsonTokenType tokenType = this->CheckValueType();
         //have to check the string to know if it's a integer, float or string
-        if (this->value == "true")
+        if (tokenType == JsonToken_BoolLiteral)
         {
-            results.Add(1);
+            writer.WriteByte((u8)data);
         }
-        else if (this->value == "false" || this->value == "null")
+        else if (tokenType == JsonToken_NullLiteral)
         {
-            results.Add(0);
+            writer.WriteByte(0);
+        }
+        else if (tokenType == JsonToken_FloatLiteral)
+        {
+            writer.Write(*(float *)&data);
+        }
+        else if (tokenType == JsonToken_IntegerLiteral)
+        {
+            writer.Write(*(i32 *)&data);
+        }
+        else if (tokenType == JsonToken_UIntegerLiteral)
+        {
+            writer.Write(*(u32 *)&data);
         }
         else
         {
-            // reuse tokenType;
-            Json::JsonTokenType tokenType = this->CheckElementType();
-
-            if (tokenType == JsonToken_BoolLiteral)
-            {
-                results.Add(this->value == "true" ? 1 : 0);
-            }
-            if (tokenType == JsonToken_FloatLiteral)
-            {
-                float parsed = atof(this->value.buffer);
-                for (i32 i = 0; i < 4; i++)
-                {
-                    results.Add(((u8*)&parsed)[i]);
-                }
-            }
-            else if (tokenType == JsonToken_IntegerLiteral)
-            {
-                i32 integer = atoi(this->value.buffer);
-                for (i32 i = 0; i < 4; i++)
-                {
-                    results.Add(((u8*)&integer)[i]);
-                }
-            }
-            else
-            {
-                for (i32 i = 0; i < sizeof(char *); i++)
-                {
-                    results.Add(0);
-                }
-            }
+            writer.Write<u64>(0);
         }
     }
-    return results.ToOwnedArrayWith(allocator);
-}
-void Json::JsonElement::DumpJsonToStdout(i32 indents)
-{
-    if (this->elementType == JsonElement_Property)
-    {
-        printf("%s", this->value.buffer);
-    }
-    else if (this->elementType == JsonElement_Array)
-    {
-        printf("[");
-        if (this->arrayElements.length > 0)
-        {
-            printf("\n");
-        }
-        for (usize i = 0; i < this->arrayElements.length; i++)
-        {
-            for (usize c = 0; c < indents + 1; c++)
-            {
-                printf(" ");
-            }
-            this->arrayElements.data[i].DumpJsonToStdout(indents + 1);
-            if (i < (i32)this->arrayElements.length - 1)
-            {
-                printf(",\n");
-            }
-            else
-                printf("\n");
-        }
-        for (usize c = 0; c < indents; c++)
-        {
-            printf(" ");
-        }
-        printf("]");
-    }
-    else
-    {
-        printf("{\n");
-        usize iterated = 0;
-        for (usize i = 0; i < this->childObjects.bucketsCount; i++)
-        {
-            if (this->childObjects.buckets[i].initialized)
-            {
-                for (usize j = 0; j < this->childObjects.buckets[i].entries.count; j++)
-                {
-                    for (usize c = 0; c < indents + 1; c++)
-                    {
-                        printf(" ");
-                    }
-                        printf("%s: ", this->childObjects.buckets[i].entries.ptr[j].key.buffer);
-                    this->childObjects.buckets[i].entries.ptr[j].value.DumpJsonToStdout(indents + 1);
-                    if (iterated < this->childObjects.count - 1)
-                    {
-                        printf(",\n");
-                    }
-                    else printf("\n");
-                    iterated++;
-                }
-            }
-        }
-        for (usize c = 0; c < indents; c++)
-        {
-            printf(" ");
-        }
-        printf("}");
-    }
+    return writer.bytes.ToOwnedArrayWith(allocator);
 }
 Json::JsonToken Json::JsonTokenizer::Next()
 {
     JsonToken result;
     result.tokenType = JsonToken_Invalid;
 
-    while (fileContents[currentIndex] == ' ' || fileContents[currentIndex] == '\n' || fileContents[currentIndex] == '\r')
+    while (fileContents[currentIndex] == ' ' || fileContents[currentIndex] == '\t' || fileContents[currentIndex] == '\n' || fileContents[currentIndex] == '\r')
     {
         if (fileContents[currentIndex] == '\n')
         {
@@ -989,7 +788,7 @@ Json::JsonToken Json::JsonTokenizer::Next()
     }
     else if (isdigit(fileContents[currentIndex]))
     {
-        result.tokenType = JsonToken_IntegerLiteral;
+        result.tokenType = JsonToken_UIntegerLiteral;
         while (isdigit(fileContents[currentIndex]) || fileContents[currentIndex] == '.')
         {
             if (fileContents[currentIndex] == '.')
@@ -1043,102 +842,165 @@ Json::JsonToken Json::JsonTokenizer::Next()
 bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, JsonElement *result)
 {
     JsonToken peekNext = tokenizer->PeekNext();
-    if (peekNext.tokenType == JsonToken_StringLiteral || peekNext.tokenType == JsonToken_IntegerLiteral || peekNext.tokenType == JsonToken_FloatLiteral || peekNext.tokenType == JsonToken_BoolLiteral || peekNext.tokenType == JsonToken_NullLiteral)
-    {
-        *result = JsonElement(tokenizer->GetString(allocator, peekNext));
-        tokenizer->Next();
-        return true;
-    }
-    else if (peekNext.tokenType == JsonToken_LBracket) //[]
-    {
-        //printf("Entering array\n");
-        IAllocator cAllocator = GetCAllocator();
 
-        collections::vector<JsonElement> arrayMembers = collections::vector<JsonElement>(cAllocator);
-        tokenizer->Next();
-        //empty array
-        if (tokenizer->PeekNext().tokenType == JsonToken_RBracket)
+    switch (peekNext.tokenType)
+    {
+        case JsonToken_StringLiteral:
         {
+            *result = JsonElement(tokenizer->GetString(allocator, peekNext));
+            tokenizer->Next();
+            return true;
+        }
+        case JsonToken_IntegerLiteral:
+        {
+            *result = JsonElement();
+
+            *((i64 *)&result->data) = StringToI64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
+            result->dataLength = -(i32)JsonToken_IntegerLiteral;
+
+            tokenizer->Next();
+            return true;
+        }
+        case JsonToken_UIntegerLiteral:
+        {
+            *result = JsonElement();
+
+            result->data = StringToU64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
+            result->dataLength = -(i32)JsonToken_UIntegerLiteral;
+
+            tokenizer->Next();
+            return true;
+        }
+        case JsonToken_FloatLiteral:
+        {
+            *result = JsonElement();
+
+            char floatLiteralStr[32];
+            u32 copied = tokenizer->GetAsString(peekNext, floatLiteralStr, 31);
+            floatLiteralStr[copied] = '\0';
+            double db = atof(floatLiteralStr);
+            *((double *)&result->data) = db;
+
+            result->dataLength = -(i32)JsonToken_FloatLiteral;
+
+            tokenizer->Next();
+            return true;
+        }
+        case JsonToken_NullLiteral:
+        {
+            *result = JsonElement();
+            result->dataLength = -(i32)JsonToken_NullLiteral;
+
+            tokenizer->Next();
+            return true;
+        }
+        case JsonToken_BoolLiteral:
+        {
+            *result = JsonElement();
+            result->data = (u64)(strncmp(tokenizer->fileContents + peekNext.startIndex, "true", peekNext.endIndex - peekNext.startIndex) == 0);
+            result->dataLength = -(i32)JsonToken_BoolLiteral;
+            tokenizer->Next();
+            return true;
+        }
+        case JsonToken_LBracket:
+        {
+            IAllocator cAllocator = GetCAllocator();
+
+            collections::vector<JsonProperty> arrayMembers = collections::vector<JsonProperty>(cAllocator);
+            tokenizer->Next();
+            //empty array
+            if (tokenizer->PeekNext().tokenType == JsonToken_RBracket)
+            {
+                tokenizer->Next();
+            }
+            else
+            {
+                while(true)
+                {
+                    JsonProperty arrayMember;
+                    arrayMember.key = string();
+                    if (!ParseJsonElement(allocator, tokenizer, &arrayMember.value))
+                    {
+                        //printf("Unable to parse array member\n");
+                        arrayMembers.deinit();
+                        return false;
+                    }
+                    arrayMembers.Add(arrayMember);
+
+                    // dont actually just peek next here as if it has an error, 
+                    //the resulting data won't matter even if it has been read out of order
+                    peekNext = tokenizer->Next(); 
+                    if (peekNext.tokenType == JsonToken_RBracket)
+                    {
+                        break;
+                    }
+                    else if (peekNext.tokenType == JsonToken_Comma)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        arrayMembers.deinit();
+                        return false;
+                    }
+                }
+            }
+
+            result->arrayElements = arrayMembers.ToOwnedArrayWith(allocator);
+            result->elementType = JsonElement_Array;
+            result->data = 0;
+            result->dataLength = -(i32)JsonToken_LBracket;
+            return true;
+        }
+        case JsonToken_LBrace:
+        {
+            *result = JsonElement();
             tokenizer->Next();
 
-        }
-        else
-        {
-            while(true)
-            {
-                JsonElement arrayMember;
-                if (!ParseJsonElement(allocator, tokenizer, &arrayMember))
-                {
-                    //printf("Unable to parse array member\n");
-                    arrayMembers.deinit();
-                    return false;
-                }
-                arrayMembers.Add(arrayMember);
+            collections::vector<JsonProperty> childObjectsOrdered = collections::vector<JsonProperty>(GetCAllocator());
 
-                // dont actually just peek next here as if it has an error, 
-                //the resulting data won't matter even if it has been read out of order
-                peekNext = tokenizer->Next(); 
-                if (peekNext.tokenType == JsonToken_RBracket)
+            while (true)
+            {
+                JsonToken propertyNameToken = tokenizer->Next();
+                if (propertyNameToken.tokenType == JsonToken_RBrace)
                 {
                     break;
                 }
-                else if (peekNext.tokenType == JsonToken_Comma)
+                else if (propertyNameToken.tokenType != JsonToken_StringLiteral)
                 {
-                    continue;
-                }
-                else
-                {
-                    arrayMembers.deinit();
                     return false;
                 }
+
+                if (tokenizer->Next().tokenType != JsonToken_Colon)
+                {
+                    return false;
+                }
+
+                JsonProperty subElementResult;
+                if (!ParseJsonElement(allocator, tokenizer, &subElementResult.value))
+                {
+                    return false;
+                }
+                subElementResult.key = tokenizer->GetString(allocator, propertyNameToken);
+                childObjectsOrdered.Add(subElementResult);
+
+                if (tokenizer->PeekNext().tokenType == JsonToken_Comma)
+                {
+                    tokenizer->Next();
+                    continue;
+                }
             }
+            result->arrayElements = childObjectsOrdered.ToOwnedArrayWith(allocator);
+            result->elementType = JsonElement_Object;
+            result->data = 0;
+            result->dataLength = -(i32)JsonToken_LBrace;
+            return true;
         }
-
-        *result = JsonElement(arrayMembers.ToOwnedArrayWith(allocator));
-        return true;
-    }
-    else if (peekNext.tokenType == JsonToken_LBrace) //{}
-    {
-        *result = JsonElement(collections::hashmap<string, JsonElement>(allocator, &stringHash, &stringEql));
-        tokenizer->Next();
-
-        collections::vector<JsonElement> childObjectsOrdered = collections::vector<JsonElement>(GetCAllocator());
-
-        while (true)
+        default:
         {
-            JsonToken propertyNameToken = tokenizer->Next();
-            if (propertyNameToken.tokenType == JsonToken_RBrace)
-            {
-                break;
-            }
-            else if (propertyNameToken.tokenType != JsonToken_StringLiteral)
-            {
-                return false;
-            }
-            string propertyName = tokenizer->GetString(allocator, propertyNameToken); // string(allocator, tokenizer->fileContents + propertyNameToken.startIndex + 1, propertyNameToken.endIndex - 1 - propertyNameToken.startIndex - 1);
-
-            if (tokenizer->Next().tokenType != JsonToken_Colon)
-            {
-                return false;
-            }
-
-            JsonElement subElementResult;
-            if (!ParseJsonElement(allocator, tokenizer, &subElementResult))
-            {
-                return false;
-            }
-            result->childObjects.Add(propertyName, subElementResult);
-            childObjectsOrdered.Add(subElementResult);
-
-            if (tokenizer->PeekNext().tokenType == JsonToken_Comma)
-            {
-                tokenizer->Next();
-                continue;
-            }
+            return false;
         }
-        result->arrayElements = childObjectsOrdered.ToOwnedArrayWith(allocator);
-        return true;
     }
-    return false;
 }
+#endif
 #endif

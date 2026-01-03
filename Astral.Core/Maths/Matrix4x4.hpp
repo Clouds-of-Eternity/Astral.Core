@@ -2,10 +2,13 @@
 #include <math.h>
 #include "Maths/simd.h"
 #include "Maths/Util.hpp"
+#include "Maths/Vec4.hpp"
 #include "Maths/Quaternion.hpp"
 #include "option.hpp"
 
 #include "assert.h"
+
+#define MATRIX4x4_DECOMPOSE_EPSILON 0.0001f
 
 namespace Maths
 {
@@ -36,15 +39,22 @@ namespace Maths
 				float M43;
 				float M44;
 			};
+			struct
+			{
+				Maths::Vec4 X;
+				Maths::Vec4 Y;
+				Maths::Vec4 Z;
+				Maths::Vec4 W;
+			} asVec4s;
 #ifdef USE_SSE
 			struct
 			{
-				__m128 row1;
-				__m128 row2;
-				__m128 row3;
-				__m128 row4;
+				__m128 m128_row1;
+				__m128 m128_row2;
+				__m128 m128_row3;
+				__m128 m128_row4;
 			};
-#else
+#endif
 			struct
 			{
 				float row1[4];
@@ -52,7 +62,6 @@ namespace Maths
 				float row3[4];
 				float row4[4];
 			};
-#endif
 		};
 
 		Matrix4x4()
@@ -62,11 +71,10 @@ namespace Maths
 		Matrix4x4(float fill)
 		{
 #ifdef USE_SSE
-			__m128 asM128 = _mm_set_ps1(fill);
-			row1 = asM128;
-			row2 = asM128;
-			row3 = asM128;
-			row4 = asM128;
+			m128_row1 = _mm_set_ps1(fill);
+			m128_row2 = _mm_set_ps1(fill);
+			m128_row3 = _mm_set_ps1(fill);
+			m128_row4 = _mm_set_ps1(fill);
 #else
 			M11 = M12 = M13 = M14 = fill;
 			M21 = M22 = M23 = M24 = fill;
@@ -77,10 +85,10 @@ namespace Maths
 		Matrix4x4(float* m)
 		{
 #ifdef USE_SSE
-			row1 = _mm_load_ps(m);//_mm_set_ps(m[0], m[1], m[2], m[3]);
-			row2 = _mm_load_ps(m + 4);//_mm_set_ps(m[4], m[5], m[6], m[7]);
-			row3 = _mm_load_ps(m + 8);//_mm_set_ps(m[8], m[9], m[10], m[11]);
-			row4 = _mm_load_ps(m + 12);//_mm_set_ps(m[12], m[13], m[14], m[15]);
+			m128_row1 = _mm_load_ps(m);//_mm_set_ps(m[0], m[1], m[2], m[3]);
+			m128_row2 = _mm_load_ps(m + 4);//_mm_set_ps(m[4], m[5], m[6], m[7]);
+			m128_row3 = _mm_load_ps(m + 8);//_mm_set_ps(m[8], m[9], m[10], m[11]);
+			m128_row4 = _mm_load_ps(m + 12);//_mm_set_ps(m[12], m[13], m[14], m[15]);
 #else
 			M11 = m[0];
 			M12 = m[1];
@@ -103,6 +111,169 @@ namespace Maths
 			M44 = m[15];
 #endif
 		}
+		inline float GetDeterminant()
+		{
+			float a = asVec4s.X.X, b = asVec4s.X.Y, c = asVec4s.X.Z, d = asVec4s.X.W;
+			float e = asVec4s.Y.X, f = asVec4s.Y.Y, g = asVec4s.Y.Z, h = asVec4s.Y.W;
+			float i = asVec4s.Z.X, j = asVec4s.Z.Y, k = asVec4s.Z.Z, l = asVec4s.Z.W;
+			float m = asVec4s.W.X, n = asVec4s.W.Y, o = asVec4s.W.Z, p = asVec4s.W.W;
+
+			float kp_lo = k * p - l * o;
+			float jp_ln = j * p - l * n;
+			float jo_kn = j * o - k * n;
+			float ip_lm = i * p - l * m;
+			float io_km = i * o - k * m;
+			float in_jm = i * n - j * m;
+
+			return a * (f * kp_lo - g * jp_ln + h * jo_kn) -
+					b * (e * kp_lo - g * ip_lm + h * io_km) +
+					c * (e * jp_ln - f * ip_lm + h * in_jm) -
+					d * (e * jo_kn - f * io_km + g * in_jm);
+		}
+		inline Quaternion ToQuaternion()
+		{
+            float trace = M11 + M22 + M33;
+ 
+            Quaternion q = Quaternion();
+ 
+            if (trace > 0.0f)
+            {
+                float s = sqrtf(trace + 1.0f);
+                q.W = s * 0.5f;
+                s = 0.5f / s;
+                q.X = (M23 - M32) * s;
+                q.Y = (M31 - M13) * s;
+                q.Z = (M12 - M21) * s;
+            }
+            else
+            {
+                if (M11 >= M22 && M11 >= M33)
+                {
+                    float s = sqrtf(1.0f + M11 - M22 - M33);
+                    float invS = 0.5f / s;
+                    q.X = 0.5f * s;
+                    q.Y = (M12 + M21) * invS;
+                    q.Z = (M13 + M31) * invS;
+                    q.W = (M23 - M32) * invS;
+                }
+                else if (M22 > M33)
+                {
+                    float s = sqrtf(1.0f + M22 - M11 - M33);
+                    float invS = 0.5f / s;
+                    q.X = (M21 + M12) * invS;
+                    q.Y = 0.5f * s;
+                    q.Z = (M32 + M23) * invS;
+                    q.W = (M31 - M13) * invS;
+                }
+                else
+                {
+                    float s = sqrtf(1.0f + M33 - M11 - M22);
+                    float invS = 0.5f / s;
+                    q.X = (M31 + M13) * invS;
+                    q.Y = (M32 + M23) * invS;
+                    q.Z = 0.5f * s;
+                    q.W = (M12 - M21) * invS;
+                }
+            }
+ 
+            return q;
+		}
+		inline option<Matrix4x4> Invert()
+		{
+			float a = M11, b = M12, c = M13, d = M14;
+			float e = M21, f = M22, g = M23, h = M24;
+			float i = M31, j = M32, k = M33, l = M34;
+			float m = M41, n = M42, o = M43, p = M44;
+
+			float kp_lo = k * p - l * o;
+			float jp_ln = j * p - l * n;
+			float jo_kn = j * o - k * n;
+			float ip_lm = i * p - l * m;
+			float io_km = i * o - k * m;
+			float in_jm = i * n - j * m;
+
+			float a11 = +(f * kp_lo - g * jp_ln + h * jo_kn);
+			float a12 = -(e * kp_lo - g * ip_lm + h * io_km);
+			float a13 = +(e * jp_ln - f * ip_lm + h * in_jm);
+			float a14 = -(e * jo_kn - f * io_km + g * in_jm);
+
+			float det = a * a11 + b * a12 + c * a13 + d * a14;
+
+			if (fabsf(det) <= 0.0f)
+			{
+				return option<Matrix4x4>();
+			}
+
+			float invDet = 1.0f / det;
+
+			Matrix4x4 result;
+			result.M11 = a11 * invDet;
+			result.M21 = a12 * invDet;
+			result.M31 = a13 * invDet;
+			result.M41 = a14 * invDet;
+
+			result.M12 = -(b * kp_lo - c * jp_ln + d * jo_kn) * invDet;
+			result.M22 = +(a * kp_lo - c * ip_lm + d * io_km) * invDet;
+			result.M32 = -(a * jp_ln - b * ip_lm + d * in_jm) * invDet;
+			result.M42 = +(a * jo_kn - b * io_km + c * in_jm) * invDet;
+
+			float gp_ho = g * p - h * o;
+			float fp_hn = f * p - h * n;
+			float fo_gn = f * o - g * n;
+			float ep_hm = e * p - h * m;
+			float eo_gm = e * o - g * m;
+			float en_fm = e * n - f * m;
+
+			result.M13 = +(b * gp_ho - c * fp_hn + d * fo_gn) * invDet;
+			result.M23 = -(a * gp_ho - c * ep_hm + d * eo_gm) * invDet;
+			result.M33 = +(a * fp_hn - b * ep_hm + d * en_fm) * invDet;
+			result.M43 = -(a * fo_gn - b * eo_gm + c * en_fm) * invDet;
+
+			float gl_hk = g * l - h * k;
+			float fl_hj = f * l - h * j;
+			float fk_gj = f * k - g * j;
+			float el_hi = e * l - h * i;
+			float ek_gi = e * k - g * i;
+			float ej_fi = e * j - f * i;
+
+			result.M14 = -(b * gl_hk - c * fl_hj + d * fk_gj) * invDet;
+			result.M24 = +(a * gl_hk - c * el_hi + d * ek_gi) * invDet;
+			result.M34 = -(a * fl_hj - b * el_hi + d * ej_fi) * invDet;
+			result.M44 = +(a * fk_gj - b * ek_gi + c * ej_fi) * invDet;
+
+			return option<Matrix4x4>(result);
+		}
+		inline bool IsIdentity()
+		{
+			return M11 == 1.0f && M22 == 1.0f && M33 == 1.0f && M44 == 1.0f &&
+				M12 == 0.0f && M13 == 0.0f && M14 == 0.0f &&
+				M21 == 0.0f && M23 == 0.0f && M24 == 0.0f &&
+				M31 == 0.0f && M32 == 0.0f && M34 == 0.0f &&
+				M41 == 0.0f && M42 == 0.0f && M43 == 0.0f;
+		}
+		inline Matrix4x4 Transpose()
+		{
+            Matrix4x4 result;
+
+            result.M11 = M11;
+            result.M12 = M21;
+            result.M13 = M31;
+            result.M14 = M41;
+            result.M21 = M12;
+            result.M22 = M22;
+            result.M23 = M32;
+            result.M24 = M42;
+            result.M31 = M13;
+            result.M32 = M23;
+            result.M33 = M33;
+            result.M34 = M43;
+            result.M41 = M14;
+            result.M42 = M24;
+            result.M43 = M34;
+            result.M44 = M44;
+
+            return result;
+		}
 
 		inline static Matrix4x4 Identity()
 		{
@@ -114,13 +285,44 @@ namespace Maths
 			};
 			return Matrix4x4(&m[0]);
 		}
-		inline bool IsIdentity()
+		inline static Matrix4x4 CreateFromTransform(Maths::Vec3 position, Maths::Vec3 scale, Maths::Quaternion rotation)
 		{
-			return M11 == 1.0f && M22 == 1.0f && M33 == 1.0f && M44 == 1.0f &&
-				M12 == 0.0f && M13 == 0.0f && M14 == 0.0f &&
-				M21 == 0.0f && M23 == 0.0f && M24 == 0.0f &&
-				M31 == 0.0f && M32 == 0.0f && M34 == 0.0f &&
-				M41 == 0.0f && M42 == 0.0f && M43 == 0.0f;
+			Maths::Matrix4x4 result;
+			float *lm = &result.M11;
+			float tx = position.X;
+            float ty = position.Y;
+            float tz = position.Z;
+
+            float qx = rotation.X;
+            float qy = rotation.Y;
+            float qz = rotation.Z;
+            float qw = rotation.W;
+
+            float sx = scale.X;
+            float sy = scale.Y;
+            float sz = scale.Z;
+
+            lm[0] = (1 - 2 * qy * qy - 2 * qz * qz) * sx;
+            lm[1] = (2 * qx * qy + 2 * qz * qw) * sx;
+            lm[2] = (2 * qx * qz - 2 * qy * qw) * sx;
+            lm[3] = 0.0f;
+
+            lm[4] = (2 * qx * qy - 2 * qz * qw) * sy;
+            lm[5] = (1 - 2 * qx * qx - 2 * qz * qz) * sy;
+            lm[6] = (2 * qy * qz + 2 * qx * qw) * sy;
+            lm[7] = 0.0f;
+
+            lm[8] = (2 * qx * qz + 2 * qy * qw) * sz;
+            lm[9] = (2 * qy * qz - 2 * qx * qw) * sz;
+            lm[10] = (1 - 2 * qx * qx - 2 * qy * qy) * sz;
+            lm[11] = 0.0f;
+
+            lm[12] = tx;
+            lm[13] = ty;
+            lm[14] = tz;
+            lm[15] = 1.0f;
+
+            return result;
 		}
 		inline static Matrix4x4 CreateTranslation(float X, float Y, float Z)
 		{
@@ -289,99 +491,204 @@ namespace Maths
 		{
 			return Matrix4x4::CreateFromQuaternion(Quaternion::FromYawPitchRoll(yaw, pitch, roll));
 		}
-		option<Matrix4x4> Invert()
+		inline static bool Decompose(const Matrix4x4 &self, Maths::Vec3 *outPosition, Maths::Vec3 *outScale, Maths::Quaternion *outRotation)
 		{
-			float a = M11, b = M12, c = M13, d = M14;
-			float e = M21, f = M22, g = M23, h = M24;
-			float i = M31, j = M32, k = M33, l = M34;
-			float m = M41, n = M42, o = M43, p = M44;
+			Maths::Matrix4x4 temp = Maths::Matrix4x4::Identity();
+			Maths::Vec3 canonicalBasis[3] = {
+				Maths::Vec3(1.0f, 0.0f, 0.0f),
+				Maths::Vec3(0.0f, 1.0f, 0.0f),
+				Maths::Vec3(0.0f, 0.0f, 1.0f)
+			};
+			*outPosition = Maths::Vec3(self.M41, self.M42, self.M43);
 
-			float kp_lo = k * p - l * o;
-			float jp_ln = j * p - l * n;
-			float jo_kn = j * o - k * n;
-			float ip_lm = i * p - l * m;
-			float io_km = i * o - k * m;
-			float in_jm = i * n - j * m;
+			Maths::Vec3 *vectorBasis[3] = {
+				(Maths::Vec3 *)temp.row1,
+				(Maths::Vec3 *)temp.row2,
+				(Maths::Vec3 *)temp.row3
+			};
+			*(vectorBasis[0]) = *(Maths::Vec3 *)self.row1;
+			*(vectorBasis[1]) = *(Maths::Vec3 *)self.row2;
+			*(vectorBasis[2]) = *(Maths::Vec3 *)self.row3;
 
-			float a11 = +(f * kp_lo - g * jp_ln + h * jo_kn);
-			float a12 = -(e * kp_lo - g * ip_lm + h * io_km);
-			float a13 = +(e * jp_ln - f * ip_lm + h * in_jm);
-			float a14 = -(e * jo_kn - f * io_km + g * in_jm);
+			float scales[3] = {vectorBasis[0]->Length(), vectorBasis[1]->Length(), vectorBasis[2]->Length()};
+			u32 a;
+			u32 b;
+			u32 c;
 
-			float det = a * a11 + b * a12 + c * a13 + d * a14;
+			//ranking
+			float x = scales[0];
+			float y = scales[1];
+			float z = scales[2];
 
-			if (fabsf(det) <= 0.0f)
+			if (x < y)
 			{
-				return option<Matrix4x4>();
+				if (y < z)
+				{
+					a = 2;
+					b = 1;
+					c = 0;
+				}
+				else
+				{
+					a = 1;
+
+					if (x < z)
+					{
+						b = 2;
+						c = 0;
+					}
+					else
+					{
+						b = 0;
+						c = 2;
+					}
+				}
+			}
+			else
+			{
+				if (x < z)
+				{
+					a = 2;
+					b = 0;
+					c = 1;
+				}
+				else
+				{
+					a = 0;
+
+					if (y < z)
+					{
+						b = 2;
+						c = 1;
+					}
+					else
+					{
+						b = 1;
+						c = 2;
+					}
+				}
 			}
 
-			float invDet = 1.0f / det;
+			if (scales[a] < MATRIX4x4_DECOMPOSE_EPSILON)
+			{
+				*(vectorBasis[a]) = canonicalBasis[a];
+			}
 
-			Matrix4x4 result;
-			result.M11 = a11 * invDet;
-			result.M21 = a12 * invDet;
-			result.M31 = a13 * invDet;
-			result.M41 = a14 * invDet;
+			*vectorBasis[a] = (*vectorBasis[a]).Normalized(); // Maths::Vec3::Normalize(*vectorBasis[a]);
+			if (scales[b] < MATRIX4x4_DECOMPOSE_EPSILON)
+			{
+				u32 cc;
+				float fAbsX, fAbsY, fAbsZ;
 
-			result.M12 = -(b * kp_lo - c * jp_ln + d * jo_kn) * invDet;
-			result.M22 = +(a * kp_lo - c * ip_lm + d * io_km) * invDet;
-			result.M32 = -(a * jp_ln - b * ip_lm + d * in_jm) * invDet;
-			result.M42 = +(a * jo_kn - b * io_km + c * in_jm) * invDet;
+				fAbsX = fabsf(vectorBasis[a]->X);
+				fAbsY = fabsf(vectorBasis[a]->Y);
+				fAbsZ = fabsf(vectorBasis[a]->Z);
 
-			float gp_ho = g * p - h * o;
-			float fp_hn = f * p - h * n;
-			float fo_gn = f * o - g * n;
-			float ep_hm = e * p - h * m;
-			float eo_gm = e * o - g * m;
-			float en_fm = e * n - f * m;
+				//ranking
+				if (fAbsX < fAbsY)
+				{
+					if (fAbsY < fAbsZ)
+					{
+						cc = 0;
+					}
+					else
+					{
+						if (fAbsX < fAbsZ)
+						{
+							cc = 0;
+						}
+						else
+						{
+							cc = 2;
+						}
+					}
+				}
+				else
+				{
+					if (fAbsX < fAbsZ)
+					{
+						cc = 1;
+					}
+					else
+					{
+						if (fAbsY < fAbsZ)
+						{
+							cc = 1;
+						}
+						else
+						{
+							cc = 2;
+						}
+					}
+				}
 
-			result.M13 = +(b * gp_ho - c * fp_hn + d * fo_gn) * invDet;
-			result.M23 = -(a * gp_ho - c * ep_hm + d * eo_gm) * invDet;
-			result.M33 = +(a * fp_hn - b * ep_hm + d * en_fm) * invDet;
-			result.M43 = -(a * fo_gn - b * eo_gm + c * en_fm) * invDet;
+				*vectorBasis[b] = Maths::Vec3::Cross(*vectorBasis[a], canonicalBasis[cc]);
+			}
 
-			float gl_hk = g * l - h * k;
-			float fl_hj = f * l - h * j;
-			float fk_gj = f * k - g * j;
-			float el_hi = e * l - h * i;
-			float ek_gi = e * k - g * i;
-			float ej_fi = e * j - f * i;
+			*vectorBasis[b] = (*vectorBasis[b]).Normalized();
+ 
+			if (scales[c] < MATRIX4x4_DECOMPOSE_EPSILON)
+			{
+				*vectorBasis[c] = Maths::Vec3::Cross(*vectorBasis[a], *vectorBasis[b]);
+			}
 
-			result.M14 = -(b * gl_hk - c * fl_hj + d * fk_gj) * invDet;
-			result.M24 = +(a * gl_hk - c * el_hi + d * ek_gi) * invDet;
-			result.M34 = -(a * fl_hj - b * el_hi + d * ej_fi) * invDet;
-			result.M44 = +(a * fk_gj - b * ek_gi + c * ej_fi) * invDet;
+			*vectorBasis[c] = (*vectorBasis[c]).Normalized();
 
-			return option<Matrix4x4>(result);
+			float det = temp.GetDeterminant();
+
+			// use Kramer's rule to check for handedness of coordinate system
+			if (det < 0.0f)
+			{
+				// switch coordinate system by negating the scale and inverting the basis vector on the x-axis
+				scales[a] = -scales[a];
+				*vectorBasis[a] = -(*vectorBasis[a]);
+
+				det = -det;
+			}
+
+			det -= 1.0f;
+			det *= det;
+
+			bool result;
+
+			if (MATRIX4x4_DECOMPOSE_EPSILON < det)
+			{
+				// Non-SRT matrix encountered
+				//rotation = Quaternion.Identity;
+				*outRotation = Maths::Quaternion::Identity();
+				result = false;
+			}
+			else
+			{
+				// generate the quaternion from the matrix
+				//rotation = Quaternion.CreateFromRotationMatrix(matTemp.AsM4x4());
+				*outRotation = temp.ToQuaternion(); // Maths::Quaternion::FromRotationMatrix(temp);
+				result = true;
+			}
+			*outScale = *(Maths::Vec3 *)scales;
+			return result;
 		}
 
-		Matrix4x4 operator*(const Matrix4x4 &other)
+#ifdef USE_SSE
+		static inline __m128 lincomb_SSE(const __m128 &a, const Matrix4x4 &B)
+		{
+			__m128 result;
+			result = _mm_mul_ps(_mm_shuffle_ps(a, a, 0x00), B.m128_row1);
+			result = _mm_add_ps(result, _mm_mul_ps(_mm_shuffle_ps(a, a, 0x55), B.m128_row2));
+			result = _mm_add_ps(result, _mm_mul_ps(_mm_shuffle_ps(a, a, 0xaa), B.m128_row3));
+			result = _mm_add_ps(result, _mm_mul_ps(_mm_shuffle_ps(a, a, 0xff), B.m128_row4));
+			return result;
+		}
+#endif
+		inline Matrix4x4 operator*(const Matrix4x4 &other)
 		{
 #ifdef USE_SSE
-			Matrix4x4 result;
-			const __m128 BCx = other.row1;
-			const __m128 BCy = other.row2;
-			const __m128 BCz = other.row3;
-			const __m128 BCw = other.row4;
-
-			float *leftRowPointer = &M11;
-			float *resultRowPointer = &result.M11;
-
-			for (unsigned int i = 0; i < 4; ++i, leftRowPointer += 4, resultRowPointer += 4) {
-				__m128 ARx = _mm_set1_ps(leftRowPointer[0]);
-				__m128 ARy = _mm_set1_ps(leftRowPointer[1]);
-				__m128 ARz = _mm_set1_ps(leftRowPointer[2]);
-				__m128 ARw = _mm_set1_ps(leftRowPointer[3]);
-
-				__m128 X = _mm_mul_ps(ARx, BCx); // ARx * BCx;
-				__m128 Y = _mm_mul_ps(ARy, BCy);
-				__m128 Z = _mm_mul_ps(ARz, BCz);
-				__m128 W = _mm_mul_ps(ARw, BCw);
-
-				__m128 R = _mm_add_ps(_mm_add_ps(X, Y), _mm_add_ps(Z, W)); // X + Y + Z + W;
-				_mm_store_ps(resultRowPointer, R);
-			}
-			return result;
+			Maths::Matrix4x4 m;
+			m.m128_row1 = lincomb_SSE(m128_row1, other);
+			m.m128_row2 = lincomb_SSE(m128_row2, other);
+			m.m128_row3 = lincomb_SSE(m128_row3, other);
+			m.m128_row4 = lincomb_SSE(m128_row4, other);
+			return m;
 #else
 			Matrix4x4 m;
 
@@ -434,17 +741,20 @@ namespace Maths
 				M41 != other.M41 || M42 != other.M42 || M43 != other.M43 || M44 != other.M44);
 		}
 
+		inline Vec4 Transform(Vec4 vec4)
+		{
+            return Vec4(
+            vec4.X * M11 + vec4.Y * M21 + vec4.Z * M31 + vec4.W * M41,
+            vec4.X * M12 + vec4.Y * M22 + vec4.Z * M32 + vec4.W * M42,
+            vec4.X * M13 + vec4.Y * M23 + vec4.Z * M33 + vec4.W * M43,
+            vec4.X * M14 + vec4.Y * M24 + vec4.Z * M34 + vec4.W * M44);
+		}
         inline Vec3 Transform(Vec3 vec3)
         {
-			float vec4[4] = {
-            vec3.X * M11 + vec3.Y * M21 + vec3.Z * M31 + M41,
-            vec3.X * M12 + vec3.Y * M22 + vec3.Z * M32 + M42,
-            vec3.X * M13 + vec3.Y * M23 + vec3.Z * M33 + M43,
-            vec3.X * M14 + vec3.Y * M24 + vec3.Z * M34 + M44
-			};
-			float oneOverW = 1.0f / vec4[3];
-			return Vec3(vec4[0] * oneOverW, vec4[1] * oneOverW, vec4[2] * oneOverW);
-        }
+			Maths::Vec4 asVec4 = Maths::Vec4(vec3, 1.0f);
+			asVec4 = Transform(asVec4);
+			return Vec3(asVec4.X / asVec4.W, asVec4.Y / asVec4.W, asVec4.Z / asVec4.W);
+		}
 		inline static Matrix4x4 Lerp(const Matrix4x4 A, const Matrix4x4 B, float amount)
 		{
 #ifdef USE_SSE
@@ -452,47 +762,47 @@ namespace Maths
 			Matrix4x4 m;
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row1, sub);
-				m.row1 = _mm_add_ps(_mm_mul_ps(B.row1, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row1, sub);
+				m.m128_row1 = _mm_add_ps(_mm_mul_ps(B.m128_row1, amountAsM128), mul);
 			}
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row2, sub);
-				m.row2 = _mm_add_ps(_mm_mul_ps(B.row2, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row2, sub);
+				m.m128_row2 = _mm_add_ps(_mm_mul_ps(B.m128_row2, amountAsM128), mul);
 			}
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row3, sub);
-				m.row3 = _mm_add_ps(_mm_mul_ps(B.row3, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row3, sub);
+				m.m128_row3 = _mm_add_ps(_mm_mul_ps(B.m128_row3, amountAsM128), mul);
 			}
 			{
 				__m128 sub = _mm_sub_ps(_mm_set1_ps(1.0f), amountAsM128);
-				__m128 mul = _mm_mul_ps(A.row4, sub);
-				m.row4 = _mm_add_ps(_mm_mul_ps(B.row4, amountAsM128), mul);
+				__m128 mul = _mm_mul_ps(A.m128_row4, sub);
+				m.m128_row4 = _mm_add_ps(_mm_mul_ps(B.m128_row4, amountAsM128), mul);
 			}
 			return m;
 #else
 			Matrix4x4 m;
 
-			m.row1[0] = LERP(A.row1[0], B.row1[0], amount);
-			m.row1[1] = LERP(A.row1[1], B.row1[1], amount);
-			m.row1[2] = LERP(A.row1[2], B.row1[2], amount);
-			m.row1[3] = LERP(A.row1[3], B.row1[3], amount);
+			m.row1[0] = AC_LERP(A.row1[0], B.row1[0], amount);
+			m.row1[1] = AC_LERP(A.row1[1], B.row1[1], amount);
+			m.row1[2] = AC_LERP(A.row1[2], B.row1[2], amount);
+			m.row1[3] = AC_LERP(A.row1[3], B.row1[3], amount);
 
-			m.row2[0] = LERP(A.row2[0], B.row2[0], amount);
-			m.row2[1] = LERP(A.row2[1], B.row2[1], amount);
-			m.row2[2] = LERP(A.row2[2], B.row2[2], amount);
-			m.row2[3] = LERP(A.row2[3], B.row2[3], amount);
+			m.row2[0] = AC_LERP(A.row2[0], B.row2[0], amount);
+			m.row2[1] = AC_LERP(A.row2[1], B.row2[1], amount);
+			m.row2[2] = AC_LERP(A.row2[2], B.row2[2], amount);
+			m.row2[3] = AC_LERP(A.row2[3], B.row2[3], amount);
 
-			m.row3[0] = LERP(A.row3[0], B.row3[0], amount);
-			m.row3[1] = LERP(A.row3[1], B.row3[1], amount);
-			m.row3[2] = LERP(A.row3[2], B.row3[2], amount);
-			m.row3[3] = LERP(A.row3[3], B.row3[3], amount);
+			m.row3[0] = AC_LERP(A.row3[0], B.row3[0], amount);
+			m.row3[1] = AC_LERP(A.row3[1], B.row3[1], amount);
+			m.row3[2] = AC_LERP(A.row3[2], B.row3[2], amount);
+			m.row3[3] = AC_LERP(A.row3[3], B.row3[3], amount);
 
-			m.row4[0] = LERP(A.row4[0], B.row4[0], amount);
-			m.row4[1] = LERP(A.row4[1], B.row4[1], amount);
-			m.row4[2] = LERP(A.row4[2], B.row4[2], amount);
-			m.row4[3] = LERP(A.row4[3], B.row4[3], amount);
+			m.row4[0] = AC_LERP(A.row4[0], B.row4[0], amount);
+			m.row4[1] = AC_LERP(A.row4[1], B.row4[1], amount);
+			m.row4[2] = AC_LERP(A.row4[2], B.row4[2], amount);
+			m.row4[3] = AC_LERP(A.row4[3], B.row4[3], amount);
 
 			return m;
 #endif

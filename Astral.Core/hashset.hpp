@@ -72,7 +72,7 @@ namespace collections
             //in all likelihood, we may have to fill an additional bucket
             //on adding a new item. Thus, we may have to resize the underlying buffer if the weight
             //is more than 0.75
-            if (filledBuckets + 1.0f >= bucketsCount * HASHMAP_MAX_WEIGHT)
+            if (filledBuckets + 1.0f >= bucketsCount * HASHSET_MAX_WEIGHT)
             {
                 usize newSize = bucketsCount * 2;
 
@@ -171,6 +171,28 @@ namespace collections
                 }
             }
             return false;
+        }
+        T *GetInstanceOf(T value)
+        {
+            u32 hash = hashFunc(value);
+            u32 index = hash % bucketsCount;
+
+            if (!buckets[index].initialized)
+            {
+                return NULL;
+            }
+
+            if (buckets[index].entries.count > 0)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (eqlFunc(value, *buckets[index].entries.Get(i)))
+                    {
+                        return buckets[index].entries.Get(i);
+                    }
+                }
+            }
+            return NULL;
         }
         void Clear()
         {

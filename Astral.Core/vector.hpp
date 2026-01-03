@@ -117,6 +117,14 @@ namespace collections
         {
             return ptr[index];
         }
+        inline T Pop()
+        {
+            if (count == 0)
+            {
+                return T{};
+            }
+            return ptr[--count];
+        }
         void RemoveAt_Swap(usize index)
         {
             assert(index >= 0 && index < count);
@@ -147,6 +155,19 @@ namespace collections
                 ptr[i] = ptr[i + numRemoves];
             }
             count -= numRemoves;
+        }
+        collections::vector<T> Clone(IAllocator newAllocator)
+        {
+            if (this->ptr == NULL)
+            {
+                return collections::vector<T>(newAllocator);
+            }
+            collections::vector<T> result = collections::vector<T>(newAllocator, count);
+            for (u32 i = 0; i < count; i++)
+            {
+                result.Add(ptr[i]);
+            }
+            return result;
         }
         collections::Array<T> ToClonedArray(IAllocator newAllocator)
         {
@@ -198,20 +219,20 @@ namespace collections
             {
                 if (eqlFunc(this->ptr[i], value))
                 {
-                    option<usize>(i);
+                    return option<usize>(i);
                 }
             }
             return option<usize>();
         }
         collections::Array<T> ToRefArray()
         {
-            return collections::Array<T>(IAllocator(), this->ptr, this->count);
+            return collections::Array<T>(this->ptr, this->count);
         }
         void AddAllDeinit(collections::vector<T> *from)
         {
             for (usize i = 0; i < from->count; i++)
             {
-                Add(from->data[i]);
+                Add(from->ptr[i]);
             }
             //memcpy(this->ptr, from->ptr, from->count * sizeof(T));
             from->deinit();
@@ -228,7 +249,7 @@ namespace collections
         {
             for (usize i = 0; i < from->count; i++)
             {
-                Add(from->data[i]);
+                Add(from->ptr[i]);
             }
         }
         void AddAll(collections::Array<T> *from)

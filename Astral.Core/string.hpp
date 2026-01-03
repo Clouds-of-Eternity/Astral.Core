@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "math.h"
 #include "vector.hpp"
+#include <wchar.h>
 
 inline const char* digits2(usize value)
 {
@@ -517,18 +518,22 @@ inline string ReplaceChar(IAllocator allocator, const char* input, char toReplac
     usize inputLength = strlen(input) + 1;
     string str = string(allocator);
     char* buffer = (char*)allocator.Allocate(inputLength);
-    str.length = inputLength;
 
+    usize index = 0;
     for (usize i = 0; i < inputLength - 1; i++)
     {
         if (input[i] == toReplace)
         {
-            buffer[i] = replaceWith;
+            if (replaceWith != '\0')
+            {
+                buffer[index++] = replaceWith;
+            }
         }
-        else buffer[i] = input[i];
+        else buffer[index++] = input[i];
     }
     
-    buffer[inputLength - 1] = '\0';
+    buffer[index++] = '\0';
+    str.length = index;
 
     str.buffer = buffer;
     return str;
@@ -641,5 +646,39 @@ inline string ConcatFromCharSlices(IAllocator allocator, CharSlice* strings, usi
     string result = string(allocator);
     result.buffer = buffer;
     result.length = totalLength;
+    return result;
+}
+inline i64 StringToI64(const char* buffer, usize length)
+{
+    i64 result = 0;
+    u32 index = 1;
+    for (i32 i = (i32)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            i64 amount = index * (buffer[i] - (i64)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    if (buffer[0] == '-')
+    {
+        result *= -1;
+    }
+    return result;
+}
+inline u64 StringToU64(const char* buffer, usize length)
+{
+    u64 result = 0;
+    u32 index = 1;
+    for (i32 i = (i32)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            i64 amount = index * (buffer[i] - (u64)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
     return result;
 }
