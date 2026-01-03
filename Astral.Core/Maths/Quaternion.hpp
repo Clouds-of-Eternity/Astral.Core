@@ -145,27 +145,6 @@ namespace Maths
 
 			return Maths::Quaternion::FromAxisAngle(rotAxis, rotation);
 		}
-		inline Maths::Vec3 Transform(Maths::Vec3 value)
-		{
-            float x2 = X + X;
-            float y2 = Y + Y;
-            float z2 = Z + Z;
-
-            float wx2 = W * x2;
-            float wy2 = W * y2;
-            float wz2 = W * z2;
-            float xx2 = X * x2;
-            float xy2 = X * y2;
-            float xz2 = X * z2;
-            float yy2 = Y * y2;
-            float yz2 = Y * z2;
-            float zz2 = Z * z2;
-
-            return Maths::Vec3(
-                value.X * (1.0f - yy2 - zz2) + value.Y * (xy2 - wz2) + value.Z * (xz2 + wy2),
-                value.X * (xy2 + wz2) + value.Y * (1.0f - xx2 - zz2) + value.Z * (yz2 - wx2),
-                value.X * (xz2 - wy2) + value.Y * (yz2 + wx2) + value.Z * (1.0f - xx2 - yy2));
-		}
 		static inline float Dot(Quaternion A, Quaternion B)
 		{
 			return A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
