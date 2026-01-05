@@ -72,7 +72,7 @@ inline bool i32Eql(i32 A, i32 B)
 }
 inline u32 U64Hash(u64 value)
 {
-    return value % U32Max;
+    return value % AC_U32Max;
 }
 inline bool U64Eql(u64 A, u64 B)
 {
