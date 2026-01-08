@@ -45,9 +45,9 @@ namespace collections
 			lastIndex = -1;
 			count = 0;
 		}
-		inline LinkedVecNode<T> GetNode(u32 index)
+		inline LinkedVecNode<T> *GetNode(u32 index)
 		{
-			return elements.ptr[index];
+			return &elements.ptr[index];
 		}
 		inline T *GetNodeValue(u32 index)
 		{
@@ -89,6 +89,7 @@ namespace collections
 			{
 				firstIndex = newIndex;
 			}
+			count++;
 			return newIndex;
 		}
 		i32 AddAfter(T item, i32 after)
@@ -109,10 +110,11 @@ namespace collections
 			
 			newNode->prev = after;
 			afterNode->next = newIndex;
-			if (lastIndex == newIndex)
+			if (lastIndex == after)
 			{
 				lastIndex = newIndex;
 			}
+			count++;
 			return newIndex;
 		}
 		i32 Append(T item)
@@ -131,6 +133,8 @@ namespace collections
 
 			firstIndex = newIndex;
 			lastIndex = newIndex;
+
+			count++;
 			return newIndex;
 		}
 		i32 Prepend(T item)
@@ -149,6 +153,8 @@ namespace collections
 
 			firstIndex = newIndex;
 			lastIndex = newIndex;
+
+			count++;
 			return newIndex;
 		}
 		void Remove(i32 nodeIndex)
@@ -174,6 +180,8 @@ namespace collections
 			}
 			node->prev = -1;
 			node->next = -1;
+
+			count--;
 			freeIndices.Add(nodeIndex);
 		}
 		void Clear()
@@ -182,12 +190,14 @@ namespace collections
 			elements.Clear();
 			firstIndex = -1;
 			lastIndex = -1;
+			count = 0;
 		}
 
 		inline void deinit()
 		{
 			freeIndices.deinit();
 			elements.deinit();
+			count = 0;
 		}
 	};
 }
