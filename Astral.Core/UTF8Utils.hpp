@@ -112,7 +112,7 @@ inline u32 UTF8GetCharPoint(text utf8, usize *index)
         result = startingByte;
         *index += 1;
     }
-    return result;
+    return 0;
     /*u32 result = 0;
     //is single byte
     char startingByte = utf8[*index];
