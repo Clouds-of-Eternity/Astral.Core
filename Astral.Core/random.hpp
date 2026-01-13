@@ -21,6 +21,13 @@ struct SplitMix64
         return z ^ (z >> 31);
     }
 };
+
+template<typename T>
+struct RandomWeightedChoice
+{
+    float weight;
+    T choice;
+};
 struct Random
 {
     u64 state0;
@@ -81,5 +88,26 @@ struct Random
         u64 next = Next();
         float result = next / ((float)AC_U64Max / diff);
         return minValue + result;
+    }
+
+    template <typename T>
+    inline T NextWeighted(RandomWeightedChoice<T> *choices, usize numChoices)
+    {
+        float max = 0.0f;
+        for (usize i = 0; i < numChoices; i++)
+        {
+            max += choices[i].weight;
+        }
+        float rand = NextFloat(max);
+
+        max = 0.0f;
+        for (usize i = 0; i < numChoices; i++)
+        {
+            if (max <= rand && rand < max + choices[i].weight)
+            {
+                return choices[i].choice;
+            }
+            max += choices[i].weight;
+        }
     }
 };
