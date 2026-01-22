@@ -109,5 +109,6 @@ struct Random
             }
             max += choices[i].weight;
         }
+        return {};
     }
 };
