@@ -56,23 +56,49 @@ namespace io
     inline string ReadFile(IAllocator allocator, const char* path, bool isBinary)
     {
         string result = string(allocator);
-
-        FILE *fs = fopen(path, isBinary ? "rb" : "r");
-        if (fs != NULL)
+        if (!isBinary)
         {
-            usize size = GetFileSize(fs);
-
-            char* buffer = (char*)allocator.Allocate(size + 1);
-            if (buffer != NULL)
+            FILE *fs = fopen(path, "r");
+            if (fs != NULL)
             {
-                fread(buffer, sizeof(char), size, fs);
-                
-                buffer[size] = '\0';
-                result.buffer = buffer;
-                result.length = size + 1;
-            }
+                usize size = GetFileSize(fs);
 
-            fclose(fs);
+                char* buffer = (char*)allocator.Allocate(size + 1);
+                if (buffer != NULL)
+                {
+                    fread(buffer, sizeof(char), size, fs);
+                    
+                    buffer[size] = '\0';
+                    result.buffer = buffer;
+                    result.length = size + 1;
+                }
+
+                fclose(fs);
+            }
+        }
+        else
+        {
+            FILE *fs = fopen(path, "rb");
+            if (fs != NULL)
+            {
+                usize size = 0;
+                fseek(fs, 0, SEEK_END);
+                size = (usize)ftell(fs);
+
+                fseek(fs, 0, SEEK_SET);
+
+                char* buffer = (char*)allocator.Allocate(size + 1);
+                if (buffer != NULL)
+                {
+                    fread(buffer, sizeof(char), size, fs);
+                    
+                    buffer[size] = '\0';
+                    result.buffer = buffer;
+                    result.length = size + 1;
+                }
+
+                fclose(fs);
+            }
         }
         return result;
     }

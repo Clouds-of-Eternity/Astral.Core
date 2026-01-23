@@ -129,6 +129,14 @@ struct ByteStreamWriter
         memcpy(bytes.ptr + bytes.count, data, length);
         bytes.count += length;
     }
+    inline void WriteArray(const void *data, usize elementSize, usize elementCount)
+    {
+        usize length = elementSize * elementCount;
+        
+        bytes.EnsureArrayCapacity(bytes.count + length);
+        memcpy(bytes.ptr + bytes.count, data, length);
+        bytes.count += length;
+    }
     inline void WriteByte(u8 byte)
     {
         bytes.Add(byte);
