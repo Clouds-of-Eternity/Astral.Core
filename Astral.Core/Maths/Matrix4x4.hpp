@@ -287,6 +287,9 @@ namespace Maths
 		}
 		inline static Matrix4x4 CreateFromTransform(Maths::Vec3 position, Maths::Vec3 scale, Maths::Quaternion rotation)
 		{
+			#ifdef USE_SSE
+			return Matrix4x4::CreateScale(scale) * Matrix4x4::CreateFromQuaternion(rotation) * Matrix4x4::CreateTranslation(position);
+#else
 			Maths::Matrix4x4 result;
 			float *lm = &result.M11;
 			float tx = position.X;
@@ -323,9 +326,16 @@ namespace Maths
             lm[15] = 1.0f;
 
             return result;
+			#endif
 		}
 		inline static Matrix4x4 CreateTranslation(float X, float Y, float Z)
 		{
+			#ifdef USE_SSE
+			Matrix4x4 result;
+			
+			//return Matrix4x4::CreateScale(scale) * Matrix4x4::CreateFromQuaternion(rotation) * Matrix4x4::CreateTranslation(position);
+			#else
+
 			float m[16] = {
 					1.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 1.0f, 0.0f, 0.0f,
@@ -333,6 +343,7 @@ namespace Maths
 					X, Y, Z, 1.0f
 			};
 			return Matrix4x4(m);
+			#endif
 		}
 		inline static Matrix4x4 CreateTranslation(Vec3 pos)
 		{

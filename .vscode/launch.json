@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "Run SIMD test (Release)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Tests/SIMD/bin/Release/SIMD.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Tests/SIMD/bin/Release/",
+            "environment": [],
+            "console": "externalTerminal"
+        }
+    ]
+}

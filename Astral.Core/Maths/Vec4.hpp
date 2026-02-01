@@ -82,7 +82,7 @@ namespace Maths
 #endif
 
         //addition operators
-        inline Vec4 operator+(Vec4 other)
+        inline Vec4 operator+(const Vec4 &other)
         {
 #ifdef USE_SSE
             Vec4 result;
@@ -98,7 +98,7 @@ namespace Maths
             return result;
 #endif
         }
-        inline void operator+=(Vec4 other)
+        inline void operator+=(const Vec4 &other)
         {
 #ifdef USE_SSE
             this->asM128 = _mm_add_ps(this->asM128, other.asM128);
@@ -111,7 +111,7 @@ namespace Maths
         }
 
         //subtraction operators
-        inline Vec4 operator-(Vec4 other)
+        inline Vec4 operator-(const Vec4 &other)
         {
 #ifdef USE_SSE
             Vec4 result;
