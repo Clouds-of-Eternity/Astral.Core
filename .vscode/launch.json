@@ -10,6 +10,17 @@
             "cwd": "${workspaceFolder}/Tests/SIMD/bin/Release/",
             "environment": [],
             "console": "externalTerminal"
+        },
+        {
+            "name": "Run SIMD test (Debug)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Tests/SIMD/bin/Debug/SIMD.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Tests/SIMD/bin/Debug/",
+            "environment": [],
+            "console": "externalTerminal"
         }
     ]
 }

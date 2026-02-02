@@ -168,23 +168,28 @@ namespace Maths
         }
         inline Vec4 operator*(float other)
         {
+#ifdef USE_SSE
+            return Vec4(_mm_mul_ps(asM128, _mm_set1_ps(other)));
+#endif
             return Vec4(X * other, Y * other, Z * other, W * other);
         }
         inline void operator*=(float other)
         {
+#ifdef USE_SSE
+            asM128 = _mm_mul_ps(asM128, _mm_set1_ps(other));
+#else
             X *= other;
             Y *= other;
             Z *= other;
             W *= other;
+#endif
         }
 
         //division operators
         inline Vec4 operator/(Vec4 other)
         {
 #ifdef USE_SSE
-            Vec4 result;
-            result.asM128 = _mm_div_ps(this->asM128, other.asM128);
-            return result;
+            return Vec4(_mm_div_ps(this->asM128, other.asM128));
 #else
             Vec4 result;
             result.X = X / other.X;
@@ -237,6 +242,30 @@ namespace Maths
 #else
             return Vec4(-X, -Y, -Z, -W);
 #endif
+        }
+
+        inline Vec4 Sine()
+        {
+#if defined(USE_SSE)
+//Clang on windows doesnt support trigonometric intrinsics, only MSVC does
+#if (defined(_MSC_VER) && !defined(__clang__)) || !defined(_WIN32)
+            return Vec4(_mm_sin_ps(asM128));
+#endif
+
+#endif
+            return Vec4(sinf(X), sinf(Y), sinf(Z), sinf(W));
+        }
+
+        inline Vec4 Cosine()
+        {
+#if defined(USE_SSE)
+//Clang on windows doesnt support trigonometric intrinsics, only MSVC does
+#if (defined(_MSC_VER) && !defined(__clang__)) || !defined(_WIN32)
+            return Vec4(_mm_cos_ps(asM128));
+#endif
+
+#endif
+            return Vec4(cosf(X), cosf(Y), cosf(Z), cosf(W));
         }
 
         float Length()
@@ -319,5 +348,36 @@ namespace Maths
         {
             return Maths::Vec3(X, Y, Z);
         }
+
+        #ifdef USE_SSE
+        static inline constexpr u32 GetShuffler(text literal)
+        {
+            u8 x = 0;
+            u8 y = 0;
+            u8 z = 0;
+            u8 w = 0;
+
+            i8 index = 0;
+            u8 isNegative = 0;
+
+            index = ((i8)(literal[0] - 120) & (i8)0b11111111);
+            isNegative = (u8)index >> 7;
+            x = isNegative * 3 + !isNegative * index;
+
+            index = ((i8)(literal[1] - 120) & (i8)0b11111111);
+            isNegative = (u8)index >> 7;
+            y = isNegative * 3 + !isNegative * index;
+
+            index = ((i8)(literal[2] - 120) & (i8)0b11111111);
+            isNegative = (u8)index >> 7;
+            z = isNegative * 3 + !isNegative * index;
+
+            index = ((i8)(literal[3] - 120) & (i8)0b11111111);
+            isNegative = (u8)index >> 7;
+            w = isNegative * 3 + !isNegative * index;
+
+            return _MM_SHUFFLE(w, z, y, x);
+        }
+        #endif
     };
 }

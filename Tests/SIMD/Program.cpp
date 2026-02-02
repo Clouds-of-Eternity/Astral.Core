@@ -6,8 +6,16 @@
 #include "Maths/Matrix4x4.hpp"
 
 #ifndef ITERATIONS
-#define ITERATIONS 1000000
+#define ITERATIONS 100000000
 #endif
+
+inline void PrintMatrix(const Maths::Matrix4x4 &mat)
+{
+    printf("%f %f %f %f\n", mat.M11, mat.M12, mat.M13, mat.M14);
+    printf("%f %f %f %f\n", mat.M21, mat.M22, mat.M23, mat.M24);
+    printf("%f %f %f %f\n", mat.M31, mat.M32, mat.M33, mat.M34);
+    printf("%f %f %f %f\n", mat.M41, mat.M42, mat.M43, mat.M44);
+}
 
 i32 main()
 {
@@ -35,6 +43,24 @@ i32 main()
         for (i32 i = 0; i < ITERATIONS; i++)
         {
             A += B;
+        }
+        double end = stm_ms(stm_now());
+        
+        printf("   - time taken: %f ms (%f, %f, %f, %f)\n", end - start, A.X, A.Y, A.Z, A.W);
+    }
+
+    printf("Vec4 Trigonometry:\n");
+
+    for (u32 c = 0; c < 5; c++)
+    {
+        Maths::Vec4 A = Maths::Vec4(0.0f);
+        Maths::Vec4 B = Maths::Vec4(0.0f);
+
+        double start = stm_ms(stm_now());
+        for (i32 i = 0; i < ITERATIONS; i++)
+        {
+            A += (Maths::Vec4(0.0f, 90.0f, 180.0f, 270.0f) * Degree2Radian).Sine();
+            B += (Maths::Vec4(0.0f, 90.0f, 180.0f, 270.0f) * Degree2Radian).Cosine();
         }
         double end = stm_ms(stm_now());
         

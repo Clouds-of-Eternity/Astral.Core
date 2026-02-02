@@ -28,7 +28,7 @@ namespace Maths
 		inline Quaternion(float x, float y, float z, float w)
 		{
 #ifdef USE_SSE
-			asM128 = _mm_set_ps(x, y, z, w);
+			asM128 = _mm_setr_ps(x, y, z, w);
 #else
 			X = x;
 			Y = y;
@@ -39,7 +39,7 @@ namespace Maths
 		inline Quaternion(Vec3 vector, float scalar)
 		{
 #ifdef USE_SSE
-			asM128 = _mm_set_ps(vector.X, vector.Y, vector.Z, scalar);
+			asM128 = _mm_setr_ps(vector.X, vector.Y, vector.Z, scalar);
 #else
 			X = vector.X;
 			Y = vector.Y;
@@ -105,6 +105,22 @@ namespace Maths
 		}
 		static inline Quaternion FromYawPitchRoll(float yaw, float pitch, float roll)
 		{
+			Quaternion result;
+
+// #ifdef USE_SSE
+// 			__m128 rpy0 = _mm_setr_ps(roll, pitch, yaw, 0.0f);
+// 			rpy0 = _mm_mul_ps(rpy0, _mm_set1_ps(0.5f));
+
+// 			__m128 sin4 = _mm_sin_ps(rpy0);
+// 			__m128 cos4 = _mm_cos_ps(rpy0);
+
+// 			__m128 spspcpcp = _mm_add_ps(_mm_shuffle_ps(sin4, sin4, Maths::Vec4::GetShuffler("yyww")), _mm_shuffle_ps(cos4, cos4, Maths::Vec4::GetShuffler("wwyy"))); //sin4.yyww + cos4.wwyy
+// 			__m128 crsrsrcr = _mm_add_ps(_mm_shuffle_ps(cos4, cos4, Maths::Vec4::GetShuffler("xwwx")), _mm_shuffle_ps(sin4, sin4, Maths::Vec4::GetShuffler("wxxw")));
+
+// 			__m128 pitchXroll = _mm_mul_ps(spspcpcp, crsrsrcr);
+
+// 			__m128 cysycycy
+// #else
 			Maths::Vec3 sin3 = Maths::Vec3(sinf(roll * 0.5f), sinf(pitch * 0.5f), sinf(yaw * 0.5f));
 			Maths::Vec3 cos3 = Maths::Vec3(cosf(roll * 0.5f), cosf(pitch * 0.5f), cosf(yaw * 0.5f));
 
@@ -115,13 +131,19 @@ namespace Maths
 			float cp = cos3.Y;
 			float cy = cos3.Z;
 
-			Quaternion result;
+
+			float spcr = sp * cr;
+			float spsr = sp * sr;
+			float cpsr = cp * sr;
+			float cpcr = cp * cr;
+
+			result.X = cy * spcr + sy * cpsr;
+            result.Y = sy * cpcr - cy * spsr;
+            result.Z = cy * cpsr - sy * spcr;
+            result.W = cy * cpcr + sy * spsr;
  
-            result.X = cy * sp * cr + sy * cp * sr;
-            result.Y = sy * cp * cr - cy * sp * sr;
-            result.Z = cy * cp * sr - sy * sp * cr;
-            result.W = cy * cp * cr + sy * sp * sr;
- 
+			//#endif
+
             return result;
 		}
 		static inline Quaternion CreateLookAt(Vec3 sourcePoint, Vec3 destPoint)

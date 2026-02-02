@@ -82,7 +82,7 @@ namespace Maths
 			M41 = M42 = M43 = M44 = fill;
 #endif
 		}
-		Matrix4x4(float* m)
+		Matrix4x4(const float* m)
 		{
 #ifdef USE_SSE
 			m128_row1 = _mm_load_ps(m);//_mm_set_ps(m[0], m[1], m[2], m[3]);
@@ -277,13 +277,13 @@ namespace Maths
 
 		inline static Matrix4x4 Identity()
 		{
-			float m[16] = {
+			constexpr float m[16] = {
 					1.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 1.0f, 0.0f, 0.0f,
 					0.0f, 0.0f, 1.0f, 0.0f,
 					0.0f, 0.0f, 0.0f, 1.0f
 			};
-			return Matrix4x4(&m[0]);
+			return Matrix4x4(m);
 		}
 		inline static Matrix4x4 CreateFromTransform(Maths::Vec3 position, Maths::Vec3 scale, Maths::Quaternion rotation)
 		{
@@ -330,12 +330,6 @@ namespace Maths
 		}
 		inline static Matrix4x4 CreateTranslation(float X, float Y, float Z)
 		{
-			#ifdef USE_SSE
-			Matrix4x4 result;
-			
-			//return Matrix4x4::CreateScale(scale) * Matrix4x4::CreateFromQuaternion(rotation) * Matrix4x4::CreateTranslation(position);
-			#else
-
 			float m[16] = {
 					1.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 1.0f, 0.0f, 0.0f,
@@ -343,7 +337,6 @@ namespace Maths
 					X, Y, Z, 1.0f
 			};
 			return Matrix4x4(m);
-			#endif
 		}
 		inline static Matrix4x4 CreateTranslation(Vec3 pos)
 		{
@@ -353,7 +346,7 @@ namespace Maths
 					0.0f, 0.0f, 1.0f, 0.0f,
 					pos.X, pos.Y, pos.Z, 1.0f
 			};
-			return Matrix4x4(&m[0]);
+			return Matrix4x4(m);
 		}
 		inline static Matrix4x4 CreateScale(float X, float Y, float Z)
 		{
@@ -479,9 +472,6 @@ namespace Maths
 		}
 		inline static Matrix4x4 CreateFromQuaternion(Quaternion quaternion)
 		{
-			float xx = quaternion.X * quaternion.X;
-			float yy = quaternion.Y * quaternion.Y;
-			float zz = quaternion.Z * quaternion.Z;
 
 			float xy = quaternion.X * quaternion.Y;
 			float wz = quaternion.Z * quaternion.W;
@@ -490,6 +480,21 @@ namespace Maths
 			float yz = quaternion.Y * quaternion.Z;
 			float wx = quaternion.X * quaternion.W;
 
+#ifdef USE_SSE
+			__m128 qq = _mm_mul_ps(quaternion.asM128, quaternion.asM128);
+			Maths::Vec4 a = Maths::Vec4(_mm_add_ps(_mm_shuffle_ps(qq, qq, Maths::Vec4::GetShuffler("yzyw")), _mm_shuffle_ps(qq, qq, Maths::Vec4::GetShuffler("zxxw"))));
+
+			Matrix4x4 result;
+			result.m128_row1 = _mm_setr_ps(1.0f - 2.0f * (a.X), 2.0f * (xy + wz), 2.0f * (xz - wy), 0.0f);
+			result.m128_row2 = _mm_setr_ps(2.0f * (xy - wz), 1.0f - 2.0f * (a.Y), 2.0f * (yz + wx), 0.0f);
+			result.m128_row3 = _mm_setr_ps(2.0f * (xz + wy), 2.0f * (yz - wx), 1.0f - 2.0f * (a.Z), 0.0f);
+			result.m128_row4 = _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f);
+			return result;
+#else
+			float xx = quaternion.X * quaternion.X;
+			float yy = quaternion.Y * quaternion.Y;
+			float zz = quaternion.Z * quaternion.Z;
+
 			float m[16] = {
 				1.0f - 2.0f * (yy + zz), 2.0f * (xy + wz), 2.0f * (xz - wy), 0.0f,
 				2.0f * (xy - wz), 1.0f - 2.0f * (zz + xx), 2.0f * (yz + wx), 0.0f,
@@ -497,6 +502,7 @@ namespace Maths
 				0.0f, 0.0f, 0.0f, 1.0f
 			};
 			return Matrix4x4(m);
+#endif
 		}
 		inline static Matrix4x4 CreateFromYawPitchRoll(float yaw, float pitch, float roll)
 		{

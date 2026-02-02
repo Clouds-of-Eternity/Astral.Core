@@ -1,12 +1,14 @@
 {
     "configurations": [
         {
-            "name": "Win32 (Client)",
+            "name": "Win32",
             "defines": [
-                "USE_SSE"
+                "USE_SSE",
+                "x86_64"
             ],
-            "intelliSenseMode": "windows-msvc-x64",
-            "compilerPath": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "includePath": [
+                "Astral.Core"
+            ],
             "cStandard": "c17",
             "cppStandard": "c++17"
         }
