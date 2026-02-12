@@ -22,7 +22,7 @@ namespace Maths
 			X = 0.0f;
 			Y = 0.0f;
 			Z = 0.0f;
-			W = 1.0f;
+			W = 0.0f;
 		}
 
 		inline Quaternion(float x, float y, float z, float w)
