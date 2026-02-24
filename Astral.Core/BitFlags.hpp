@@ -3,7 +3,7 @@
 #include "allocators.hpp"
 
 template <typename T>
-inline bool CheckBitFlag(T *ptr, usize ptrElementCount, u32 bitIndex)
+inline bool CheckBitFlag(const T *ptr, usize ptrElementCount, u32 bitIndex)
 {
     static_assert(sizeof(T) <= 8, "template parameter type must have size less than or equal to 8 bytes");
     const u32 sizeTBits = sizeof(T) * 8;
@@ -14,7 +14,7 @@ inline bool CheckBitFlag(T *ptr, usize ptrElementCount, u32 bitIndex)
     {
         return false;
     }
-    return (ptr[ptrIndex] & (T)(1 << bitOffset)) != 0;
+    return (ptr[ptrIndex] & ((T)1 << bitOffset)) != 0;
 };
 template <typename T>
 inline bool SetBitFlag(T *ptr, usize ptrElementCount, bool value, u32 bitIndex)
@@ -28,7 +28,7 @@ inline bool SetBitFlag(T *ptr, usize ptrElementCount, bool value, u32 bitIndex)
     {
         return false;
     }
-    T flag = (T)(1 << bitOffset);
+    T flag = ((T)1 << bitOffset);
     //clear bit
     ptr[ptrIndex] = ptr[ptrIndex] & (~flag);
     //if value is true, toggle bit
