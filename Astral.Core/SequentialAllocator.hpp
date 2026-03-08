@@ -20,7 +20,7 @@ struct SequentialAllocator
     }
     inline void *GetAllocation()
     {
-        return payload + sizeof(SequentialAllocatorInternals);
+        return (u8*)payload + sizeof(SequentialAllocatorInternals);
     }
     inline SequentialAllocator()
     {
@@ -62,7 +62,7 @@ void *SequentialAllocator_Allocate(void *instance, usize bytes)
         return NULL;
     }
 
-    void *result = allocator.GetAllocation() + internals.currentOffset;
+    void *result = (u8 *)allocator.GetAllocation() + internals.currentOffset;
     internals.currentOffset += bytes;
     return result;
 }
