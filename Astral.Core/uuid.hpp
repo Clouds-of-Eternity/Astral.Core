@@ -4,6 +4,8 @@
 #include "allocators.hpp"
 #include "string.hpp"
 
+def_delegate(RandomNextU64, u64);
+
 struct uuid
 {
     u8 byte[16];
@@ -13,12 +15,45 @@ struct uuid
         ((u64*)byte)[0] = 0;
         ((u64*)byte)[1] = 0;
     }
+    inline uuid(u64 num1, u64 num2)
+    {
+        ((u64*)byte)[0] = num1;
+        ((u64*)byte)[1] = num2;
+    }
+    // First hashes the string input, then creates a random instance from it,
+    // then generates a UUID from the random. This should give enough entropy for the resulting
+    // ID. Use NewFromStringHashFunction if a different or cryptographically secure hash function is required.
+    inline static uuid NewFromStringHash(text stringInput)
+    {
+        u32 seed = Murmur3((const u8 *)stringInput, strlen(stringInput));
+        Random tempRand = Random::init(seed);
+        return New(&tempRand);
+    }
+    inline static uuid NewFromStringHashFunction(text stringInput, u32 (customHashFunction)(const u8 *, usize))
+    {
+        u32 seed = customHashFunction((const u8 *)stringInput, strlen(stringInput));
+        Random tempRand = Random::init(seed);
+        return New(&tempRand);
+    }
+
     inline static uuid New(Random* random)
     {
         uuid result;
         u64* asPointer = (u64*)&result;
         asPointer[0] = random->Next();
         asPointer[1] = random->Next();
+
+        result.byte[6] = (result.byte[6] & 0x0f) | 0x40;
+        result.byte[8] = (result.byte[8] & 0x3f) | 0x80;
+
+        return result;
+    }
+    inline static uuid New(RandomNextU64 randomNextFunction)
+    {
+        uuid result;
+        u64* asPointer = (u64*)&result;
+        asPointer[0] = randomNextFunction();
+        asPointer[1] = randomNextFunction();
 
         result.byte[6] = (result.byte[6] & 0x0f) | 0x40;
         result.byte[8] = (result.byte[8] & 0x3f) | 0x80;
