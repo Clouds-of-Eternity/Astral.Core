@@ -1,0 +1,17 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Windows (x64)",
+            "defines": [
+                "WINDOWS",
+                "DEBUG",
+                "USE_INTRINSICS",
+                "USE_SSE"
+            ],
+            "cStandard": "c23",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "windows-clang-x64"
+        }
+    ]
+}
