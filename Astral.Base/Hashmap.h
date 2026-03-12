@@ -57,6 +57,7 @@ inline HashMap HashMap_Create(size_t keySize, size_t valueSize, IAllocator alloc
     }
     return result;
 }
+#define HASHMAP_CREATE(keyType, valueType, allocator, hashFunc, eqlFunc) HashMap_Create(sizeof(keyType), sizeof(valueType), allocator, hashFunc, eqlFunc)
 
 inline void HashMap_Deinit(HashMap *self)
 {
