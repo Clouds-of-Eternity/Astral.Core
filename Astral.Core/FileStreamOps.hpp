@@ -89,6 +89,10 @@ struct FileStreamWriter
     {
         fwrite(data, 1, length, fs);
     }
+    inline void WriteArray(const void *data, usize elementSize, usize elementCount)
+    {
+        fwrite(data, elementSize, elementCount, fs);
+    }
     inline void WriteByte(u8 byte)
     {
         fwrite(&byte, 1, 1, fs);

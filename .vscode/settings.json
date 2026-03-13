@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.h": "c"
+    },
+    "chat.disableAIFeatures": true,
+    "C_Cpp.copilotHover": "disabled"
+}

@@ -22,7 +22,7 @@ namespace Maths
 			X = 0.0f;
 			Y = 0.0f;
 			Z = 0.0f;
-			W = 1.0f;
+			W = 0.0f;
 		}
 
 		inline Quaternion(float x, float y, float z, float w)
@@ -146,10 +146,8 @@ namespace Maths
 
             return result;
 		}
-		static inline Quaternion CreateLookAt(Vec3 sourcePoint, Vec3 destPoint)
+		static inline Quaternion CreateFromNormalizedDirection(Vec3 dir)
 		{
-			Maths::Vec3 dir = (destPoint - sourcePoint).Normalized();
-
 			const Maths::Vec3 forward = Maths::Vec3(1.0f, 0.0f, 0.0f);
 
 			float dot = Maths::Vec3::Dot(forward, dir);
@@ -166,6 +164,10 @@ namespace Maths
 			float rotation = acosf(dot);
 
 			return Maths::Quaternion::FromAxisAngle(rotAxis, rotation);
+		}
+		static inline Quaternion CreateLookAt(Vec3 sourcePoint, Vec3 destPoint)
+		{
+			return CreateFromNormalizedDirection((destPoint - sourcePoint).Normalized());
 		}
 		static inline float Dot(Quaternion A, Quaternion B)
 		{
