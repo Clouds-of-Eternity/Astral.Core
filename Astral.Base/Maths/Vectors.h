@@ -1,5 +1,6 @@
 #pragma once
 #include <math.h>
+#include <stdint.h>
 
 #ifndef FORCE_NO_INTRINSICS
 #ifdef __x86_64__
@@ -170,6 +171,21 @@ inline Vec2 Vec2Min(Vec2 A, Vec2 B)
     const Vec2 result = {fminf(A.X, B.X), fminf(A.Y, B.Y)};
     return result;
 }
+inline Vec2 Vec2Normalized(Vec2 A)
+{
+    const float len = Vec2Length(A);
+    const Vec2 result = {A.X / len, A.Y / len};
+    return result;
+}
+inline Vec2 NegateVec2(Vec2 A)
+{
+    const Vec2 result = {-A.X, -A.Y};
+    return result;
+}
+inline bool Vec2Eqls(Vec2 A, Vec2 B, float approximation)
+{
+    return fabsf(B.X - A.X) <= approximation && fabsf(B.Y - A.Y) <= approximation;
+}
 
 inline Vec3 AddVec3(Vec3 A, Vec3 B)
 {
@@ -205,6 +221,13 @@ inline float Vec3Dot(Vec3 A, Vec3 B)
 {
     return A.X * B.X + A.Y * B.Y + A.Z * B.Z;
 }
+inline Vec3 Vec3Cross(Vec3 A, Vec3 B)
+{
+    return CreateVec3(
+        A.Y * B.Z - A.Z * B.Y,
+        A.Z * B.X - A.X * B.Z,
+        A.X * B.Y - A.Y * B.X);
+}
 inline float Vec3Length(Vec3 A)
 {
     return sqrtf(Vec3Dot(A, A));
@@ -218,6 +241,21 @@ inline Vec3 Vec3Min(Vec3 A, Vec3 B)
 {
     const Vec3 result = {fminf(A.X, B.X), fminf(A.Y, B.Y), fminf(A.Z, B.Z)};
     return result;
+}
+inline Vec3 Vec3Normalized(Vec3 A)
+{
+    const float len = Vec3Length(A);
+    const Vec3 result = {A.X / len, A.Y / len, A.Z / len};
+    return result;
+}
+inline Vec3 NegateVec3(Vec3 A)
+{
+    const Vec3 result = {-A.X, -A.Y, -A.Z};
+    return result;
+}
+inline bool Vec3Eqls(Vec3 A, Vec3 B, float approximation)
+{
+    return fabsf(B.X - A.X) <= approximation && fabsf(B.Y - A.Y) <= approximation && fabsf(B.Z - A.Z) <= approximation;
 }
 
 inline Vec4 AddVec4(Vec4 A, Vec4 B)
@@ -303,4 +341,27 @@ inline Vec4 Vec4Min(Vec4 A, Vec4 B)
     const Vec4 result = {fminf(A.X, B.X), fminf(A.Y, B.Y), fminf(A.Z, B.Z), fminf(A.W, B.W)};
 #endif
     return result;
+}
+inline Vec4 Vec4Normalized(Vec4 A)
+{
+#ifdef USE_SSE
+    const Vec4 result = {.m128 = _mm_div_ps(A.m128, _mm_set1_ps(Vec4Length(A)))};
+#else
+    const float len = Vec4Length(A);
+    const Vec4 result = {A.X / len, A.Y / len, A.Z / len, A.W / len};
+#endif
+    return result;
+}
+inline Vec4 NegateVec4(Vec4 A)
+{
+#ifdef USE_SSE
+    const Vec4 result = {.m128 = _mm_mul_ps(A.m128, _mm_set1_ps(-1.0f))};
+#else
+    const Vec4 result = {-A.X, -A.Y, -A.Z, -A.W};
+#endif
+    return result;
+}
+inline bool Vec4Eqls(Vec4 A, Vec4 B, float approximation)
+{
+    return fabsf(B.X - A.X) <= approximation && fabsf(B.Y - A.Y) <= approximation && fabsf(B.Z - A.Z) <= approximation && fabsf(B.W - A.W) <= approximation;
 }
