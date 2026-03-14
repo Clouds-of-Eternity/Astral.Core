@@ -34,7 +34,7 @@ inline void Random_SetSeed(Random *self, uint64_t seed)
     self->state2 = SplitMix64_Next(&initial);
     self->state3 = SplitMix64_Next(&initial);
 }
-inline Random Random_Init(uint64_t seed)
+inline Random Random_FromSeed(uint64_t seed)
 {
     Random result;
     Random_SetSeed(&result, seed);
