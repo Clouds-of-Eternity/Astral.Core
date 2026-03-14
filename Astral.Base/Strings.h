@@ -18,6 +18,11 @@ typedef struct
     size_t length;
 } string;
 
+inline string StringEmpty()
+{
+    const string result = {};
+    return result;
+}
 inline string StringFrom(IAllocator allocator, const char *input)
 {
     const size_t len = strlen(input) + 1;
@@ -34,6 +39,14 @@ inline string StringFromSlice(IAllocator allocator, const char *input, size_t le
     buffer[length] = '\0';
     string result = {allocator, buffer, length + 1};
 
+    return result;
+}
+inline string StringFromLength(IAllocator allocator, size_t lengthNoNullTerminator)
+{
+    char *buffer = (char *)IAllocator_Allocate(allocator, lengthNoNullTerminator);
+    buffer[lengthNoNullTerminator] = '\0';
+    string result = {allocator, buffer, lengthNoNullTerminator + 1};
+    
     return result;
 }
 inline void String_Deinit(string *self)
@@ -332,4 +345,90 @@ inline string ReplaceCharWithString(IAllocator allocator, const char* input, cha
 
     str.buffer = buffer;
     return str;
+}
+
+inline bool StringFindLast(string str, char character, size_t *outIndex)
+{
+    for (int64_t i = (int64_t)str.length - 1; i >= 0; i--)
+    {
+        if (str.buffer[i] == character)
+        {
+            *outIndex = (size_t)i;
+            return true;
+        }
+    }
+    return false;
+}
+inline bool StringFindAnyFromEnd(string str, const char *characters, size_t *outIndex)
+{
+    size_t charLen = strlen(characters);
+
+    for (int64_t i = (int64_t)str.length - 1; i >= 0; i--)
+    {
+        for (size_t j = 0; j < charLen; j++)
+        {
+            if (str.buffer[i] == characters[j])
+            {
+                *outIndex = (size_t)i;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+inline bool StringFindFirst(string str, char character, size_t *outIndex)
+{
+    for (size_t i = 0; i < str.length; i++)
+    {
+        if (str.buffer[i] == character)
+        {
+            *outIndex = i;
+            return true;
+        }
+    }
+    return false;
+}
+inline bool StringFindAnyFromStart(string str, const char *characters, size_t *outIndex)
+{
+    size_t charLen = strlen(characters);
+
+    for (size_t i = 0; i < str.length; i++)
+    {
+        for (size_t j = 0; j < charLen; j++)
+        {
+            if (str.buffer[i] == characters[j])
+            {
+                *outIndex = i;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+inline bool LitFindLast(const char *str, char character, size_t *outIndex)
+{
+    size_t len = strlen(str) + 1;
+    for (int64_t i = (int64_t)len; i >= 0; i--)
+    {
+        if (str[i] == character)
+        {
+            *outIndex = (size_t)i;
+            return true;
+        }
+    }
+    return false;
+}
+inline bool LitFindFirst(const char *str, char character, size_t *outIndex)
+{
+    size_t len = strlen(str);
+    for (size_t i = 0; i < len; i++)
+    {
+        if (str[i] == character)
+        {
+            *outIndex = i;
+            return true;
+        }
+    }
+    return false;
 }

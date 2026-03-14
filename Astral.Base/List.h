@@ -158,15 +158,17 @@ inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
 
     return true;
 }
-inline void List_InsertOverride(List *self, const void *item, int64_t atIndex)
+inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
 {
     EnsureArrayCapacity(atIndex + 1);
 
-    memcpy((uint8_t *)self->ptr + self->itemSize * atIndex, item, self->itemSize);
+    void *intoPos = (uint8_t *)self->ptr + self->itemSize * atIndex;
+    memcpy(intoPos, item, self->itemSize);
     if (self->count < atIndex + 1)
     {
         self->count = atIndex + 1;
     }
+    return intoPos;
 }
 inline void List_Clear(List *self)
 {
@@ -175,6 +177,12 @@ inline void List_Clear(List *self)
 inline void *List_Get(List *self, size_t index)
 {
     return (uint8_t *)self->ptr + index * self->itemSize;
+}
+inline void *List_Pop(List *self)
+{
+    void *result = (uint8_t *)self->ptr + (self->count - 1) * self->itemSize;
+    self->count--;
+    return result;
 }
 inline void List_Deinit(List *self)
 {
