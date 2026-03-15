@@ -438,6 +438,75 @@ inline u32 stringHash(string A)
     return hash;
 }
 
+struct CharSlice
+{
+    const char* buffer;
+    usize length;
+
+    inline CharSlice(string str)
+    {
+        buffer = str.buffer;
+        length = str.length;
+    }
+    inline CharSlice(const char* stringLiteral)
+    {
+        buffer = stringLiteral;
+        length = strlen(stringLiteral);
+    }
+    inline CharSlice(const char* stringLiteral, usize literalLength)
+    {
+        buffer = stringLiteral;
+        length = literalLength;
+    }
+    inline bool operator==(text str)
+    {
+        //use memcmp not strcmp as CharSlice is probably not null terminated
+        return memcmp(buffer, str, length) == 0;
+    }
+    inline bool operator!=(text str)
+    {
+        return memcmp(buffer, str, length) != 0;
+    }
+};
+
+inline string ConcatFromCharSlices(IAllocator allocator, CharSlice* strings, usize length)
+{
+    usize totalLength = 1; //1 to account for the null termination of the concatenated string
+    for (usize i = 0; i < length; i++)
+    {
+        if (strings[i].length > 0)
+        {
+            totalLength += strings[i].length;
+            if (strings[i].buffer[strings[i].length - 1] == '\0')
+            {
+                totalLength -= 1;
+            }
+        }
+    }
+    char *buffer = (char *)allocator.Allocate(totalLength);
+    usize index = 0;
+    for (usize i = 0; i < length; i++)
+    {
+        if (strings[i].length > 0)
+        {
+            usize currentStringLength = strings[i].length;
+            //if the string character is null terminated, remove the null termination before copying
+            if (strings[i].buffer[currentStringLength - 1] == '\0')
+            {
+                currentStringLength -= 1;
+            }
+            memcpy(buffer + index, strings[i].buffer, currentStringLength);
+            index += currentStringLength;
+        }
+    }
+    //add the null termination to our new string
+    buffer[totalLength - 1] = '\0';
+    string result = string(allocator);
+    result.buffer = buffer;
+    result.length = totalLength;
+    return result;
+}
+
 inline u32 charHash(const char *A)
 {
     u32 hash = 7;
