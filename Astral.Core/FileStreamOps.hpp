@@ -41,7 +41,7 @@ struct FileStreamReader
     }
     inline string ReadString(IAllocator allocator)
     {
-        collections::vector<char> chars = collections::vector<char>(GetCAllocator());
+        collections::List<char> chars = collections::List<char>(GetCAllocator());
         while (true)
         {
             int c = fgetc(fs);

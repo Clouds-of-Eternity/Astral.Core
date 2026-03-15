@@ -1,31 +1,31 @@
 #pragma once
-#include "denseset.hpp"
-#include "vector.hpp"
+#include "DenseSet.hpp"
+#include "List.hpp"
 
 namespace collections
 {
     template <typename T>
-    struct sparseset
+    struct SparseSet
     {
         IAllocator allocator;
 
-        collections::denseset<i64> IDtoActualIndex;
-        collections::vector<T> storage;
-        collections::vector<i64> emptySpaces;
+        collections::DenseSet<i64> IDtoActualIndex;
+        collections::List<T> storage;
+        collections::List<i64> emptySpaces;
 
-        inline sparseset()
+        inline SparseSet()
         {
             allocator = {};
-            IDtoActualIndex = collections::denseset<i64>();
-            storage = collections::vector<T>();
-            emptySpaces = collections::vector<i64>();
+            IDtoActualIndex = collections::DenseSet<i64>();
+            storage = collections::List<T>();
+            emptySpaces = collections::List<i64>();
         }
-        inline sparseset(IAllocator alloc)
+        inline SparseSet(IAllocator alloc)
         {
             allocator = alloc;
-            IDtoActualIndex = collections::denseset<i64>(alloc, -1);
-            storage = collections::vector<T>(alloc);
-            emptySpaces = collections::vector<i64>(alloc);
+            IDtoActualIndex = collections::DenseSet<i64>(alloc, -1);
+            storage = collections::List<T>(alloc);
+            emptySpaces = collections::List<i64>(alloc);
         }
         inline void deinit()
         {

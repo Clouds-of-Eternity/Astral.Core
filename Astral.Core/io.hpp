@@ -2,9 +2,9 @@
 
 #include "Linxc.h"
 #include "string.hpp"
-#include "array.hpp"
+#include "Array.hpp"
 #include <stdio.h>
-#include "vector.hpp"
+#include "List.hpp"
 #include "ArenaAllocator.hpp"
 #include "scope.hpp"
 
@@ -15,6 +15,8 @@
 #include <io.h>
 #include <Windows.h>
 #define access _access
+#define stat _stat
+#define S_ISDIR _S_IFDIR
 #endif
 #if POSIX
 #include <unistd.h>
@@ -116,7 +118,7 @@ namespace io
 
             stat(path, &status);
 
-            return (status.st_mode & S_IFDIR) != 0;
+            return (status.st_mode & S_ISDIR) != 0;
         }
         return false;
     }
@@ -219,7 +221,7 @@ namespace io
             return collections::Array<string>();
         }
 
-        collections::vector<string> results = collections::vector<string>(tempAllocator);
+        collections::List<string> results = collections::List<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
@@ -245,7 +247,7 @@ namespace io
 
         return results.ToOwnedArrayWith(allocator);
 #else
-        collections::vector<string> results = collections::vector<string>(tempAllocator);
+        collections::List<string> results = collections::List<string>(tempAllocator);
 
         struct dirent *dent;
         DIR *srcdir = opendir(dirPath);
@@ -294,7 +296,7 @@ namespace io
             return collections::Array<string>();
         }
 
-        collections::vector<string> results = collections::vector<string>(tempAllocator);
+        collections::List<string> results = collections::List<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
@@ -320,7 +322,7 @@ namespace io
 
         return results.ToOwnedArrayWith(allocator);
 #else
-        collections::vector<string> results = collections::vector<string>(tempAllocator);
+        collections::List<string> results = collections::List<string>(tempAllocator);
         struct dirent *dir;
         DIR *srcdir = opendir(dirPath);
         if (srcdir != NULL) 
@@ -357,8 +359,8 @@ namespace io
     {
         ArenaAllocator arena = ArenaAllocator(GetCAllocator());
         IAllocator alloc = arena.AsAllocator();
-        collections::vector<string> results = collections::vector<string>(alloc);
-        collections::vector<string> foldersToProcess = collections::vector<string>(alloc);
+        collections::List<string> results = collections::List<string>(alloc);
+        collections::List<string> foldersToProcess = collections::List<string>(alloc);
         foldersToProcess.Add(string(alloc, dirPath));
 
         while (foldersToProcess.count > 0)

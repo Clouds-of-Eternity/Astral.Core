@@ -1,25 +1,25 @@
 #pragma once
-#include "vector.hpp"
-#include "allocators.hpp"
+#include "List.hpp"
+#include "Allocators.hpp"
 
 inline void *ArenaAllocator_Allocate(void *instance, usize bytes);
 inline void ArenaAllocator_Free(void *instance, void *ptr);
 
 struct ArenaAllocator
 {
-    collections::vector<void*> *ptrs;
+    collections::List<void*> *ptrs;
     IAllocator baseAllocator;
 
     inline ArenaAllocator()
     {
-        ptrs = NULL; //(collections::vector<void *> *)baseAllocator.Allocate(sizeof(collections::vector<void *>)); // collections::vector<void *>();
-        //*ptrs = collections::vector<void *>();
+        ptrs = NULL; //(collections::List<void *> *)baseAllocator.Allocate(sizeof(collections::List<void *>)); // collections::List<void *>();
+        //*ptrs = collections::List<void *>();
         baseAllocator = IAllocator();
     }
     inline ArenaAllocator(IAllocator base)
     {
-        ptrs = (collections::vector<void *> *)base.Allocate(sizeof(collections::vector<void *>)); // collections::vector<void *>();
-        *ptrs = collections::vector<void *>(base);
+        ptrs = (collections::List<void *> *)base.Allocate(sizeof(collections::List<void *>)); // collections::List<void *>();
+        *ptrs = collections::List<void *>(base);
         this->baseAllocator = base;
     }
     inline IAllocator AsAllocator()
@@ -48,7 +48,7 @@ struct ArenaAllocator
 
 void* ArenaAllocator_Allocate(void* instance, usize bytes)
 {
-    collections::vector<void *> *self = (collections::vector<void *> *)instance;
+    collections::List<void *> *self = (collections::List<void *> *)instance;
     void* result = self->allocator.Allocate(bytes);
     self->Add(result);
     return result;

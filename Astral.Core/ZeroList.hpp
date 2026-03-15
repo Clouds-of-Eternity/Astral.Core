@@ -1,16 +1,16 @@
 #pragma once
 
 #include "Linxc.h"
-#include "allocators.hpp"
+#include "Allocators.hpp"
 #include <stdlib.h>
 #include <assert.h>
-#include "array.hpp"
+#include "Array.hpp"
 #include "option.hpp"
 
 namespace collections
 {
     template <typename T>
-    struct vector
+    struct ZeroList
     {
         def_delegate(EqlFunc, bool, T, T);
 
@@ -19,24 +19,28 @@ namespace collections
         usize capacity;
         usize count;
 
-        vector()
+        ZeroList()
         {
             allocator = IAllocator{};
             ptr = NULL;
             capacity = 0;
             count = 0;
         }
-        vector(IAllocator myAllocator)
+        ZeroList(IAllocator myAllocator)
         {
             allocator = myAllocator;
             ptr = NULL;
             capacity = 0;
             count = 0;
         }
-        vector(IAllocator myAllocator, usize minCapacity)
+        ZeroList(IAllocator myAllocator, usize minCapacity)
         {
             this->allocator = myAllocator;
             ptr = (T*)this->allocator.Allocate(sizeof(T) * minCapacity);
+            for (usize i = 0; i < minCapacity; i++)
+            {
+                ptr[i] = T();
+            }
             capacity = minCapacity;
             count = 0;
         }
@@ -52,7 +56,7 @@ namespace collections
 
         void EnsureArrayCapacity(usize minCapacity)
         {
-            if (capacity < minCapacity)
+            if (capacity <= minCapacity)
             {
                 usize newCapacity = capacity;
                 if (newCapacity == 0)
@@ -72,19 +76,23 @@ namespace collections
                     }
                     allocator.Free(ptr);
                 }
+                for (usize i = capacity; i < newCapacity; i++)
+                {
+                    newPtr[i] = T();
+                }
                 ptr = newPtr;
                 capacity = newCapacity;
             }
         }
         void Add(T item)
         {
-            EnsureArrayCapacity(count + 1);
+            EnsureArrayCapacity(count + 2); //+2 for a null buffer
             ptr[count] = item;
             count += 1;
         }
         void Insert(T item, usize at)
         {
-            EnsureArrayCapacity(count + 1);
+            EnsureArrayCapacity(count + 2); //+2 for a null buffer
             for (i64 i = (i64)count; i > (i64)at; i--)
             {
                 ptr[i] = ptr[i - 1];
@@ -94,7 +102,7 @@ namespace collections
         }
         void InsertAll(T* item, usize numItems, usize at)
         {
-            EnsureArrayCapacity(count + numItems);
+            EnsureArrayCapacity(count + numItems + 1); //+1 for a null buffer
             for (i64 i = (i64)count -1 + numItems; i >= at + numItems; i--)
             {
                 ptr[i] = ptr[i - 1];
@@ -107,23 +115,15 @@ namespace collections
         }
         void Clear()
         {
+            for (usize i = 0; i < count; i++)
+            {
+                ptr[i] = T();
+            }
             count = 0;
         }
         T *Get(usize index)
         {
             return &ptr[index];
-        }
-        inline T& operator[](usize index)
-        {
-            return ptr[index];
-        }
-        inline T Pop()
-        {
-            if (count == 0)
-            {
-                return T{};
-            }
-            return ptr[--count];
         }
         void RemoveAt_Swap(usize index)
         {
@@ -133,6 +133,7 @@ namespace collections
             {
                 ptr[index] = ptr[count - 1];
             }
+            ptr[count - 1] = T();
             count -= 1;
         }
         void RemoveAt_Pullback(usize index)
@@ -145,6 +146,7 @@ namespace collections
                     ptr[i] = ptr[i + 1];
                 }
             }
+            ptr[count - 1] = T();
             count -= 1;
         }
         void RemoveManyAt(usize index, usize numRemoves)
@@ -154,20 +156,11 @@ namespace collections
             {
                 ptr[i] = ptr[i + numRemoves];
             }
+            for (usize i = count - numRemoves; i < count; i++)
+            {
+                ptr[i] = T();
+            }
             count -= numRemoves;
-        }
-        collections::vector<T> Clone(IAllocator newAllocator)
-        {
-            if (this->ptr == NULL)
-            {
-                return collections::vector<T>(newAllocator);
-            }
-            collections::vector<T> result = collections::vector<T>(newAllocator, count);
-            for (u32 i = 0; i < count; i++)
-            {
-                result.Add(ptr[i]);
-            }
-            return result;
         }
         collections::Array<T> ToClonedArray(IAllocator newAllocator)
         {
@@ -219,16 +212,16 @@ namespace collections
             {
                 if (eqlFunc(this->ptr[i], value))
                 {
-                    return option<usize>(i);
+                    option<usize>(i);
                 }
             }
             return option<usize>();
         }
         collections::Array<T> ToRefArray()
         {
-            return collections::Array<T>(this->ptr, this->count);
+            return collections::Array<T>(NULL, this->ptr, this->count);
         }
-        void AddAllDeinit(collections::vector<T> *from)
+        void AddAllDeinit(collections::ZeroList<T> *from)
         {
             for (usize i = 0; i < from->count; i++)
             {
@@ -236,28 +229,6 @@ namespace collections
             }
             //memcpy(this->ptr, from->ptr, from->count * sizeof(T));
             from->deinit();
-        }
-        void AddAllDeinit(collections::Array<T> *from)
-        {
-            for (usize i = 0; i < from->length; i++)
-            {
-                Add(from->data[i]);
-            }
-            from->deinit();
-        }
-        void AddAll(collections::vector<T> *from)
-        {
-            for (usize i = 0; i < from->count; i++)
-            {
-                Add(from->ptr[i]);
-            }
-        }
-        void AddAll(collections::Array<T> *from)
-        {
-            for (usize i = 0; i < from->length; i++)
-            {
-                Add(from->data[i]);
-            }
         }
     };
 }

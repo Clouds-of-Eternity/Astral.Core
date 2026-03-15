@@ -2,7 +2,7 @@
 
 #include "Linxc.h"
 #include "string.hpp"
-#include "array.hpp"
+#include "Array.hpp"
 #include "option.hpp"
 #include <math.h>
 

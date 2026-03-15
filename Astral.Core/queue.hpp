@@ -1,11 +1,11 @@
 #pragma once
 #include "Linxc.h"
-#include "allocators.hpp"
+#include "Allocators.hpp"
 
 namespace collections
 {
     template<typename T>
-    struct queue
+    struct Queue
     {
         IAllocator allocator;
         T *items;
@@ -14,7 +14,7 @@ namespace collections
         usize count;
         usize capacity;
 
-        queue()
+        Queue()
         {
             allocator = IAllocator{};
             items = NULL;
@@ -23,7 +23,7 @@ namespace collections
             count = 0;
             capacity = 0;
         }
-        queue(IAllocator allocator)
+        Queue(IAllocator allocator)
         {
             this->allocator = allocator;
             items = NULL;
@@ -75,7 +75,7 @@ namespace collections
             }
         }
 
-        T* Enqueue(T item)
+        T* EnQueue(T item)
         {
             EnsureArrayCapacity(count + 1);
 
@@ -86,7 +86,7 @@ namespace collections
             count++;
             return result;
         }
-        T Dequeue()
+        T DeQueue()
         {
             if (count == 0)
             {

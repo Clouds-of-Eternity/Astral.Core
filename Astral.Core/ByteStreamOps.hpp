@@ -1,9 +1,9 @@
 #pragma once
-#include "vector.hpp"
+#include "List.hpp"
 #include "io.hpp"
 #include "UTF8Utils.hpp"
 
-typedef collections::vector<u8> ByteStream;
+typedef collections::List<u8> ByteStream;
 
 struct ByteStreamReader
 {

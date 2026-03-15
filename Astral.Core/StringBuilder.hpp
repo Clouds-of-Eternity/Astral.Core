@@ -1,6 +1,6 @@
 #pragma once
 #include "string.hpp"
-#include "list.hpp"
+#include "ZeroList.hpp"
 #include "UTF8Utils.hpp"
 #include "stdarg.h"
 
@@ -17,17 +17,17 @@
 struct StringBuilder
 {
     IAllocator allocator;
-    collections::list<char> buffer;
+    collections::ZeroList<char> buffer;
 
     inline StringBuilder()
     {
         allocator = IAllocator{};
-        buffer = collections::list<char>();
+        buffer = collections::ZeroList<char>();
     }
     inline StringBuilder(IAllocator allocator)
     {
         this->allocator = allocator;
-        buffer = collections::list<char>(allocator);
+        buffer = collections::ZeroList<char>(allocator);
     }
     inline StringBuilder &Append(text text)
     {

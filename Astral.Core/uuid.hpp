@@ -1,8 +1,10 @@
 #pragma once
 #include "random.hpp"
 #include "hash.hpp"
-#include "allocators.hpp"
+#include "Allocators.hpp"
 #include "string.hpp"
+
+#define UUID_STR_LEN 37
 
 def_delegate(RandomNextU64, u64);
 
@@ -12,13 +14,13 @@ struct uuid
 
     inline uuid()
     {
-        ((u64*)byte)[0] = 0;
-        ((u64*)byte)[1] = 0;
+        ((u64 *)byte)[0] = 0;
+        ((u64 *)byte)[1] = 0;
     }
     inline uuid(u64 num1, u64 num2)
     {
-        ((u64*)byte)[0] = num1;
-        ((u64*)byte)[1] = num2;
+        ((u64 *)byte)[0] = num1;
+        ((u64 *)byte)[1] = num2;
     }
     // First hashes the string input, then creates a random instance from it,
     // then generates a UUID from the random. This should give enough entropy for the resulting
@@ -29,17 +31,17 @@ struct uuid
         Random tempRand = Random::init(seed);
         return New(&tempRand);
     }
-    inline static uuid NewFromStringHashFunction(text stringInput, u32 (customHashFunction)(const u8 *, usize))
+    inline static uuid NewFromStringHashFunction(text stringInput, u32(customHashFunction)(const u8 *, usize))
     {
         u32 seed = customHashFunction((const u8 *)stringInput, strlen(stringInput));
         Random tempRand = Random::init(seed);
         return New(&tempRand);
     }
 
-    inline static uuid New(Random* random)
+    inline static uuid New(Random *random)
     {
         uuid result;
-        u64* asPointer = (u64*)&result;
+        u64 *asPointer = (u64 *)&result;
         asPointer[0] = random->Next();
         asPointer[1] = random->Next();
 
@@ -51,7 +53,7 @@ struct uuid
     inline static uuid New(RandomNextU64 randomNextFunction)
     {
         uuid result;
-        u64* asPointer = (u64*)&result;
+        u64 *asPointer = (u64 *)&result;
         asPointer[0] = randomNextFunction();
         asPointer[1] = randomNextFunction();
 
@@ -119,28 +121,28 @@ struct uuid
 
     inline bool operator==(uuid other)
     {
-        u64* asPointer = (u64*)this;
-        u64* otherAsPointer = (u64*)&other;
+        u64 *asPointer = (u64 *)this;
+        u64 *otherAsPointer = (u64 *)&other;
         return asPointer[0] == otherAsPointer[0] && asPointer[1] == otherAsPointer[1];
     }
     inline bool operator!=(uuid other)
     {
-        u64* asPointer = (u64*)this;
-        u64* otherAsPointer = (u64*)&other;
+        u64 *asPointer = (u64 *)this;
+        u64 *otherAsPointer = (u64 *)&other;
         return asPointer[0] != otherAsPointer[0] || asPointer[1] != otherAsPointer[1];
     }
     inline bool Equals(uuid other)
     {
-        //lol
-        u64* asPointer = (u64*)byte;
-        u64* otherAsPointer = (u64*)other.byte;
+        // lol
+        u64 *asPointer = (u64 *)byte;
+        u64 *otherAsPointer = (u64 *)other.byte;
         return asPointer[0] == otherAsPointer[0] && asPointer[1] == otherAsPointer[1];
     }
     inline u32 GetHashCode()
     {
         return Murmur3(byte, 16);
     }
-    inline void GetAsString(char* buffer)
+    inline void GetAsString(char *buffer)
     {
         buffer[8] = '-';
         buffer[13] = '-';
@@ -156,8 +158,10 @@ struct uuid
         //     buffer[positions[i] + 1] = hex[byte[i] & 0xf];
         // }
 
-//manual for loop unrolling go
-#define SET_BUFFER(i) buffer[positions[i]] = hex[byte[i] >> 4]; buffer[positions[i] + 1] = hex[byte[i] & 0xf]
+// manual for loop unrolling go
+#define SET_BUFFER(i)                         \
+    buffer[positions[i]] = hex[byte[i] >> 4]; \
+    buffer[positions[i] + 1] = hex[byte[i] & 0xf]
 
         SET_BUFFER(0);
         SET_BUFFER(1);
@@ -181,8 +185,8 @@ struct uuid
 
     inline string ToString(IAllocator allocator)
     {
-        char buffers[37];
-        buffers[36] = '\0';
+        char buffers[UUID_STR_LEN];
+        buffers[UUID_STR_LEN - 1] = '\0';
         GetAsString(buffers);
         return string(allocator, buffers);
     }
@@ -197,6 +201,6 @@ inline bool UuidEql(uuid A, uuid B)
 }
 
 #define UUID_STRINGIFY(uuidVarName, resultVarName) \
-    char resultVarName[37];                        \
-    resultVarName[36] = 0;                         \
+    char resultVarName[UUID_STR_LEN];              \
+    resultVarName[UUID_STR_LEN - 1] = 0;           \
     uuidVarName.GetAsString(resultVarName);

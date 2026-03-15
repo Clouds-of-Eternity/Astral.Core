@@ -3,7 +3,7 @@
 #define HASHMAP_MAX_WEIGHT 0.8f
 
 #include "Linxc.h"
-#include "vector.hpp"
+#include "List.hpp"
 #include <stdio.h>
 
 #ifndef foreach
@@ -13,7 +13,7 @@
 namespace collections
 {
     template <typename K, typename V>
-    struct hashmap
+    struct HashMap
     {
         IAllocator allocator;
         struct Entry
@@ -30,17 +30,17 @@ namespace collections
         struct Bucket
         {
             bool initialized;
-            collections::vector<Entry> entries;
+            collections::List<Entry> entries;
 
             Bucket()
             {
                 initialized = false;
-                entries = collections::vector<Entry>();
+                entries = collections::List<Entry>();
             }
             Bucket(IAllocator allocator)
             {
                 initialized = false;
-                entries = collections::vector<Entry>(allocator);
+                entries = collections::List<Entry>(allocator);
             }
         };
         def_delegate(HashFunc, u32, K);
@@ -54,7 +54,7 @@ namespace collections
         usize filledBuckets;
         usize count;
 
-        hashmap()
+        HashMap()
         {
             this->allocator = IAllocator{};
             this->hashFunc = NULL;
@@ -64,7 +64,7 @@ namespace collections
             this->bucketsCount = 32;
             this->buckets = NULL;
         }
-        hashmap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc)
+        HashMap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc)
         {
             this->allocator = myAllocator;
             this->hashFunc = hashFunction;
@@ -78,7 +78,7 @@ namespace collections
                 this->buckets[i] = Bucket(this->allocator);
             }
         }
-        hashmap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc, u32 bucketsCount)
+        HashMap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc, u32 bucketsCount)
         {
             this->allocator = myAllocator;
             this->hashFunc = hashFunction;
@@ -285,9 +285,9 @@ namespace collections
             return false;
         }
 
-        hashmap<K, V> Clone(IAllocator newAllocator)
+        HashMap<K, V> Clone(IAllocator newAllocator)
         {
-            hashmap<K, V> result = hashmap<K, V>(newAllocator, this->hashFunc, this->eqlFunc);
+            HashMap<K, V> result = HashMap<K, V>(newAllocator, this->hashFunc, this->eqlFunc);
 
             for (usize i = 0; i < bucketsCount; i++)
             {
@@ -305,12 +305,12 @@ namespace collections
 
         struct Iterator
         {
-            hashmap<K, V> *map;
+            HashMap<K, V> *map;
             usize i;
             usize j;
             bool completed;
 
-            Iterator(hashmap<K, V> *map)
+            Iterator(HashMap<K, V> *map)
             {
                 this->map = map;
                 i = 0;

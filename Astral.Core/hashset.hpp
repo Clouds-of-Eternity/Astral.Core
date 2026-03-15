@@ -3,7 +3,7 @@
 #define HASHSET_MAX_WEIGHT 0.8f
 
 #include "Linxc.h"
-#include "vector.hpp"
+#include "List.hpp"
 
 #ifndef foreach
 #define foreach(instance, iterator) for (auto instance = iterator.Next(); !iterator.completed; instance = iterator.Next())
@@ -12,13 +12,13 @@
 namespace collections
 {
     template <typename T>
-    struct hashset
+    struct HashSet
     {
         struct Bucket
         {
             bool initialized;
             u32 keyHash;
-            collections::vector<T> entries;
+            collections::List<T> entries;
         };
         def_delegate(HashFunc, u32, T);
         def_delegate(EqlFunc, bool, T, T);
@@ -32,7 +32,7 @@ namespace collections
         usize filledBuckets;
         usize count;
 
-        hashset()
+        HashSet()
         {
             this->allocator = IAllocator{};
             this->hashFunc = NULL;
@@ -42,7 +42,7 @@ namespace collections
             this->bucketsCount = 32;
             this->buckets = NULL;
         }
-        hashset(IAllocator allocator, HashFunc hashFunction, EqlFunc eqlFunc)
+        HashSet(IAllocator allocator, HashFunc hashFunction, EqlFunc eqlFunc)
         {
             this->allocator = allocator;
             this->hashFunc = hashFunction;
@@ -80,7 +80,7 @@ namespace collections
 
                 for (usize i = 0; i < newSize; i++)
                 {
-                    newBuckets[i].entries = collections::vector<T>(this->allocator);
+                    newBuckets[i].entries = collections::List<T>(this->allocator);
                     newBuckets[i].initialized = false;
                 }
                 for (usize i = 0; i < bucketsCount; i++)
@@ -113,7 +113,7 @@ namespace collections
             {
                 buckets[index].initialized = true;
                 buckets[index].keyHash = hash;
-                buckets[index].entries = collections::vector<T>(allocator);
+                buckets[index].entries = collections::List<T>(allocator);
 
                 filledBuckets++;
             }
@@ -211,12 +211,12 @@ namespace collections
 
         struct Iterator
         {
-            hashset<T> *set;
+            HashSet<T> *set;
             usize i;
             usize j;
             bool completed;
 
-            Iterator(hashset<T> *set)
+            Iterator(HashSet<T> *set)
             {
                 this->set = set;
                 i = 0;

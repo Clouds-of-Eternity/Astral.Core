@@ -1,23 +1,22 @@
 #pragma once
 #include "string.hpp"
-#include "array.hpp"
+#include "Array.hpp"
 #include "ArenaAllocator.hpp"
-#include "denseset.hpp"
+#include "DenseSet.hpp"
 
 struct StringRentalBuffer
 {
-    ArenaAllocator arena;
-    collections::denseset<collections::vector<string>> stringPool;
+    IAllocator allocator;
+    collections::DenseSet<collections::List<string>> stringPool;
 
     inline StringRentalBuffer()
     {
-        arena = ArenaAllocator();
-        stringPool = collections::denseset<collections::vector<string>>();
+        stringPool = collections::DenseSet<collections::List<string>>();
     }
     inline StringRentalBuffer(IAllocator allocator)
     {
-        arena = ArenaAllocator(allocator);
-        stringPool = collections::denseset<collections::vector<string>>(arena.AsAllocator(), collections::vector<string>());
+        this->allocator = allocator;
+        stringPool = collections::DenseSet<collections::List<string>>(allocator, collections::List<string>());
     }
     inline string Rent(text str, usize lengthNoNullTerminator)
     {
@@ -35,11 +34,11 @@ struct StringRentalBuffer
             size *= 2;
             index++;
         }
-        collections::vector<string> *stack = stringPool.Get(index);
+        collections::List<string> *stack = stringPool.Get(index);
         string result;
         if (stack == NULL || stack->ptr == NULL || stack->count == 0)
         {
-            result = string(arena.AsAllocator(), size + 1);
+            result = string(allocator, size + 1);
         }
         else
         {
@@ -66,15 +65,26 @@ struct StringRentalBuffer
             size *= 2;
             index++;
         }
-        collections::vector<string> *stack = stringPool.Get(index);
+        collections::List<string> *stack = stringPool.Get(index);
         if (stack == NULL || stack->ptr == NULL)
         {
-            stack = stringPool.Insert(index, collections::vector<string>(arena.AsAllocator()));
+            stack = stringPool.Insert(index, collections::List<string>(allocator));
         }
         stack->Add(str);
     }
     inline void deinit()
     {
-        arena.deinit();
+        for (u32 i = 0; i < stringPool.capacity; i++)
+        {
+            if (stringPool[i].ptr != NULL)
+            {
+                for (u32 j = 0; j < stringPool[j].count; j++)
+                {
+                    stringPool[i].ptr[j].deinit();
+                }
+                stringPool[i].deinit();
+            }
+        }
+        stringPool.deinit();
     }
 };

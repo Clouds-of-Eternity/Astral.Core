@@ -2,7 +2,7 @@
 #define JSON2_HPP
 
 #include "string.hpp"
-#include "allocators.hpp"
+#include "Allocators.hpp"
 #include "ctype.h"
 #include "stdio.h"
 #include "ByteStreamOps.hpp"
@@ -236,7 +236,7 @@ namespace Json
             {
                 return string();
             }
-            collections::vector<CharSlice> charSlices = collections::vector<CharSlice>(GetCAllocator());
+            collections::List<CharSlice> charSlices = collections::List<CharSlice>(GetCAllocator());
             usize start = 0;
             char *buffer = (char *)data;
             for (usize i = 0; i < dataLength - 1; i++)
@@ -332,7 +332,7 @@ namespace Json
     {
         FILE *stream;
         JsonTokenType previousToken;
-        collections::vector<JsonTokenType> indentTypes;
+        collections::List<JsonTokenType> indentTypes;
         bool shouldIndent;
         bool isBinary;
 
@@ -341,7 +341,7 @@ namespace Json
             stream = fileStream;
             previousToken = JsonToken_Invalid;
             shouldIndent = writerShouldIndent;
-            indentTypes = collections::vector<JsonTokenType>(allocator);
+            indentTypes = collections::List<JsonTokenType>(allocator);
             isBinary = false;
         }
         inline void SaveAndCloseFile()
@@ -906,7 +906,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             IAllocator cAllocator = GetCAllocator();
 
-            collections::vector<JsonProperty> arrayMembers = collections::vector<JsonProperty>(cAllocator);
+            collections::List<JsonProperty> arrayMembers = collections::List<JsonProperty>(cAllocator);
             tokenizer->Next();
             //empty array
             if (tokenizer->PeekNext().tokenType == JsonToken_RBracket)
@@ -957,7 +957,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             *result = JsonElement();
             tokenizer->Next();
 
-            collections::vector<JsonProperty> childObjectsOrdered = collections::vector<JsonProperty>(GetCAllocator());
+            collections::List<JsonProperty> childObjectsOrdered = collections::List<JsonProperty>(GetCAllocator());
 
             while (true)
             {

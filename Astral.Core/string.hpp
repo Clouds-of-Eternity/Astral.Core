@@ -2,13 +2,14 @@
 
 #include "Linxc.h"
 #include "stdlib.h"
-#include "allocators.hpp"
+#include "Allocators.hpp"
 #include "string.h"
 #include "option.hpp"
-#include "array.hpp"
+#include "Array.hpp"
+#include "stdarg.h"
 #include "stdio.h"
 #include "math.h"
-#include "vector.hpp"
+#include "List.hpp"
 #include <wchar.h>
 
 inline const char* digits2(usize value)
@@ -75,14 +76,6 @@ struct string
             buffer = NULL;
             length = 0;
         }
-    }
-    inline bool eql(const char *other)
-    {
-        if (this->buffer == NULL || other == NULL)
-        {
-            return this->buffer == other;
-        }
-        return strcmp(buffer, other) == 0;
     }
 
     inline string *Prepend(const char *other)
@@ -404,36 +397,20 @@ struct string
         this->Append(other);
         return *this;
     }
-};
+    inline static string Format(IAllocator allocator, const char *input, ...)
+    {
+        va_list args;
+        va_start(args, input);
+        i32 requiredBytes = vsnprintf(NULL, 0, input, args);
+        requiredBytes += 1;
 
-struct CharSlice
-{
-    const char* buffer;
-    usize length;
+        char *buffer = (char *)allocator.Allocate(requiredBytes);
+        vsnprintf(buffer, requiredBytes, input, args);
 
-    inline CharSlice(string str)
-    {
-        buffer = str.buffer;
-        length = str.length;
-    }
-    inline CharSlice(const char* stringLiteral)
-    {
-        buffer = stringLiteral;
-        length = strlen(stringLiteral);
-    }
-    inline CharSlice(const char* stringLiteral, usize literalLength)
-    {
-        buffer = stringLiteral;
-        length = literalLength;
-    }
-    inline bool operator==(text str)
-    {
-        //use memcmp not strcmp as CharSlice is probably not null terminated
-        return memcmp(buffer, str, length) == 0;
-    }
-    inline bool operator!=(text str)
-    {
-        return memcmp(buffer, str, length) != 0;
+        va_end(args);
+
+        string result = string(allocator, buffer, requiredBytes);
+        return result;
     }
 };
 
@@ -586,7 +563,7 @@ inline string ReplaceCharWithString(IAllocator allocator, const char* input, cha
 inline collections::Array<string> SplitString(IAllocator allocator, const char* input, char toSplitOn)
 {
     IAllocator defaultAllocator = GetCAllocator();
-    collections::vector<string> results = collections::vector<string>(defaultAllocator);
+    collections::List<string> results = collections::List<string>(defaultAllocator);
 
     usize lastIndex = 0;
     usize i = 0;
@@ -611,43 +588,6 @@ inline collections::Array<string> SplitString(IAllocator allocator, const char* 
     return results.ToOwnedArrayWith(allocator);
 }
 
-inline string ConcatFromCharSlices(IAllocator allocator, CharSlice* strings, usize length)
-{
-    usize totalLength = 1; //1 to account for the null termination of the concatenated string
-    for (usize i = 0; i < length; i++)
-    {
-        if (strings[i].length > 0)
-        {
-            totalLength += strings[i].length;
-            if (strings[i].buffer[strings[i].length - 1] == '\0')
-            {
-                totalLength -= 1;
-            }
-        }
-    }
-    char *buffer = (char *)allocator.Allocate(totalLength);
-    usize index = 0;
-    for (usize i = 0; i < length; i++)
-    {
-        if (strings[i].length > 0)
-        {
-            usize currentStringLength = strings[i].length;
-            //if the string character is null terminated, remove the null termination before copying
-            if (strings[i].buffer[currentStringLength - 1] == '\0')
-            {
-                currentStringLength -= 1;
-            }
-            memcpy(buffer + index, strings[i].buffer, currentStringLength);
-            index += currentStringLength;
-        }
-    }
-    //add the null termination to our new string
-    buffer[totalLength - 1] = '\0';
-    string result = string(allocator);
-    result.buffer = buffer;
-    result.length = totalLength;
-    return result;
-}
 inline i64 StringToI64(const char* buffer, usize length)
 {
     i64 result = 0;

@@ -1,6 +1,6 @@
 #pragma once
 #include "Linxc.h"
-#include "array.hpp"
+#include "Array.hpp"
 #include "assert.h"
 #include "Maths/Util.hpp"
 

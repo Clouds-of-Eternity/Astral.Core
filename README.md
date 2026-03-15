@@ -14,7 +14,7 @@ Astral.Core does not utilise the C++ standard library, and works on Windows and 
 
 ## Functionality
 * Vectors
-* Unordered hashmaps and hashsets
+* Unordered HashMaps and hashsets
 * Heap arrays
 * Arithmetic types: Matrices, vectors, etc (Currently only supports SSE SIMD, which is not enabled by default)
 * Allocators (Arena Allocator and CAllocator)
@@ -28,5 +28,5 @@ Astral.Core does not utilise the C++ standard library, and works on Windows and 
 * Lists (Identical to vectors except they 'zero' initialize using the default constructor)
 * IO functions (Read file, check file existence, create directories, iterate files in directories)
 * Path functions (Get path extension, swap extension, get directory, get file name)
-* FIFO queues
+* FIFO Queues
 * Sorting (TimSort and BitonicSort)

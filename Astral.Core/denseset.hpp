@@ -1,49 +1,44 @@
 #pragma once
 #include "Linxc.h"
-#include "allocators.hpp"
+#include "Allocators.hpp"
 #include "stdio.h"
 
 namespace collections
 {
     template <typename T>
-    struct denseset
+    struct DenseSet
     {
         IAllocator allocator;
         T *ptr;
         T defaultValue;
         usize capacity;
 
-        denseset()
+        inline DenseSet()
         {
             allocator = IAllocator{};
             ptr = NULL;
             defaultValue = T{};
             capacity = 0;
         }
-        denseset(IAllocator myAllocator)
+        inline DenseSet(IAllocator myAllocator)
         {
             allocator = myAllocator;
             ptr = NULL;
             defaultValue = T{};
             capacity = 0;
         }
-        // denseset(IAllocator myAllocator, usize minCapacity)
-        // {
-        //     this->allocator = myAllocator;
-        //     ptr = NULL;
-        //     capacity = 0;
-        //     defaultValue = T{};
-        //     //capacity = minCapacity;
-        //     EnsureArrayCapacity(minCapacity);
-        // }
-        denseset(IAllocator myAllocator, T defaultValue)
+        inline DenseSet(IAllocator myAllocator, T defaultValue)
         {
             allocator = myAllocator;
             ptr = NULL;
             this->defaultValue = defaultValue;
             capacity = 0;
         }
-        void deinit()
+        inline T& operator[](usize index)
+        {
+            return ptr[index];
+        }
+        inline void deinit()
         {
             if (ptr != NULL && this->allocator.allocFunction != NULL)
             {
@@ -51,7 +46,7 @@ namespace collections
             }
             capacity = 0;
         }
-        void EnsureArrayCapacity(usize minCapacity)
+        inline void EnsureArrayCapacity(usize minCapacity)
         {
             if (capacity <= minCapacity || ptr == NULL)
             {
@@ -91,13 +86,13 @@ namespace collections
                 capacity = newCapacity;
             }
         }
-        T* Insert(usize index, T value)
+        inline T* Insert(usize index, T value)
         {
             EnsureArrayCapacity(index);
             ptr[index] = value;
             return &ptr[index];
         }
-        T *Get(usize index)
+        inline T *Get(usize index)
         {
             if (index >= capacity)
             {
@@ -106,7 +101,7 @@ namespace collections
             T *result = &ptr[index];
             return result;
         }
-        T GetCopyOr(usize index, T valueOnNotFound)
+        inline T GetCopyOr(usize index, T valueOnNotFound)
         {
             if (index >= capacity)
             {
@@ -114,7 +109,7 @@ namespace collections
             }
             return ptr[index];
         }
-        void Remove(u32 index)
+        inline void Remove(u32 index)
         {
             if (index <= capacity)
             {

@@ -2,7 +2,7 @@
 #include "Linxc.h"
 #include "stdio.h"
 #include "string.hpp"
-#include "array.hpp"
+#include "Array.hpp"
 
 template <typename T>
 inline void Binary_WriteData(FILE *fs, const T input)

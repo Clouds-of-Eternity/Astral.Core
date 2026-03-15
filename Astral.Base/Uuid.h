@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 #include "./Hash.h"
 #include "./Random.h"
 #include "./Strings.h"
@@ -403,3 +404,4 @@ inline string UuidToString(Uuid self, IAllocator allocator)
     char resultVarName[UUID_STR_LEN];              \
     resultVarName[UUID_STR_LEN - 1] = 0;           \
     UuidGetAsString(uuidVarName, resultVarName);
+#define UUID_ISEMPTY(uuidVarName) UuidEqls(uuidVarName, Uuid_Empty())

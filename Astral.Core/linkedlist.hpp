@@ -1,45 +1,45 @@
 #pragma once
-#include "allocators.hpp"
+#include "Allocators.hpp"
 
 namespace collections
 {
 	template<typename T>
-	struct linkedlist;
+	struct LinkedList;
 	template<typename T>
-	struct linkednode;
+	struct LinkedNode;
 
 	template<typename T>
-	struct linkednode
+	struct LinkedNode
 	{
-		linkednode<T>* next;
-		linkednode<T>* prev;
-		linkedlist* list;
+		LinkedNode<T>* next;
+		LinkedNode<T>* prev;
+		LinkedList* list;
 		T value;
 	};
 
 	template<typename T>
-	struct linkedlist
+	struct LinkedList
 	{
 		IAllocator allocator;
-		linkednode<T>* first;
-		linkednode<T>* last;
+		LinkedNode<T>* first;
+		LinkedNode<T>* last;
 		usize count;
 
-		linkedlist()
+		LinkedList()
 		{
 			allocator = IAllocator{};
 			first = NULL;
 			last = NULL;
 			count = 0;
 		}
-		linkedlist(IAllocator myAllocator)
+		LinkedList(IAllocator myAllocator)
 		{
 			allocator = myAllocator;
 			first = NULL;
 			last = NULL;
 			count = 0;
 		}
-		bool AddListAfter(linkednode<T>* after, linkedlist<T>* listToAdd)
+		bool AddListAfter(LinkedNode<T>* after, LinkedList<T>* listToAdd)
 		{
 			//operation can only continue if listToAdd has objects within, and the allocator is the same instance
 			if (listToAdd->allocator != this->allocator || listToAdd->first == NULL || listToAdd->last == NULL)
@@ -47,14 +47,14 @@ namespace collections
 				return false;
 			}
 			//transfer list ownership
-			linkednode<T>* node = listToAdd->first;
+			LinkedNode<T>* node = listToAdd->first;
 			while (node != NULL)
 			{
 				node->list = this;
 				node = node->next;
 			}
 
-			linkednode<T>* originalNext = after->next;
+			LinkedNode<T>* originalNext = after->next;
 			after->next = listToAdd->first;
 			listToAdd->first->prev = after;
 			originalNext->prev = listToAdd->last;
@@ -66,12 +66,12 @@ namespace collections
 			listToAdd->last = NULL;
 			return true;
 		}
-		linkednode<T>* AddBefore(T item, linkednode<T>* before)
+		LinkedNode<T>* AddBefore(T item, LinkedNode<T>* before)
 		{
-			linkednode<T>* node = (linkednode<T>*)allocator.Allocate(sizeof(linkednode<T>));
+			LinkedNode<T>* node = (LinkedNode<T>*)allocator.Allocate(sizeof(LinkedNode<T>));
 			node->list = this;
 			node->value = item;
-			linkednode<T>* originalPrev = before->prev;
+			LinkedNode<T>* originalPrev = before->prev;
 			before->prev = node;
 			node->next = before;
 			node->prev = originalPrev;
@@ -86,12 +86,12 @@ namespace collections
 			count += 1;
 			return node;
 		}
-		linkednode<T>* AddAfter(T item, linkednode<T>* after)
+		LinkedNode<T>* AddAfter(T item, LinkedNode<T>* after)
 		{
-			linkednode<T>* node = (linkednode<T>*)allocator.Allocate(sizeof(linkednode<T>));
+			LinkedNode<T>* node = (LinkedNode<T>*)allocator.Allocate(sizeof(LinkedNode<T>));
 			node->list = this;
 			node->value = item;
-			linkednode<T>* originalNext = after->next;
+			LinkedNode<T>* originalNext = after->next;
 			after->next = node;
 			node->prev = after;
 			node->next = originalNext;
@@ -106,13 +106,13 @@ namespace collections
 			count += 1;
 			return node;
 		}
-		linkednode<T>* Append(T item)
+		LinkedNode<T>* Append(T item)
 		{
 			if (this->last != NULL)
 			{
 				return AddAfter(item, this->last);
 			}
-			linkednode<T>* node = (linkednode<T>*)allocator.Allocate(sizeof(linkednode<T>));
+			LinkedNode<T>* node = (LinkedNode<T>*)allocator.Allocate(sizeof(LinkedNode<T>));
 			node->list = this;
 			node->value = item;
 			node->prev = NULL;
@@ -122,13 +122,13 @@ namespace collections
 			count += 1;
 			return node;
 		}
-		linkednode<T>* Prepend(T item)
+		LinkedNode<T>* Prepend(T item)
 		{
 			if (this->first != NULL)
 			{
 				return AddBefore(item, this->first);
 			}
-			linkednode<T>* node = (linkednode<T>*)allocator.Allocate(sizeof(linkednode<T>));
+			LinkedNode<T>* node = (LinkedNode<T>*)allocator.Allocate(sizeof(LinkedNode<T>));
 			node->list = this;
 			node->value = item;
 			node->prev = NULL;
@@ -138,7 +138,7 @@ namespace collections
 			count += 1;
 			return node;
 		}
-		void Remove(linkednode<T>* node, bool dispose = true)
+		void Remove(LinkedNode<T>* node, bool dispose = true)
 		{
 			if (node->next == NULL)
 			{
@@ -165,10 +165,10 @@ namespace collections
 		}
 		void Clear_Free()
 		{
-			linkednode<T>* node = this->first;
+			LinkedNode<T>* node = this->first;
 			while (node != NULL)
 			{
-				linkednode<T>* next = node->next;
+				LinkedNode<T>* next = node->next;
 				this->allocator.Free(node);
 				node = next;
 			}

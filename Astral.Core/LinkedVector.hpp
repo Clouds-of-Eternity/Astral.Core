@@ -1,5 +1,5 @@
 #pragma once
-#include "vector.hpp"
+#include "List.hpp"
 
 namespace collections
 {
@@ -21,8 +21,8 @@ namespace collections
 	struct LinkedVector
 	{
 		IAllocator allocator;
-		collections::vector<LinkedVecNode<T>> elements;
-		collections::vector<i32> freeIndices;
+		collections::List<LinkedVecNode<T>> elements;
+		collections::List<i32> freeIndices;
 		i32 firstIndex;
 		i32 lastIndex;
 		usize count;
@@ -30,8 +30,8 @@ namespace collections
 		LinkedVector()
 		{
 			allocator = IAllocator{};
-			elements = collections::vector<LinkedVecNode<T>>();
-			freeIndices = collections::vector<i32>();
+			elements = collections::List<LinkedVecNode<T>>();
+			freeIndices = collections::List<i32>();
 			firstIndex = -1;
 			lastIndex = -1;
 			count = 0;
@@ -39,8 +39,8 @@ namespace collections
 		LinkedVector(IAllocator myAllocator)
 		{
 			allocator = myAllocator;
-			elements = collections::vector<LinkedVecNode<T>>(allocator);
-			freeIndices = collections::vector<i32>(allocator);
+			elements = collections::List<LinkedVecNode<T>>(allocator);
+			freeIndices = collections::List<i32>(allocator);
 			firstIndex = -1;
 			lastIndex = -1;
 			count = 0;
