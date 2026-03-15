@@ -1,6 +1,6 @@
 #pragma once
-#include "random.hpp"
-#include "hash.hpp"
+#include "Random.hpp"
+#include "Hash.hpp"
 #include "Allocators.hpp"
 #include "string.hpp"
 

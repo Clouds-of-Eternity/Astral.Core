@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "List.hpp"
 #include "ArenaAllocator.hpp"
-#include "scope.hpp"
+#include "Scope.hpp"
 
 #include <sys/stat.h>   // For stat().
 
