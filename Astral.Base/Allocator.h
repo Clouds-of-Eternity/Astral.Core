@@ -1,5 +1,6 @@
 #pragma once
 #include "Astral.Base.h"
+#include <stdlib.h>
 
 #define KiB_SIZE 1024
 #define MiB_SIZE (KiB_SIZE * 1024)
@@ -14,9 +15,6 @@ typedef struct IAllocator
     freeFunc freeFunction;
 } IAllocator;
 
-#ifndef NO_LIBC
-
-#include <stdlib.h>
 inline void* CAllocator_Allocate(void* instance, size_t bytes)
 {
     return malloc(bytes);
@@ -29,8 +27,8 @@ inline void CAllocator_Free(void* instance, void* ptr)
 inline IAllocator GetCAllocator()
 {
     IAllocator result = {NULL, &CAllocator_Allocate, &CAllocator_Free};
+    return result;
 }
-#endif
 
 
 inline IAllocator IAllocator_Make(void *instance, allocFunc allocateFunc, freeFunc freeFunc)

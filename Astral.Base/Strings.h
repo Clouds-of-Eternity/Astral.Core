@@ -1,6 +1,7 @@
 #pragma once
-#include "Array.h"
-#include "List.h"
+#include "./Array.h"
+#include "./List.h"
+#include "./Hash.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>

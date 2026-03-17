@@ -210,6 +210,8 @@ inline bool HashMap_Contains(HashMap *self, const void *key)
     return HashMap_Get(self, key) != NULL;
 }
 
+#define HM_GET(type, hashmapPtr, keyPtr) *(type *)HashMap_Get(hashmapPtr, keyPtr)
+
 typedef struct HashMapIterator
 {
     HashMap *map;
