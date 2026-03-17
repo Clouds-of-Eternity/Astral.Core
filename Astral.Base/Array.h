@@ -2,7 +2,7 @@
 #include "Allocator.h"
 #include <string.h>
 
-typedef struct
+typedef struct Array
 {
     IAllocator allocator;
     void *ptr;

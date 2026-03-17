@@ -7,7 +7,7 @@
 #define READ_FILE_BUFFER_SIZE 1024
 #endif
 
-typedef struct
+typedef struct ByteStreamReader
 {
     const uint8_t *stream;
     size_t position;
@@ -98,7 +98,7 @@ inline string ByteStreamReader_GetString(ByteStreamReader *self, IAllocator allo
 }
 #define BS_READ(stream, type) *(const type *)ByteStreamReader_Read(stream, sizeof(type))
 
-typedef struct
+typedef struct ByteStreamWriter
 {
     List bytes;
 } ByteStreamWriter;

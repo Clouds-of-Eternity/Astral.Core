@@ -1,7 +1,7 @@
 #pragma once
 #include "List.h"
 
-typedef struct
+typedef struct ArenaAllocator
 {
     List *ptrs;
 } ArenaAllocator;

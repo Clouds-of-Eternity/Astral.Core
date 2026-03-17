@@ -4,7 +4,7 @@
 #include "assert.h"
 #include <math.h>
 
-typedef struct
+typedef struct SplitMix64
 {
     uint64_t state;
 } SplitMix64;
@@ -18,7 +18,7 @@ inline uint64_t SplitMix64_Next(SplitMix64 *self)
     return z ^ (z >> 31);
 }
 
-typedef struct
+typedef struct Random
 {
     uint64_t state0;
     uint64_t state1;

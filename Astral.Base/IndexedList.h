@@ -4,7 +4,7 @@
 /// @brief An IndexedList is a collection of items that also tracks the indices that have been
 /// removed, such that when a new item is added, it will instead occupy an already existing but
 /// vacant slot before it attempts to append to the list.
-typedef struct
+typedef struct IndexedList
 {
     List list;
     List freeIndices;
@@ -30,7 +30,7 @@ inline uint32_t IndexedList_Add(IndexedList *self, const void *item)
 {
     if (self->freeIndices.count == 0)
     {
-        List_Add(self, item);
+        List_Add(&self->list, item);
         return (uint32_t)self->list.count - 1;
     }
     uint32_t intoIndex = *(uint32_t*)List_Pop(&self->freeIndices);
@@ -42,7 +42,7 @@ inline uint32_t IndexedList_AddDefault(IndexedList *self)
 {
     if (self->freeIndices.count == 0)
     {
-        List_AddEmpty(self);
+        List_AddEmpty(&self->list);
         return (uint32_t)self->list.count - 1;
     }
     uint32_t intoIndex = *(uint32_t*)List_Pop(&self->freeIndices);

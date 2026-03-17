@@ -12,7 +12,7 @@
 def_delegate(MapHashFunc, uint32_t, const void *);
 def_delegate(MapEqlFunc, bool, const void *, const void *);
 
-typedef struct
+typedef struct HashMapBucket
 {
     bool initialized;
     List entries;
@@ -26,7 +26,7 @@ inline HashMapBucket HashMapBucket_Create(IAllocator allocator, size_t keySize, 
     return result;
 }
 
-typedef struct
+typedef struct HashMap
 {
     IAllocator allocator;
 
@@ -124,11 +124,11 @@ inline void HashMap_EnsureCapacity(HashMap *self)
     }
 }
 
-void *HashMap_Add(HashMap *self, const void *key, const void *value)
+inline void *HashMap_Add(HashMap *self, const void *key, const void *value)
 {
     HashMap_EnsureCapacity(self);
 
-    uint32_t hash = hashFunc(key);
+    uint32_t hash = self->hashFunc(key);
     size_t index = hash % self->bucketsCount;
 
     if (!self->buckets[index].initialized)
@@ -140,7 +140,7 @@ void *HashMap_Add(HashMap *self, const void *key, const void *value)
     for (size_t i = 0; i < self->buckets[index].entries.count; i++)
     {
         void *keyAt = List_Get(&self->buckets[index].entries, i);
-        if (eqlFunc(keyAt, key))
+        if (self->eqlFunc(keyAt, key))
         {
             memcpy(keyAt, key, self->keySize);
 
@@ -163,7 +163,7 @@ void *HashMap_Add(HashMap *self, const void *key, const void *value)
     return valueOffset;
 }
 
-bool HashMap_Remove(HashMap *self, const void *key)
+inline bool HashMap_Remove(HashMap *self, const void *key)
 {
     uint32_t hash = self->hashFunc(key);
     size_t index = hash % self->bucketsCount;
@@ -173,7 +173,7 @@ bool HashMap_Remove(HashMap *self, const void *key)
         for (size_t i = 0; i < self->buckets[index].entries.count; i++)
         {
             void *keyAt = List_Get(&self->buckets[index].entries, i);
-            if (eqlFunc(keyAt, key))
+            if (self->eqlFunc(keyAt, key))
             {
                 //buckets[index].entries.RemoveAt_Swap(i);
                 List_RemoveAtSwap(&self->buckets[index].entries, i);
@@ -186,7 +186,7 @@ bool HashMap_Remove(HashMap *self, const void *key)
     }
     return false;
 }
-void *HashMap_Get(HashMap *self, const void *key)
+inline void *HashMap_Get(HashMap *self, const void *key)
 {
     uint32_t hash = self->hashFunc(key);
     size_t index = hash % self->bucketsCount;
@@ -196,7 +196,7 @@ void *HashMap_Get(HashMap *self, const void *key)
         for (size_t i = 0; i < self->buckets[index].entries.count; i++)
         {
             void *keyAt = List_Get(&self->buckets[index].entries, i);
-            if (eqlFunc(keyAt, key))
+            if (self->eqlFunc(keyAt, key))
             {
                 void *valueAt = (uint8_t *)keyAt + self->keySize;
                 return valueAt;
@@ -205,12 +205,12 @@ void *HashMap_Get(HashMap *self, const void *key)
     }
     return NULL;
 }
-void *HashMap_Contains(HashMap *self, const void *key)
+inline bool HashMap_Contains(HashMap *self, const void *key)
 {
     return HashMap_Get(self, key) != NULL;
 }
 
-typedef struct
+typedef struct HashMapIterator
 {
     HashMap *map;
     size_t i;
@@ -218,7 +218,13 @@ typedef struct
     bool completed;
 } HashMapIterator;
 
-void *HashMapIterator_Next(HashMapIterator *self)
+inline HashMapIterator HashMapIterator_From(HashMap *self)
+{
+    const HashMapIterator result = {self, 0, 0, false};
+    return result;
+}
+
+inline void *HashMapIterator_Next(HashMapIterator *self)
 {
     if (self->i >= self->map->bucketsCount || self->completed)
     {

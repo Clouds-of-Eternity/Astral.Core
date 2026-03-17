@@ -5,7 +5,7 @@
 
 def_delegate(ListEqlFunc, bool, const void *, const void *);
 
-typedef struct
+typedef struct List
 {
     IAllocator allocator;
     void *ptr;
@@ -128,7 +128,7 @@ inline bool List_InsertPushback(List *self, const void *item, int64_t atIndex)
     {
         return false;
     }
-    EnsureArrayCapacity(self->count + 1);
+    List_EnsureArrayCapacity(self, self->count + 1);
 
     for (int64_t i = (int64_t)self->count; i > atIndex; i--)
     {
@@ -147,7 +147,7 @@ inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
     {
         return false;
     }
-    EnsureArrayCapacity(self->count + 1);
+    List_EnsureArrayCapacity(self, self->count + 1);
 
     if (atIndex < self->count)
     {
@@ -160,7 +160,7 @@ inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
 }
 inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
 {
-    EnsureArrayCapacity(atIndex + 1);
+    List_EnsureArrayCapacity(self, atIndex + 1);
 
     void *intoPos = (uint8_t *)self->ptr + self->itemSize * atIndex;
     memcpy(intoPos, item, self->itemSize);

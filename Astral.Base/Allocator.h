@@ -7,7 +7,7 @@
 def_delegate(allocFunc, void *, void *, size_t);
 def_delegate(freeFunc, void, void *, void *);
 
-typedef struct
+typedef struct IAllocator
 {
     void* instance;
     allocFunc allocFunction;

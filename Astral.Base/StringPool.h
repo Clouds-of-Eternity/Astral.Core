@@ -2,12 +2,12 @@
 #include "./Strings.h"
 #include "./List.h"
 
-typedef struct
+typedef struct StringPoolBuffer
 {
     List strings;
 } StringPoolBuffer;
 
-typedef struct
+typedef struct StringPool
 {
     IAllocator allocator;
     List buffers;

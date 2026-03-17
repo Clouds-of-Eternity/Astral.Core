@@ -9,7 +9,7 @@
 
 def_delegate(RandomNextU64, uint64_t);
 
-typedef struct
+typedef struct Uuid
 {
     uint64_t num1;
     uint64_t num2;
@@ -332,8 +332,8 @@ inline Uuid FromString(const char *text)
     uint8_t *bytes = (uint8_t *)&result.num1;
     for (size_t i = 0; i < 16; i++)
     {
-        const auto high = hexToNibble[text[positions[i]]];
-        const auto low = hexToNibble[text[positions[i] + 1]];
+        const uint8_t high = hexToNibble[text[positions[i]]];
+        const uint8_t low = hexToNibble[text[positions[i] + 1]];
         if (high == 0xff || low == 0xff)
         {
             return Uuid_Empty();
@@ -342,14 +342,26 @@ inline Uuid FromString(const char *text)
     }
     return result;
 }
-inline bool UuidEqls(Uuid A, Uuid B)
-{
-    return A.num1 == B.num1 && A.num2 == B.num2;
-}
 inline uint32_t UuidHash(Uuid self)
 {
     return Murmur3((uint8_t *)&self, sizeof(Uuid));
 }
+inline bool UuidEqls(Uuid A, Uuid B)
+{
+    return A.num1 == B.num1 && A.num2 == B.num2;
+}
+
+inline uint32_t UuidPtr_Hash(const void *self)
+{
+    return Murmur3((uint8_t *)self, sizeof(Uuid));
+}
+inline bool UuidPtr_Eqls(const void *ID1, const void *ID2)
+{
+    const Uuid *A = (Uuid *)ID1;
+    const Uuid *B = (Uuid *)ID2;
+    return A->num1 == B->num1 && A->num2 == B->num2;
+}
+
 inline void UuidGetAsString(Uuid self, char *buffer)
 {
     buffer[8] = '-';
@@ -396,7 +408,7 @@ inline string UuidToString(Uuid self, IAllocator allocator)
 {
     char buffers[UUID_STR_LEN];
     buffers[UUID_STR_LEN - 1] = '\0';
-    GetAsString(buffers);
+    UuidGetAsString(self, buffers);
     return StringFrom(allocator, buffers);
 }
 

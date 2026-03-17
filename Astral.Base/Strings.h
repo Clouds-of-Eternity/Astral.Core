@@ -11,14 +11,14 @@ typedef wchar_t char_t;
 typedef char char_t;
 #endif
 
-typedef struct
+typedef struct string
 {
     IAllocator allocator;
     char *buffer;
     size_t length;
 } string;
 
-typedef struct
+typedef struct CharSlice
 {
     const char *buffer;
     size_t length;
@@ -186,6 +186,19 @@ inline uint32_t StringHashMurmur3(string A)
         return 7;
     }
     return Murmur3((const uint8_t *)A.buffer, A.length - 1);
+}
+
+inline bool StringPtr_Eqls(const void *A, const void *B)
+{
+    return StringEqls(*(string *)A, *(string *)B);
+}
+inline uint32_t StringPtr_Hash(const void *A)
+{
+    return StringHash(*(string *)A);
+}
+inline uint32_t StringPtr_HashMurmur3(const void *A)
+{
+    return StringHashMurmur3(*(string *)A);
 }
 
 inline wchar_t* StringToWChar(string self, IAllocator allocator)
@@ -476,6 +489,7 @@ inline CharSlice CharSliceFrom(const char *input)
     const CharSlice result = {input, strlen(input) + 1};
     return result;
 }
+
 inline bool CharSliceEqls(CharSlice A, CharSlice B)
 {
     if (A.buffer == NULL || B.buffer == NULL)
@@ -503,4 +517,17 @@ inline uint32_t CharSliceHashMurmur3(CharSlice A)
         return 7;
     }
     return Murmur3((const uint8_t *)A.buffer, A.length - 1);
+}
+
+inline bool CharSlicePtr_Eqls(const void *A, const void *B)
+{
+    return CharSliceEqls(*(CharSlice *)A, *(CharSlice *)B);
+}
+inline uint32_t CharSlicePtr_Hash(const void *A)
+{
+    return CharSliceHash(*(CharSlice *)A);
+}
+inline uint32_t CharSlicePtr_HashMurmur3(const void *A)
+{
+    return CharSliceHashMurmur3(*(CharSlice *)A);
 }
