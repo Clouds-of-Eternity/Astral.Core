@@ -168,6 +168,17 @@ inline bool StringEqls(string A, string B)
     }
     return A.length == B.length && memcmp(A.buffer, B.buffer, A.length) == 0;
 }
+inline bool StringEqlsCharSlice(string A, CharSlice B)
+{
+    if (A.buffer == NULL || B.buffer == NULL)
+    {
+        return A.buffer == B.buffer;
+    }
+    //CharSlice length does not include null terminator since it may not have one
+    //string length always has a null terminator, so we need to deduct 1 from string A's length
+    //for the memcmp to be valid
+    return (A.length - 1) == B.length && memcmp(A.buffer, B.buffer, A.length - 1) == 0;
+}
 inline uint32_t StringHash(string A)
 {
     uint32_t hash = 7;
@@ -487,7 +498,7 @@ inline CharSlice CharSliceEmpty()
 }
 inline CharSlice CharSliceFrom(const char *input)
 {
-    const CharSlice result = {input, strlen(input) + 1};
+    const CharSlice result = {input, strlen(input)};
     return result;
 }
 
@@ -531,4 +542,55 @@ inline uint32_t CharSlicePtr_Hash(const void *A)
 inline uint32_t CharSlicePtr_HashMurmur3(const void *A)
 {
     return CharSliceHashMurmur3(*(CharSlice *)A);
+}
+
+inline int64_t CharsToI64(const char* buffer, size_t length)
+{
+    int64_t result = 0;
+    uint32_t index = 1;
+    for (int32_t i = (int32_t)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            int64_t amount = index * (buffer[i] - (int64_t)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    if (buffer[0] == '-')
+    {
+        result *= -1;
+    }
+    return result;
+}
+inline uint64_t CharsToU64(const char* buffer, size_t length)
+{
+    uint64_t result = 0;
+    uint32_t index = 1;
+    for (int32_t i = (int32_t)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            int64_t amount = index * (buffer[i] - (uint64_t)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    return result;
+}
+inline int64_t StringToI64(string str)
+{
+    return CharsToI64(str.buffer, str.length - 1);
+}
+inline uint64_t StringToU64(string str)
+{
+    return CharsToU64(str.buffer, str.length - 1);
+}
+inline int64_t CharSliceToI64(CharSlice slice)
+{
+    return CharsToI64(slice.buffer, slice.length);
+}
+inline uint64_t CharSliceToU64(CharSlice slice)
+{
+    return CharsToU64(slice.buffer, slice.length);
 }

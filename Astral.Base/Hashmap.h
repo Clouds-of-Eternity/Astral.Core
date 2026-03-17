@@ -256,5 +256,5 @@ inline void *HashMapEntry_GetValue(void *entry, HashMap *hashMap)
     return (uint8_t *)entry + hashMap->keySize;
 }
 
-#define HMENTRY_GETKEY(entry, keyType) (keyType *)entry
+#define HMENTRY_GETKEY(entry, keyType, hm) (keyType *)entry
 #define HMENTRY_GETVAL(entry, valType, hm) (valType *)HashMapEntry_GetValue(entry, hm )

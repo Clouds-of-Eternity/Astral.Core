@@ -79,7 +79,7 @@ inline CharSlice ByteStreamReader_GetCharSlice(ByteStreamReader *self)
     self->position += length + 1;
     return result;
 }
-inline CharSlice ByteStreamReader_PassString(ByteStreamReader *self)
+inline void ByteStreamReader_PassString(ByteStreamReader *self)
 {
     size_t length = 0;
     while (self->stream[self->position + length] != 0)
@@ -178,4 +178,11 @@ inline void ByteStreamWriter_WriteFile(ByteStreamWriter *self, FILE* file)
     {
         ByteStreamWriter_Write(self, readBuffer, bytesRead);
     }
+}
+
+inline void *ByteStreamWriter_CloneBytes(IAllocator newAllocator, ByteStreamWriter *self)
+{
+    void *result = IAllocator_Allocate(newAllocator, self->bytes.count);
+    memcpy(result, self->bytes.ptr, self->bytes.count);
+    return result;
 }
