@@ -1,5 +1,4 @@
-#ifndef LINXC_H
-#define LINXC_H
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -25,6 +24,4 @@
 #define DynamicFunction exportDynamic
 #else
 #define DynamicFunction importDynamic
-#endif
-
 #endif

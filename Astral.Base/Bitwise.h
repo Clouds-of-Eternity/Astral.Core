@@ -1,5 +1,5 @@
 #pragma once
-#include "Common.h"
+#include "Astral.Base.h"
 
 inline uint64_t rotl64(uint64_t value, uint64_t amount)
 {

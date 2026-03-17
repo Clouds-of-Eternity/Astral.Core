@@ -1,5 +1,5 @@
 #pragma once
-#include "Common.h"
+#include "Astral.Base.h"
 
 #define KiB_SIZE 1024
 #define MiB_SIZE (KiB_SIZE * 1024)

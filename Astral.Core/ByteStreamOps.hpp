@@ -2,14 +2,15 @@
 #include "List.hpp"
 #include "io.hpp"
 #include "UTF8Utils.hpp"
+#include "string.hpp"
 
 typedef collections::List<u8> ByteStream;
 
 struct ByteStreamReader
 {
+    u8* stream;
     usize position;
     usize size;
-    u8* stream;
 
     inline ByteStreamReader()
     {

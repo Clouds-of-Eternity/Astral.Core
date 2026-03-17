@@ -18,6 +18,12 @@ typedef struct
     size_t length;
 } string;
 
+typedef struct
+{
+    const char *buffer;
+    size_t length;
+} CharSlice;
+
 inline string StringEmpty()
 {
     const string result = {};
@@ -40,6 +46,10 @@ inline string StringFromSlice(IAllocator allocator, const char *input, size_t le
     string result = {allocator, buffer, length + 1};
 
     return result;
+}
+inline string StringFromCharSlice(IAllocator allocator, CharSlice charSlice)
+{
+    return StringFromSlice(allocator, charSlice.buffer, charSlice.length);
 }
 inline string StringFromLength(IAllocator allocator, size_t lengthNoNullTerminator)
 {
@@ -151,9 +161,32 @@ inline bool StringEndsWith(string self, const char* other)
 }
 inline bool StringEqls(string A, string B)
 {
+    if (A.buffer == NULL || B.buffer == NULL)
+    {
+        return A.buffer == B.buffer;
+    }
     return A.length == B.length && memcmp(A.buffer, B.buffer, A.length) == 0;
 }
-
+inline uint32_t StringHash(string A)
+{
+    uint32_t hash = 7;
+    if (A.length > 0)
+    {
+        for (size_t i = 0; i < A.length - 1; i++)
+        {
+            hash = hash * 31 + A.buffer[i];
+        }
+    }
+    return hash;
+}
+inline uint32_t StringHashMurmur3(string A)
+{
+    if (A.length == 0)
+    {
+        return 7;
+    }
+    return Murmur3((const uint8_t *)A.buffer, A.length - 1);
+}
 
 inline wchar_t* StringToWChar(string self, IAllocator allocator)
 {
@@ -431,4 +464,43 @@ inline bool LitFindFirst(const char *str, char character, size_t *outIndex)
         }
     }
     return false;
+}
+
+inline CharSlice CharSliceEmpty()
+{
+    const CharSlice result = {};
+    return result;
+}
+inline CharSlice CharSliceFrom(const char *input)
+{
+    const CharSlice result = {input, strlen(input) + 1};
+    return result;
+}
+inline bool CharSliceEqls(CharSlice A, CharSlice B)
+{
+    if (A.buffer == NULL || B.buffer == NULL)
+    {
+        return A.buffer == B.buffer;
+    }
+    return A.length == B.length && (A.buffer == B.buffer || memcmp(A.buffer, B.buffer, A.length) == 0);
+}
+inline uint32_t CharSliceHash(CharSlice A)
+{
+    uint32_t hash = 7;
+    if (A.length > 0)
+    {
+        for (size_t i = 0; i < A.length - 1; i++)
+        {
+            hash = hash * 31 + A.buffer[i];
+        }
+    }
+    return hash;
+}
+inline uint32_t CharSliceHashMurmur3(CharSlice A)
+{
+    if (A.length == 0)
+    {
+        return 7;
+    }
+    return Murmur3((const uint8_t *)A.buffer, A.length - 1);
 }

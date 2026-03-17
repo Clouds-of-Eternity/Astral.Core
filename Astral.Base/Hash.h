@@ -11,7 +11,7 @@ inline uint32_t BufferHash(uint8_t* buffer, size_t len)
     return hash;
 }
 
-inline uint32_t StrHash(const char* ptr)
+inline uint32_t CharsHash(const char* ptr)
 {
     uint32_t hash = 7;
     size_t i = 0;

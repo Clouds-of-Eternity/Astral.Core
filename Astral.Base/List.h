@@ -1,6 +1,6 @@
 #pragma once
 #include "Allocator.h"
-#include "Common.h"
+#include "Astral.Base.h"
 #include <string.h>
 
 def_delegate(ListEqlFunc, bool, const void *, const void *);
