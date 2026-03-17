@@ -38,7 +38,7 @@ inline uint32_t IndexedList_Add(IndexedList *self, const void *item)
     memcpy(slot, item, self->list.itemSize);
     return intoIndex;
 }
-inline uint32_t IndexedList_AddDefault(IndexedList *self)
+inline uint32_t IndexedList_AddDefaultZeroInitialized(IndexedList *self)
 {
     if (self->freeIndices.count == 0)
     {
@@ -48,6 +48,19 @@ inline uint32_t IndexedList_AddDefault(IndexedList *self)
     uint32_t intoIndex = *(uint32_t*)List_Pop(&self->freeIndices);
     void *slot = List_Get(&self->list, intoIndex);
     memset(slot, 0, self->list.itemSize);
+    return intoIndex;
+}
+inline uint32_t IndexedList_AddDefault(IndexedList *self, bool *created)
+{
+    if (self->freeIndices.count == 0)
+    {
+        *created = true;
+        List_AddEmpty(&self->list);
+        return (uint32_t)self->list.count - 1;
+    }
+    *created = false;
+    uint32_t intoIndex = *(uint32_t*)List_Pop(&self->freeIndices);
+    void *slot = List_Get(&self->list, intoIndex);
     return intoIndex;
 }
 inline void IndexedList_Remove(IndexedList *self, uint32_t index)
