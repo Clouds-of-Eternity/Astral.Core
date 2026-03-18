@@ -163,7 +163,14 @@ inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
     List_EnsureArrayCapacity(self, atIndex + 1);
 
     void *intoPos = (uint8_t *)self->ptr + self->itemSize * atIndex;
-    memcpy(intoPos, item, self->itemSize);
+    if (item != NULL)
+    {
+        memcpy(intoPos, item, self->itemSize);
+    }
+    else
+    {
+        memset(intoPos, 0, self->itemSize);
+    }
     if (self->count < atIndex + 1)
     {
         self->count = atIndex + 1;
