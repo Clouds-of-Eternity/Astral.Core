@@ -11,20 +11,20 @@
 #endif
 #endif
 
-typedef struct
+typedef struct Vec2
 {
     float X;
     float Y;
 } Vec2;
 
-typedef struct
+typedef struct Vec3
 {
     float X;
     float Y;
     float Z;
 } Vec3;
 
-typedef struct
+typedef struct Vec4
 {
     union
     {

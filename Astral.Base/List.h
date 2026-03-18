@@ -48,6 +48,33 @@ inline void List_EnsureArrayCapacity(List *self, size_t minCapacity)
         self->capacity = newCapacity;
     }
 }
+inline void List_EnsureArrayCapacityDefaulted(List *self, size_t minCapacity, const void *defaultItem)
+{
+    if (self->capacity < minCapacity)
+    {
+        size_t newCapacity = self->capacity;
+        if (newCapacity == 0)
+        {
+            newCapacity = 4;
+        }
+        while (newCapacity <= minCapacity)
+        {
+            newCapacity *= 2;
+        }
+        void *newPtr = IAllocator_Allocate(self->allocator, self->itemSize * newCapacity);
+        if (self->ptr != NULL)
+        {
+            memcpy(newPtr, self->ptr, self->capacity * self->itemSize);
+            IAllocator_Free(self->allocator, self->ptr);
+        }
+        for (size_t i = self->capacity; i < newCapacity; i++)
+        {
+            memcpy((uint8_t *)newPtr + i * self->itemSize, defaultItem, self->itemSize);
+        }
+        self->ptr = newPtr;
+        self->capacity = newCapacity;
+    }
+}
 inline void List_Add(List *self, const void *item)
 {
     List_EnsureArrayCapacity(self, self->count + 1);
@@ -161,6 +188,25 @@ inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
 inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
 {
     List_EnsureArrayCapacity(self, atIndex + 1);
+
+    void *intoPos = (uint8_t *)self->ptr + self->itemSize * atIndex;
+    if (item != NULL)
+    {
+        memcpy(intoPos, item, self->itemSize);
+    }
+    else
+    {
+        memset(intoPos, 0, self->itemSize);
+    }
+    if (self->count < atIndex + 1)
+    {
+        self->count = atIndex + 1;
+    }
+    return intoPos;
+}
+inline void *List_InsertOverride_ArrayDefaulted(List *self, const void *item, int64_t atIndex, const void *arrayDefaultItem)
+{
+    List_EnsureArrayCapacityDefaulted(self, atIndex + 1, arrayDefaultItem);
 
     void *intoPos = (uint8_t *)self->ptr + self->itemSize * atIndex;
     if (item != NULL)

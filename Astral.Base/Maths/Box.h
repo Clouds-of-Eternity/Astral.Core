@@ -3,7 +3,7 @@
 #include <math.h>
 #include "./Vectors.h"
 
-typedef struct
+typedef struct Box
 {
     float X;
     float Y;

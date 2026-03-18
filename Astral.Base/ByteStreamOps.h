@@ -97,6 +97,7 @@ inline string ByteStreamReader_GetString(ByteStreamReader *self, IAllocator allo
     return StringFromCharSlice(allocator, ByteStreamReader_GetCharSlice(self));
 }
 #define BS_READ(stream, type) *(const type *)ByteStreamReader_Read(&stream, sizeof(type))
+#define BSPTR_READ(stream, type) *(const type *)ByteStreamReader_Read(stream, sizeof(type))
 
 typedef struct ByteStreamWriter
 {

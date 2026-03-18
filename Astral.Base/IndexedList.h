@@ -86,3 +86,8 @@ inline void IndexedList_Deinit(IndexedList *self)
     List_Deinit(&self->list);
     List_Deinit(&self->freeIndices);
 }
+inline void IndexedList_Clear(IndexedList *self)
+{
+    List_Clear(&self->list);
+    List_Clear(&self->freeIndices);
+}

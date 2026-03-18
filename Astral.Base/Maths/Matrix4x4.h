@@ -3,7 +3,7 @@
 
 #define MATRIX4x4_DECOMPOSE_EPSILON 0.0001f
 
-typedef struct
+typedef struct Matrix4x4
 {
     union
     {

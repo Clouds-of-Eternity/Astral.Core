@@ -3,7 +3,7 @@
 #include <math.h>
 #include "./Points.h"
 
-typedef struct
+typedef struct Rectangle
 {
     int32_t X;
     int32_t Y;

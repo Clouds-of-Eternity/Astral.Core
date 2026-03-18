@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 
-typedef struct
+typedef struct Point2
 {
     int32_t X;
     int32_t Y;
