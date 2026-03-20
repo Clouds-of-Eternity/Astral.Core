@@ -21,8 +21,20 @@
 #define importDynamic
 #endif
 
-#ifdef EXPORT_DYNAMIC_LIBRARY
-#define DynamicFunction exportDynamic
+#ifdef __cplusplus
+#define CLinkage extern "C"
 #else
-#define DynamicFunction importDynamic
+#define CLinkage
+#endif
+
+#ifdef USE_DYNAMIC
+
+#ifdef EXPORT_DYNAMIC_LIBRARY
+#define DynamicFunction exportDynamic CLinkage
+#else
+#define DynamicFunction importDynamic CLinkage
+#endif
+
+#else
+#define DynamicFunction CLinkage
 #endif
