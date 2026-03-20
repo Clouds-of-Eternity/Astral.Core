@@ -1,5 +1,4 @@
-#ifndef LINXC_H
-#define LINXC_H
+#pragma once
 
 #include <stddef.h>
 
@@ -44,5 +43,3 @@ typedef size_t usize;
 
 typedef const char *text;
 typedef const char *u8text;
-
-#endif
