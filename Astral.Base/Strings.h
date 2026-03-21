@@ -52,6 +52,24 @@ inline string StringFromCharSlice(IAllocator allocator, CharSlice charSlice)
 {
     return StringFromSlice(allocator, charSlice.buffer, charSlice.length);
 }
+inline string StringFromCharSlices(IAllocator allocator, CharSlice *slices, size_t numSlices)
+{
+    string result;
+    size_t totalBytes = 1;
+    for (uint32_t i = 0; i < numSlices; i++)
+    {
+        totalBytes += slices[i].length;
+    }
+    result.buffer = IAllocator_Allocate(allocator, totalBytes);
+    result.buffer[totalBytes - 1] = '\0';
+    totalBytes = 0;
+    for (uint32_t i = 0; i < numSlices; i++)
+    {
+        memcpy(result.buffer + totalBytes, slices[i].buffer, slices[i].length);
+        totalBytes += slices[i].length;
+    }
+    return result;
+}
 inline string StringFromLength(IAllocator allocator, size_t lengthNoNullTerminator)
 {
     char *buffer = (char *)IAllocator_Allocate(allocator, lengthNoNullTerminator);

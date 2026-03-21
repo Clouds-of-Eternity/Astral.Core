@@ -1,5 +1,4 @@
-#ifndef JSON2_HPP
-#define JSON2_HPP
+#pragma once
 
 #include "string.hpp"
 #include "Allocators.hpp"
@@ -1002,5 +1001,4 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         }
     }
 }
-#endif
 #endif
