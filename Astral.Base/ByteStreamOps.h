@@ -2,6 +2,7 @@
 #include "./List.h"
 #include "./UTF8.h"
 #include "./Strings.h"
+#include "DataStream.h"
 
 #ifndef READ_FILE_BUFFER_SIZE
 #define READ_FILE_BUFFER_SIZE 1024
@@ -185,5 +186,73 @@ inline void *ByteStreamWriter_CloneBytes(IAllocator newAllocator, ByteStreamWrit
 {
     void *result = IAllocator_Allocate(newAllocator, self->bytes.count);
     memcpy(result, self->bytes.ptr, self->bytes.count);
+    return result;
+}
+
+size_t ByteStream_GetCurrPosFunc(void *self)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    return instance->position;
+}
+size_t ByteStream_Read(void *self, void *output, size_t elementSize, size_t readCount)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    if (instance->position + elementSize * readCount > instance->size)
+    {
+        //instance->position + elementSize * readCount == instance->size
+        //elementSize * readCount = instance->size - instance->position
+        //readCount = (instance->size - instance->position) / elementSize;
+        readCount = floorf(((float)instance->size - (float)instance->position) / (float)elementSize);
+    }
+    if (readCount > 0)
+    {
+        memcpy(output, instance->stream + instance->position, elementSize * readCount);
+        instance->position += elementSize * readCount;
+    }
+    return readCount;
+}
+string ByteStream_ReadString(void *self, IAllocator allocator)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    return ByteStreamReader_GetString(instance, allocator);
+}
+void ByteStream_PassString(void *self)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    ByteStreamReader_PassString(instance);
+}
+bool ByteStream_Jump(void *self, int64_t jumpOffset, DataStreamJumpRelative relative)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    size_t newPos = instance->position;
+    if (relative == DataStreamJumpRelative_StreamStart)
+    {
+        newPos = (size_t)jumpOffset;
+    }
+    else if (relative == DataStreamJumpRelative_StreamCurrentPos)
+    {
+        newPos += jumpOffset;
+    }
+    else if (relative == DataStreamJumpRelative_StreamEnd)
+    {
+        newPos = instance->size + jumpOffset;
+    }
+    if (newPos <= instance->size)
+    {
+        instance->position = newPos;
+        return true;
+    }
+    return false;
+}
+inline IDataStream ByteStreamReaderToStream(ByteStreamReader *reader)
+{
+    IDataStream result;
+    result.instance = reader;
+    result.getCurrPosFunc = &ByteStream_GetCurrPosFunc;
+    result.jumpFunc = &ByteStream_Jump;
+    result.readFunc = &ByteStream_Read;
+    result.readStringFunc = &ByteStream_ReadString;
+    result.passStringFunc = &ByteStream_PassString;
+
     return result;
 }
