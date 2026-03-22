@@ -3,12 +3,19 @@
 #include "io.hpp"
 #include "UTF8Utils.hpp"
 #include "string.hpp"
+#include "DataStream.hpp"
 
 typedef collections::List<u8> ByteStream;
 
+usize ByteStreamReader_GetCurrPosFunc(void *self);
+usize ByteStreamReader_Read(void *self, void *output, usize elementSize, usize readCount);
+string ByteStreamReader_ReadString(void *self, IAllocator allocator);
+void ByteStreamReader_PassString(void *self);
+bool ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
+
 struct ByteStreamReader
 {
-    u8* stream;
+    const u8* stream;
     usize position;
     usize size;
 
@@ -17,7 +24,7 @@ struct ByteStreamReader
         position = 0;
         stream = NULL;
     }
-    inline ByteStreamReader(u8* byteStream, usize size, usize pos)
+    inline ByteStreamReader(const u8* byteStream, usize size, usize pos)
     {
         this->position = pos;
         this->size = size;
@@ -104,7 +111,75 @@ struct ByteStreamReader
         //advance past the null terminator
         position++;
     }
+
+    inline IDataStream ToDataStream()
+    {
+        IDataStream result;
+        result.instance = this;
+        result.readFunc = &ByteStreamReader_Read;
+        result.readStringFunc = &ByteStreamReader_ReadString;
+        result.passStringFunc = &ByteStreamReader_PassString;
+        result.jumpFunc = &ByteStreamReader_Jump;
+        result.getCurrPosFunc = &ByteStreamReader_GetCurrPosFunc;
+        return result;
+    }
 };
+inline usize ByteStreamReader_Read(void *self, void *output, usize elementSize, usize readCount)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    if (instance->position + elementSize * readCount > instance->size)
+    {
+        //instance->position + elementSize * readCount == instance->size
+        //elementSize * readCount = instance->size - instance->position
+        //readCount = (instance->size - instance->position) / elementSize;
+        readCount = floorf(((float)instance->size - (float)instance->position) / (float)elementSize);
+    }
+    if (readCount > 0)
+    {
+        memcpy(output, instance->stream + instance->position, elementSize * readCount);
+        instance->position += elementSize * readCount;
+    }
+    return readCount;
+}
+inline bool ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    usize newPos = instance->position;
+    if (relative == DataStreamJumpRelative_StreamStart)
+    {
+        newPos = (usize)jumpOffset;
+    }
+    else if (relative == DataStreamJumpRelative_StreamCurrentPos)
+    {
+        newPos += jumpOffset;
+    }
+    else if (relative == DataStreamJumpRelative_StreamEnd)
+    {
+        newPos = instance->size + jumpOffset;
+    }
+    if (newPos <= instance->size)
+    {
+        instance->position = newPos;
+        return true;
+    }
+    return false;
+}
+inline string ByteStreamReader_ReadString(void *self, IAllocator allocator)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    return instance->ReadString(allocator);
+}
+inline void ByteStreamReader_PassString(void *self)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    return instance->PassString();
+}
+inline usize ByteStreamReader_GetCurrPosFunc(void *self)
+{
+    ByteStreamReader *instance = (ByteStreamReader *)self;
+    return instance->position;
+}
+
 struct ByteStreamWriter
 {
     ByteStream bytes;

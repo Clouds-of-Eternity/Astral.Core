@@ -71,7 +71,7 @@ inline string BinaryReadString(IAllocator allocator, FILE *fs)
             break;
     }
     string str = string(allocator, size);
-    fseek(fs, 0, currentPos);
+    fseek(fs, currentPos, SEEK_SET);
     fread(str.buffer, 1, size, fs);
     return str;
 }
