@@ -44,7 +44,7 @@ inline void ArenaAllocator_Free(void* instance, void* ptr)
 }
 inline IAllocator ArenaAllocator_AsAllocator(const ArenaAllocator *self)
 {
-    IAllocator result = {self->ptrs, &ArenaAllocator_Allocate, &ArenaAllocator_Deinit};
+    IAllocator result = {self->ptrs, &ArenaAllocator_Allocate, &ArenaAllocator_Free};
 
     return result;
 }
