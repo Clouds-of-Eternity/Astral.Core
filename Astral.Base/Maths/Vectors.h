@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef FORCE_NO_INTRINSICS
 #ifdef __x86_64__
@@ -109,17 +110,6 @@ inline Vec2 Vec4to2(Vec4 vec)
 inline Vec3 Vec4to3(Vec4 vec)
 {
     const Vec3 result = {vec.X, vec.Y, vec.Z};
-    return result;
-}
-
-inline Vec2 AddVec2(Vec2 A, Vec2 B)
-{
-    const Vec2 result = {A.X + B.X, A.Y + B.Y};
-    return result;
-}
-inline Vec3 AddVec3(Vec3 A, Vec3 B)
-{
-    const Vec3 result = {A.X + B.X, A.Y + B.Y, A.Z + B.Z};
     return result;
 }
 

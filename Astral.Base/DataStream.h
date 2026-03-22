@@ -30,51 +30,51 @@ typedef struct IDataStream
 #define DS_READINTO(varName, streamPtr, type) type varName; streamPtr->readFunc(streamPtr->instance, &varName, sizeof(type), 1)
 #define DS_READINTOARRAY(varName, streamPtr, type, allocator, count) Array varName = Array_Create(allocator, sizeof(type), count); streamPtr->readFunc(streamPtr->instance, varName.ptr, sizeof(type), count)
 
-uint32_t IDataStream_ReadU32(IDataStream *self)
+static inline uint32_t IDataStream_ReadU32(IDataStream *self)
 {
     DS_READINTO(result, self, uint32_t);
     return result;
 }
-int32_t IDataStream_ReadI32(IDataStream *self)
+static inline int32_t IDataStream_ReadI32(IDataStream *self)
 {
     DS_READINTO(result, self, int32_t);
     return result;
 }
 
-string IDataStream_ReadString(IDataStream *self, IAllocator allocator)
+static inline string IDataStream_ReadString(IDataStream *self, IAllocator allocator)
 {
     return self->readStringFunc(self->instance, allocator);
 }
-void IDataStream_PassString(IDataStream *self)
+static inline void IDataStream_PassString(IDataStream *self)
 {
     self->passStringFunc(self->instance);
 }
-uint8_t IDataStream_ReadByte(IDataStream *self)
+static inline uint8_t IDataStream_ReadByte(IDataStream *self)
 {
     uint8_t result;
     self->readFunc(self->instance, &result, sizeof(uint8_t), 1);
     return result;
 }
-void IDataStream_ReadByteArray(IDataStream *self, void *out, size_t count)
+static inline void IDataStream_ReadByteArray(IDataStream *self, void *out, size_t count)
 {
     self->readFunc(self->instance, out, 1, count);
 }
-void IDataStream_Jump(IDataStream *self, int64_t jumpOffset, DataStreamJumpRelative relative)
+static inline void IDataStream_Jump(IDataStream *self, int64_t jumpOffset, DataStreamJumpRelative relative)
 {
     self->jumpFunc(self->instance, jumpOffset, relative);
 }
 
-inline size_t FILE_Read(void *self, void *output, size_t elementSize, size_t readCount)
+static inline size_t FILE_Read(void *self, void *output, size_t elementSize, size_t readCount)
 {
     FILE *fs = (FILE *)self;
     return fread(output, elementSize, readCount, fs);
 }
-inline bool FILE_Jump(void *self, int64_t jumpOffset, DataStreamJumpRelative relative)
+static inline bool FILE_Jump(void *self, int64_t jumpOffset, DataStreamJumpRelative relative)
 {
     FILE *fs = (FILE *)self;
     return fseek(fs, jumpOffset, (int)relative) == 0;
 }
-inline string FILE_ReadString(void *self, IAllocator allocator)
+static inline string FILE_ReadString(void *self, IAllocator allocator)
 {
     FILE *fs = (FILE *)self;
     long currentPos = ftell(fs);
@@ -94,7 +94,7 @@ inline string FILE_ReadString(void *self, IAllocator allocator)
     fread(str.buffer, 1, size, fs);
     return str;
 }
-inline void FILE_PassString(void *self)
+static inline void FILE_PassString(void *self)
 {
     FILE *fs = (FILE *)self;
 
@@ -108,12 +108,12 @@ inline void FILE_PassString(void *self)
         }
     }
 }
-inline size_t FILE_GetCurrPos(void *self)
+static inline size_t FILE_GetCurrPos(void *self)
 {
     FILE *fs = (FILE *)self;
     return (size_t)ftell(fs);
 }
-inline IDataStream GetFileDataStream(FILE *fs)
+static inline IDataStream GetFileDataStream(FILE *fs)
 {
     IDataStream result;
     result.instance = fs;

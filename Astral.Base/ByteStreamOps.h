@@ -3,6 +3,7 @@
 #include "./UTF8.h"
 #include "./Strings.h"
 #include "DataStream.h"
+#include <math.h>
 
 #ifndef READ_FILE_BUFFER_SIZE
 #define READ_FILE_BUFFER_SIZE 1024
@@ -171,8 +172,6 @@ inline ByteStreamReader ByteStreamWriter_ToReader(ByteStreamWriter *self)
 
 inline void ByteStreamWriter_WriteFile(ByteStreamWriter *self, FILE* file)
 {
-    assert(file);
-
     uint8_t readBuffer[READ_FILE_BUFFER_SIZE];
     uint32_t bytesRead = 0;
 

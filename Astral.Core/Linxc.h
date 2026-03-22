@@ -17,6 +17,8 @@
 #define exportC
 #endif
 
+#ifndef DynamicFunction
+
 #ifdef WINDOWS
 #define exportDynamic __declspec(dllexport)
 #define importDynamic __declspec(dllimport)
@@ -29,6 +31,8 @@
 #define DynamicFunction exportDynamic
 #else
 #define DynamicFunction importDynamic
+#endif
+
 #endif
 
 typedef signed char i8;

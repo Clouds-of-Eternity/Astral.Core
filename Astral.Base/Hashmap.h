@@ -186,7 +186,7 @@ inline bool HashMap_Remove(HashMap *self, const void *key)
     }
     return false;
 }
-inline void *HashMap_Get(HashMap *self, const void *key)
+inline void *HashMap_Get(const HashMap *self, const void *key)
 {
     uint32_t hash = self->hashFunc(key);
     size_t index = hash % self->bucketsCount;
@@ -205,7 +205,7 @@ inline void *HashMap_Get(HashMap *self, const void *key)
     }
     return NULL;
 }
-inline bool HashMap_Contains(HashMap *self, const void *key)
+inline bool HashMap_Contains(const HashMap *self, const void *key)
 {
     return HashMap_Get(self, key) != NULL;
 }

@@ -169,7 +169,7 @@ inline Array GetFilesInDirectory(IAllocator allocator, const char *dirPath)
     HANDLE handle = FindFirstFileA(sPath, &findFileResult);
     if (handle == INVALID_HANDLE_VALUE)
     {
-        ArenaAllocator_Deinit(&tempAllocator);
+        ArenaAllocator_Deinit(&arenaAlloc);
         return Array_Empty();
     }
 
@@ -218,13 +218,13 @@ inline Array GetFilesInDirectory(IAllocator allocator, const char *dirPath)
 
     if (results.count == 0)
     {
-        ArenaAllocator_Deinit(&tempAllocator);
+        ArenaAllocator_Deinit(&arenaAlloc);
         return Array_Empty();
     }
 
     Array resultArray = ARRAY(string, allocator, results.count);
     memcpy(resultArray.ptr, results.ptr, results.count * sizeof(string));
 
-    ArenaAllocator_Deinit(&tempAllocator);
+    ArenaAllocator_Deinit(&arenaAlloc);
     return resultArray;
 }
