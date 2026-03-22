@@ -79,7 +79,7 @@ static inline string FILE_ReadString(void *self, IAllocator allocator)
     FILE *fs = (FILE *)self;
     long currentPos = ftell(fs);
 
-    size_t size = 1;
+    size_t size = 0;
     while (true)
     {
         int32_t result = fgetc(fs);
@@ -91,7 +91,7 @@ static inline string FILE_ReadString(void *self, IAllocator allocator)
     }
     string str = StringFromLength(allocator, size);
     fseek(fs, currentPos, SEEK_SET);
-    fread(str.buffer, 1, size, fs);
+    fread(str.buffer, 1, size + 1, fs);
     return str;
 }
 static inline void FILE_PassString(void *self)
@@ -121,5 +121,6 @@ static inline IDataStream GetFileDataStream(FILE *fs)
     result.jumpFunc = &FILE_Jump;
     result.getCurrPosFunc = &FILE_GetCurrPos;
     result.readStringFunc = &FILE_ReadString;
+    result.passStringFunc = &FILE_PassString;
     return result;
 }

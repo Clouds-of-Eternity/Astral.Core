@@ -86,8 +86,6 @@ inline float Matrix4x4_GetDeterminant(const Matrix4x4 *self)
 
 inline bool Matrix4x4_Invert(const Matrix4x4 *self, Matrix4x4 *output)
 {
-    Matrix4x4 result;
-
     float a = self->M11, b = self->M12, c = self->M13, d = self->M14;
     float e = self->M21, f = self->M22, g = self->M23, h = self->M24;
     float i = self->M31, j = self->M32, k = self->M33, l = self->M34;
