@@ -198,7 +198,7 @@ inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
     {
         memset(intoPos, 0, self->itemSize);
     }
-    if (self->count < atIndex + 1)
+    if (self->count <= atIndex)
     {
         self->count = atIndex + 1;
     }

@@ -92,6 +92,17 @@ namespace collections
             ptr[at] = item;
             count += 1;
         }
+        T& InsertOverride(T item, usize atIndex)
+        {
+            EnsureArrayCapacity(atIndex + 1);
+
+            ptr[atIndex] = item;
+            if (self->count <= atIndex)
+            {
+                self->count = atIndex + 1;
+            }
+            return ptr[atIndex];
+        }
         void InsertAll(T* item, usize numItems, usize at)
         {
             EnsureArrayCapacity(count + numItems);
