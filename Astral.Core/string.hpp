@@ -289,7 +289,7 @@ struct string
         this->deinit();
         return result;
     }
-    inline string Clone(IAllocator allocator)
+    inline string Clone(IAllocator allocator) const
     {
         return string(allocator, this->buffer, this->length - 1);
     }
@@ -343,7 +343,7 @@ struct string
         return false;
     }
 
-    inline bool operator==(const char* other)
+    inline bool operator==(const char* other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -351,7 +351,7 @@ struct string
         }
         return strcmp(this->buffer, other) == 0;
     }
-    inline bool operator!=(const char* other)
+    inline bool operator!=(const char* other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -359,7 +359,7 @@ struct string
         }
         return strcmp(this->buffer, other) != 0;
     }
-    inline bool operator==(string other)
+    inline bool operator==(string other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -367,7 +367,7 @@ struct string
         }
         return strcmp(this->buffer, other.buffer) == 0;
     }
-    inline bool operator!=(string other)
+    inline bool operator!=(string other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
