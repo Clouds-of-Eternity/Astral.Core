@@ -60,7 +60,6 @@ inline uint32_t IndexedList_AddDefault(IndexedList *self, bool *created)
     }
     *created = false;
     uint32_t intoIndex = *(uint32_t*)List_Pop(&self->freeIndices);
-    void *slot = List_Get(&self->list, intoIndex);
     return intoIndex;
 }
 inline void IndexedList_Remove(IndexedList *self, uint32_t index)

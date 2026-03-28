@@ -854,7 +854,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             *result = JsonElement();
 
-            *((i64 *)&result->data) = StringToI64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
+            *((i64 *)&result->data) = TextToI64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
             result->dataLength = -(i32)JsonToken_IntegerLiteral;
 
             tokenizer->Next();
@@ -864,7 +864,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         {
             *result = JsonElement();
 
-            result->data = StringToU64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
+            result->data = TextToU64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
             result->dataLength = -(i32)JsonToken_UIntegerLiteral;
 
             tokenizer->Next();

@@ -50,6 +50,18 @@ namespace collections
             u32 intoIndex = freeIndices.Pop();
             return intoIndex;
         }
+        inline u32 AddDefault(bool &justCreated)
+        {
+            if (freeIndices.count == 0)
+            {
+                justCreated = true;
+                list.Add({});
+                return (u32)list.count - 1;
+            }
+            justCreated = false;
+            u32 intoIndex = freeIndices.Pop();
+            return intoIndex;
+        }
         inline void Remove(u32 index)
         {
             if (index < list.count)

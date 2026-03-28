@@ -1,7 +1,4 @@
 #pragma once
-
-#include "Linxc.h"
-#include "stdlib.h"
 #include "Allocators.hpp"
 #include "string.h"
 #include "option.hpp"
@@ -26,6 +23,43 @@ typedef wchar_t char_t;
 #else
 typedef char char_t;
 #endif
+
+struct CharSlice;
+
+inline i64 TextToI64(const char* buffer, usize length)
+{
+    i64 result = 0;
+    u32 index = 1;
+    for (i32 i = (i32)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            i64 amount = index * (buffer[i] - (i64)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    if (buffer[0] == '-')
+    {
+        result *= -1;
+    }
+    return result;
+}
+inline u64 TextToU64(const char* buffer, usize length)
+{
+    u64 result = 0;
+    u32 index = 1;
+    for (i32 i = (i32)length - 1; i >= 0; i--)
+    {
+        if (buffer[i] >= '0' && buffer[i] <= '9')
+        {
+            i64 amount = index * (buffer[i] - (u64)'0');
+            result += amount;
+            index *= 10;
+        }
+    }
+    return result;
+}
 
 struct string
 {
@@ -343,7 +377,7 @@ struct string
         return false;
     }
 
-    inline bool operator==(const char* other) const
+    inline bool operator==(text other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -351,7 +385,7 @@ struct string
         }
         return strcmp(this->buffer, other) == 0;
     }
-    inline bool operator!=(const char* other) const
+    inline bool operator!=(text other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -359,7 +393,7 @@ struct string
         }
         return strcmp(this->buffer, other) != 0;
     }
-    inline bool operator==(string other) const
+    inline bool operator==(const string other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -367,7 +401,7 @@ struct string
         }
         return strcmp(this->buffer, other.buffer) == 0;
     }
-    inline bool operator!=(string other) const
+    inline bool operator!=(const string other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -375,6 +409,9 @@ struct string
         }
         return strcmp(this->buffer, other.buffer) != 0;
     }
+    bool operator==(const CharSlice other) const;
+    bool operator!=(const CharSlice other) const;
+
     inline string operator+(string other)
     {
         string newString = Clone(allocator);
@@ -411,6 +448,15 @@ struct string
 
         string result = string(allocator, buffer, requiredBytes);
         return result;
+    }
+
+    inline i64 ToI64()
+    {
+        return TextToI64(buffer, length - 1);
+    }
+    inline u64 ToU64()
+    {
+        return TextToU64(buffer, length - 1);
     }
 };
 
@@ -458,17 +504,52 @@ struct CharSlice
         buffer = stringLiteral;
         length = literalLength;
     }
-    inline bool operator==(text str)
+    inline bool operator==(text str) const
     {
-        //use memcmp not strcmp as CharSlice is probably not null terminated
+        if (str == NULL)
+        {
+            return buffer == NULL;
+        }
         return memcmp(buffer, str, length) == 0;
     }
-    inline bool operator!=(text str)
+    inline bool operator!=(text str) const
     {
-        return memcmp(buffer, str, length) != 0;
+        if (str == buffer)
+        {
+            return false;
+        }
+        return str == NULL || buffer == NULL || memcmp(buffer, str, length) != 0;
+    }
+    inline bool operator==(const CharSlice str) const
+    {
+        if (str.length != length)
+        {
+            return false;
+        }
+        return memcmp(str.buffer, buffer, length) == 0;
+    }
+    inline bool operator!=(const CharSlice str) const
+    {
+        if (str.buffer == NULL && buffer == NULL)
+        {
+            return false;
+        }
+        if (str.buffer == NULL || buffer == NULL || str.length != length)
+        {
+            return true;
+        }
+        return memcmp(str.buffer, buffer, length) != 0;
+    }
+    inline bool operator==(const string str) const
+    {
+        return *this == str.buffer;
+    }
+    inline bool operator!=(const string str) const
+    {
+        return *this != str.buffer;
     }
 
-    inline bool StartsWith(const char* other)
+    inline bool StartsWith(text other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -485,7 +566,7 @@ struct CharSlice
         }
         return memcmp(this->buffer, other, len) == 0;
     }
-    inline bool EndsWith(const char* other)
+    inline bool EndsWith(text other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -502,7 +583,25 @@ struct CharSlice
         }
         return false;
     }
+
+    inline u64 ToU64() const
+    {
+        return TextToU64(buffer, length);
+    }
+
+    inline i64 ToI64() const
+    {
+        return TextToI64(buffer, length);
+    }
 };
+inline bool string::operator==(const CharSlice other) const
+{
+    return other == *this;
+}
+inline bool string::operator!=(const CharSlice other) const
+{
+    return other != *this;
+}
 
 inline string ConcatFromCharSlices(IAllocator allocator, CharSlice* strings, usize length)
 {
@@ -690,39 +789,4 @@ inline collections::Array<string> SplitString(IAllocator allocator, const char* 
     }
 
     return results.ToOwnedArrayWith(allocator);
-}
-
-inline i64 StringToI64(const char* buffer, usize length)
-{
-    i64 result = 0;
-    u32 index = 1;
-    for (i32 i = (i32)length - 1; i >= 0; i--)
-    {
-        if (buffer[i] >= '0' && buffer[i] <= '9')
-        {
-            i64 amount = index * (buffer[i] - (i64)'0');
-            result += amount;
-            index *= 10;
-        }
-    }
-    if (buffer[0] == '-')
-    {
-        result *= -1;
-    }
-    return result;
-}
-inline u64 StringToU64(const char* buffer, usize length)
-{
-    u64 result = 0;
-    u32 index = 1;
-    for (i32 i = (i32)length - 1; i >= 0; i--)
-    {
-        if (buffer[i] >= '0' && buffer[i] <= '9')
-        {
-            i64 amount = index * (buffer[i] - (u64)'0');
-            result += amount;
-            index *= 10;
-        }
-    }
-    return result;
 }
