@@ -21,7 +21,12 @@ namespace collections
             K key;
             V value;
 
-            Entry(K key, V value)
+            inline Entry()
+            {
+                key = {};
+                value = {};
+            }
+            inline Entry(K key, V value)
             {
                 this->key = key;
                 this->value = value;
@@ -229,7 +234,7 @@ namespace collections
             return false;
         }
 
-        V *Get(K key)
+        V *Get(K key) const
         {
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
@@ -247,7 +252,7 @@ namespace collections
             return NULL;
         }
 
-        V GetCopyOr(K key, V valueOnNotFound)
+        V GetCopyOr(K key, V valueOnNotFound) const
         {
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;

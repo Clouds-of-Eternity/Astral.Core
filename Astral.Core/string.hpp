@@ -489,6 +489,11 @@ struct CharSlice
     const char* buffer;
     usize length;
 
+    inline CharSlice()
+    {
+        buffer = NULL;
+        length = 0;
+    }
     inline CharSlice(string str)
     {
         buffer = str.buffer;
