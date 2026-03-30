@@ -603,6 +603,34 @@ inline bool string::operator!=(const CharSlice other) const
     return other != *this;
 }
 
+inline bool CharSliceEql(CharSlice A, CharSlice B)
+{
+    if (A.buffer == NULL || B.buffer == NULL)
+    {
+        return A.buffer == B.buffer;
+    }
+    if (A.length != B.length)
+    {
+        return false;
+    }
+    return memcmp(A.buffer, B.buffer, A.length) == 0;
+}
+
+inline u32 CharSliceHash(CharSlice A)
+{
+    if (A.buffer == NULL)
+    {
+        return 7;
+    }
+    u32 hash = 7;
+    for (usize i = 0; i < A.length; i++)
+    {
+        hash = hash * 31 + A.buffer[i];
+    }
+
+    return hash;
+}
+
 inline string ConcatFromCharSlices(IAllocator allocator, CharSlice* strings, usize length)
 {
     usize totalLength = 1; //1 to account for the null termination of the concatenated string
