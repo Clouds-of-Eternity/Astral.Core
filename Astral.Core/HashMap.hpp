@@ -310,12 +310,12 @@ namespace collections
 
         struct Iterator
         {
-            HashMap<K, V> *map;
+            const HashMap<K, V> *map;
             usize i;
             usize j;
             bool completed;
 
-            Iterator(HashMap<K, V> *map)
+            Iterator(const HashMap<K, V> *map)
             {
                 this->map = map;
                 i = 0;
@@ -346,7 +346,7 @@ namespace collections
                 return &map->buckets[i].entries.ptr[j++];
             }
         };
-        inline Iterator GetIterator()
+        inline Iterator GetIterator() const
         {
             return Iterator(this);
         }
