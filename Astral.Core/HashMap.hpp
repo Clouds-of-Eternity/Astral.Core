@@ -322,8 +322,14 @@ namespace collections
                 j = 0;
                 completed = false;
             }
+            inline void Reset()
+            {
+                i = 0;
+                j = 0;
+                completed = false;
+            }
 
-            Entry* Next()
+            inline Entry* Next()
             {
                 if (i >= map->bucketsCount || completed)
                 {

@@ -120,11 +120,11 @@ namespace collections
         {
             count = 0;
         }
-        T *Get(usize index)
+        T *Get(usize index) const
         {
             return &ptr[index];
         }
-        inline T& operator[](usize index)
+        inline T& operator[](usize index) const
         {
             return ptr[index];
         }
