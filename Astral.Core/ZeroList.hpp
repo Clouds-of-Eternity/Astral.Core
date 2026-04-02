@@ -37,10 +37,6 @@ namespace collections
         {
             this->allocator = myAllocator;
             ptr = (T*)this->allocator.Allocate(sizeof(T) * minCapacity);
-            for (usize i = 0; i < minCapacity; i++)
-            {
-                ptr[i] = T();
-            }
             capacity = minCapacity;
             count = 0;
         }
@@ -56,7 +52,7 @@ namespace collections
 
         void EnsureArrayCapacity(usize minCapacity)
         {
-            if (capacity <= minCapacity)
+            if (capacity < minCapacity)
             {
                 usize newCapacity = capacity;
                 if (newCapacity == 0)
@@ -86,13 +82,13 @@ namespace collections
         }
         void Add(T item)
         {
-            EnsureArrayCapacity(count + 2); //+2 for a null buffer
+            EnsureArrayCapacity(count + 1);
             ptr[count] = item;
             count += 1;
         }
         void Insert(T item, usize at)
         {
-            EnsureArrayCapacity(count + 2); //+2 for a null buffer
+            EnsureArrayCapacity(count + 1);
             for (i64 i = (i64)count; i > (i64)at; i--)
             {
                 ptr[i] = ptr[i - 1];
@@ -100,9 +96,20 @@ namespace collections
             ptr[at] = item;
             count += 1;
         }
+        T& InsertOverride(T item, usize atIndex)
+        {
+            EnsureArrayCapacity(atIndex + 1);
+
+            ptr[atIndex] = item;
+            if (self->count <= atIndex)
+            {
+                self->count = atIndex + 1;
+            }
+            return ptr[atIndex];
+        }
         void InsertAll(T* item, usize numItems, usize at)
         {
-            EnsureArrayCapacity(count + numItems + 1); //+1 for a null buffer
+            EnsureArrayCapacity(count + numItems);
             for (i64 i = (i64)count -1 + numItems; i >= at + numItems; i--)
             {
                 ptr[i] = ptr[i - 1];
@@ -115,15 +122,23 @@ namespace collections
         }
         void Clear()
         {
-            for (usize i = 0; i < count; i++)
-            {
-                ptr[i] = T();
-            }
             count = 0;
         }
-        T *Get(usize index)
+        T *Get(usize index) const
         {
             return &ptr[index];
+        }
+        inline T& operator[](usize index) const
+        {
+            return ptr[index];
+        }
+        inline T Pop()
+        {
+            if (count == 0)
+            {
+                return T{};
+            }
+            return ptr[--count];
         }
         void RemoveAt_Swap(usize index)
         {
@@ -133,7 +148,6 @@ namespace collections
             {
                 ptr[index] = ptr[count - 1];
             }
-            ptr[count - 1] = T();
             count -= 1;
         }
         void RemoveAt_Pullback(usize index)
@@ -146,7 +160,6 @@ namespace collections
                     ptr[i] = ptr[i + 1];
                 }
             }
-            ptr[count - 1] = T();
             count -= 1;
         }
         void RemoveManyAt(usize index, usize numRemoves)
@@ -156,11 +169,20 @@ namespace collections
             {
                 ptr[i] = ptr[i + numRemoves];
             }
-            for (usize i = count - numRemoves; i < count; i++)
-            {
-                ptr[i] = T();
-            }
             count -= numRemoves;
+        }
+        collections::ZeroList<T> Clone(IAllocator newAllocator)
+        {
+            if (this->ptr == NULL)
+            {
+                return collections::ZeroList<T>(newAllocator);
+            }
+            collections::ZeroList<T> result = collections::ZeroList<T>(newAllocator, count);
+            for (u32 i = 0; i < count; i++)
+            {
+                result.Add(ptr[i]);
+            }
+            return result;
         }
         collections::Array<T> ToClonedArray(IAllocator newAllocator)
         {
@@ -212,14 +234,14 @@ namespace collections
             {
                 if (eqlFunc(this->ptr[i], value))
                 {
-                    option<usize>(i);
+                    return option<usize>(i);
                 }
             }
             return option<usize>();
         }
         collections::Array<T> ToRefArray()
         {
-            return collections::Array<T>(NULL, this->ptr, this->count);
+            return collections::Array<T>(this->ptr, this->count);
         }
         void AddAllDeinit(collections::ZeroList<T> *from)
         {
@@ -229,6 +251,28 @@ namespace collections
             }
             //memcpy(this->ptr, from->ptr, from->count * sizeof(T));
             from->deinit();
+        }
+        void AddAllDeinit(collections::Array<T> *from)
+        {
+            for (usize i = 0; i < from->length; i++)
+            {
+                Add(from->data[i]);
+            }
+            from->deinit();
+        }
+        void AddAll(collections::ZeroList<T> *from)
+        {
+            for (usize i = 0; i < from->count; i++)
+            {
+                Add(from->ptr[i]);
+            }
+        }
+        void AddAll(collections::Array<T> *from)
+        {
+            for (usize i = 0; i < from->length; i++)
+            {
+                Add(from->data[i]);
+            }
         }
     };
 }

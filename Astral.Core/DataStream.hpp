@@ -17,6 +17,8 @@ def_delegate(IDataStreamGetCurrPosFunc, usize, void *self);
 def_delegate(IDataStreamReadStringFunc, string, void *self, IAllocator allocator);
 def_delegate(IDataStreamPassStringFunc, void, void *self);
 
+def_delegate(IDataStreamWriteFunc, void, void *self, const void *value, usize elementSize, usize writeCount);
+
 struct IDataStream
 {
     void *instance;
@@ -25,6 +27,42 @@ struct IDataStream
     IDataStreamGetCurrPosFunc getCurrPosFunc;
     IDataStreamReadStringFunc readStringFunc;
     IDataStreamPassStringFunc passStringFunc;
+
+    IDataStreamWriteFunc writeFunc;
+
+    template<typename T>
+    inline void Write(T value)
+    {
+        writeFunc(instance, &value, sizeof(T), 1);
+    }
+    template<typename T>
+    inline void WriteArray(T *values, usize count)
+    {
+        writeFunc(instance, values, sizeof(T), count);
+    }
+    template<typename T>
+    inline void WriteArray(collections::Array<T> array)
+    {
+        writeFunc(instance, array.data, sizeof(T), array.length);
+    }
+    inline void WriteString(string str)
+    {
+        writeFunc(instance, str.buffer, 1, str.length);
+    }
+    inline void WriteCharSlice(CharSlice str)
+    {
+        const char nullTerm = '\0';
+        writeFunc(instance, str.buffer, 1, str.length);
+        writeFunc(instance, &nullTerm, 1, 1);
+    }
+    inline void WriteText(text str)
+    {
+        writeFunc(instance, str, 1, strlen(str) + 1);
+    }
+    inline void WriteByte(u8 value)
+    {
+        writeFunc(instance, &value, 1, 1);
+    }
 
     template<typename T>
     inline T Read()
@@ -113,13 +151,27 @@ inline usize FILE_GetCurrPos(void *self)
     FILE *fs = (FILE *)self;
     return (usize)ftell(fs);
 }
+inline void FILE_Write(void *self, const void *value, usize elementSize, usize writeCount)
+{
+    FILE *fs = (FILE *)self;
+    fwrite(value, elementSize, writeCount, fs);
+}
 inline IDataStream GetFileDataStream(FILE *fs)
 {
-    IDataStream result;
+    IDataStream result = {};
     result.instance = fs;
     result.readFunc = &FILE_Read;
+    result.readStringFunc = &FILE_ReadString;
     result.jumpFunc = &FILE_Jump;
     result.getCurrPosFunc = &FILE_GetCurrPos;
-    result.readStringFunc = &FILE_ReadString;
+    return result;
+}
+inline IDataStream GetWriteFileDataStream(FILE *fs)
+{
+    IDataStream result = {};
+    result.instance = fs;
+    result.jumpFunc = &FILE_Jump;
+    result.getCurrPosFunc = &FILE_GetCurrPos;
+    result.writeFunc = &FILE_Write;
     return result;
 }

@@ -13,6 +13,10 @@ string ByteStreamReader_ReadString(void *self, IAllocator allocator);
 void ByteStreamReader_PassString(void *self);
 bool ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
 
+void ByteStreamWriter_Write(void *self, const void *value, usize elementSize, usize writeCount);
+bool ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
+usize ByteStreamWriter_GetCurrPosFunc(void *self);
+
 struct ByteStreamReader
 {
     const u8* stream;
@@ -114,7 +118,7 @@ struct ByteStreamReader
 
     inline IDataStream ToDataStream()
     {
-        IDataStream result;
+        IDataStream result = {};
         result.instance = this;
         result.readFunc = &ByteStreamReader_Read;
         result.readStringFunc = &ByteStreamReader_ReadString;
@@ -270,4 +274,35 @@ struct ByteStreamWriter
     {
         bytes.deinit();
     }
+
+    inline IDataStream ToDataStream()
+    {
+        IDataStream result = {};
+        result.instance = this;
+        result.writeFunc = &ByteStreamWriter_Write;
+        result.jumpFunc = &ByteStreamWriter_Jump;
+        result.getCurrPosFunc = &ByteStreamWriter_GetCurrPosFunc;
+        return result;
+    }
 };
+
+inline void ByteStreamWriter_Write(void *self, const void *value, usize elementSize, usize writeCount)
+{
+    ByteStreamWriter *writer = (ByteStreamWriter *)self;
+    const usize totalSize = elementSize * writeCount;
+
+    writer->bytes.EnsureArrayCapacity(writer->bytes.count + totalSize);
+    memcpy(writer->bytes.ptr + writer->bytes.count, value, totalSize);
+    writer->bytes.count += totalSize;
+}
+inline bool ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
+{
+    //todo: implement
+    assert(false);
+    return false;
+}
+inline usize ByteStreamWriter_GetCurrPosFunc(void *self)
+{
+    ByteStreamWriter *instance = (ByteStreamWriter *)self;
+    return instance->bytes.count;
+}
