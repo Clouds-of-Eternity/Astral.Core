@@ -37,12 +37,15 @@ struct ArenaAllocator
     }
     inline void deinit()
     {
-        for (usize i = 0; i < this->ptrs->count; i++)
+        if (this->ptrs != NULL)
         {
-            this->baseAllocator.Free(*this->ptrs->Get(i));
+            for (usize i = 0; i < this->ptrs->count; i++)
+            {
+                this->baseAllocator.Free(*this->ptrs->Get(i));
+            }
+            ptrs->deinit();
+            baseAllocator.Free(ptrs);
         }
-        ptrs->deinit();
-        baseAllocator.Free(ptrs);
     }
 };
 

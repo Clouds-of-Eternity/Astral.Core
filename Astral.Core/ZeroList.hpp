@@ -37,6 +37,7 @@ namespace collections
         {
             this->allocator = myAllocator;
             ptr = (T*)this->allocator.Allocate(sizeof(T) * minCapacity);
+            memset(ptr, 0, sizeof(T) * minCapacity);
             capacity = minCapacity;
             count = 0;
         }
@@ -122,6 +123,7 @@ namespace collections
         }
         void Clear()
         {
+            memset(ptr, 0, count * sizeof(T));
             count = 0;
         }
         T *Get(usize index) const
@@ -148,6 +150,8 @@ namespace collections
             {
                 ptr[index] = ptr[count - 1];
             }
+            
+            ptr[count - 1] = 0;
             count -= 1;
         }
         void RemoveAt_Pullback(usize index)
@@ -160,6 +164,7 @@ namespace collections
                     ptr[i] = ptr[i + 1];
                 }
             }
+            ptr[count - 1] = 0;
             count -= 1;
         }
         void RemoveManyAt(usize index, usize numRemoves)
