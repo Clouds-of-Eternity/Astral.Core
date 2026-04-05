@@ -11,10 +11,10 @@ usize ByteStreamReader_GetCurrPosFunc(void *self);
 usize ByteStreamReader_Read(void *self, void *output, usize elementSize, usize readCount);
 string ByteStreamReader_ReadString(void *self, IAllocator allocator);
 void ByteStreamReader_PassString(void *self);
-bool ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
+u8 ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
 
 void ByteStreamWriter_Write(void *self, const void *value, usize elementSize, usize writeCount);
-bool ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
+u8 ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative);
 usize ByteStreamWriter_GetCurrPosFunc(void *self);
 
 struct ByteStreamReader
@@ -145,7 +145,7 @@ inline usize ByteStreamReader_Read(void *self, void *output, usize elementSize, 
     }
     return readCount;
 }
-inline bool ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
+inline u8 ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
 {
     ByteStreamReader *instance = (ByteStreamReader *)self;
     usize newPos = instance->position;
@@ -164,9 +164,9 @@ inline bool ByteStreamReader_Jump(void *self, i64 jumpOffset, DataStreamJumpRela
     if (newPos <= instance->size)
     {
         instance->position = newPos;
-        return true;
+        return 1;
     }
-    return false;
+    return 0;
 }
 inline string ByteStreamReader_ReadString(void *self, IAllocator allocator)
 {
@@ -295,11 +295,11 @@ inline void ByteStreamWriter_Write(void *self, const void *value, usize elementS
     memcpy(writer->bytes.ptr + writer->bytes.count, value, totalSize);
     writer->bytes.count += totalSize;
 }
-inline bool ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
+inline u8 ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
 {
     //todo: implement
     assert(false);
-    return false;
+    return 0;
 }
 inline usize ByteStreamWriter_GetCurrPosFunc(void *self)
 {

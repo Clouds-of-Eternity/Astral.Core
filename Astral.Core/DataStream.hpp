@@ -12,7 +12,7 @@ enum DataStreamJumpRelative
 };
 
 def_delegate(IDataStreamReadFunc, usize, void *self, void *output, usize elementSize, usize readCount);
-def_delegate(IDataStreamJumpFunc, bool, void *self, i64 jumpOffset, DataStreamJumpRelative relative);
+def_delegate(IDataStreamJumpFunc, u8, void *self, i64 jumpOffset, DataStreamJumpRelative relative);
 def_delegate(IDataStreamGetCurrPosFunc, usize, void *self);
 def_delegate(IDataStreamReadStringFunc, string, void *self, IAllocator allocator);
 def_delegate(IDataStreamPassStringFunc, void, void *self);
@@ -80,6 +80,22 @@ struct IDataStream
     }
     inline string ReadString(IAllocator allocator)
     {
+        if (readStringFunc == NULL)
+        {
+            usize currPos = this->getCurrPosFunc(instance);
+            usize stringLength = 0;
+            char charData;
+            do
+            {
+                this->readFunc(instance, &charData, 1, 1);
+            }
+            while (charData != 0);
+            this->jumpFunc(instance, currPos, DataStreamJumpRelative_StreamStart);
+
+            string result = string(allocator, stringLength);
+            this->readFunc(instance, result.buffer, 1, stringLength);
+            return result;
+        }
         return readStringFunc(instance, allocator);
     }
     inline void PassString()
@@ -107,7 +123,7 @@ inline usize FILE_Read(void *self, void *output, usize elementSize, usize readCo
     FILE *fs = (FILE *)self;
     return fread(output, elementSize, readCount, fs);
 }
-inline bool FILE_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
+inline u8 FILE_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
 {
     FILE *fs = (FILE *)self;
     return fseek(fs, jumpOffset, (int)relative) == 0;
