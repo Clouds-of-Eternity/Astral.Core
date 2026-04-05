@@ -5,173 +5,125 @@
 inline void *StackAllocator_Allocate(void *instance, usize bytes);
 inline void StackAllocator_Free(void *instance, void *ptr);
 
-enum StackOverflowPolicy
-{
-    StackOverflowPolicy_ReturnNull,
-    StackOverflowPolicy_AssertFalse,
-    StackOverflowPolicy_NewPage
-};
-struct StackData;
-struct StackData
-{
-    void *ptr;
-    usize head;
-    StackData *nextStack;
-};
-struct StackAllocatorImpl
-{
-    //1 usize at the start of the stack pointer is reserved for the stack head.
-    //next usize at the start is used as the pointer to the next stack 
-    //in case policy is set to NewPage and the stack runs out of space
-    StackData firstStack;
-    usize stackSize;
-    StackOverflowPolicy policy;
-    IAllocator baseAllocator;
+struct StackPageHeader;
 
-    inline StackAllocatorImpl()
-    {
-        firstStack = StackData();
-        stackSize = 0;
-        policy = StackOverflowPolicy_ReturnNull;
-        baseAllocator = {};
-    }
-    inline StackAllocatorImpl(IAllocator baseAllocator, usize stackSize, StackOverflowPolicy overflowPolicy)
-    {
-        this->baseAllocator = baseAllocator;
-        this->stackSize = stackSize;
-        this->policy = overflowPolicy;
-        firstStack.ptr = baseAllocator.Allocate(stackSize);
-        firstStack.head = 0;
-        firstStack.nextStack = NULL;
-    }
-    inline u32 BeginFrame()
-    {
-        u32 frame = 0;
-        StackData *ptr = &firstStack;
-        while (ptr != NULL)
-        {
-            frame += ptr->head;
-            ptr = ptr->nextStack;
-        }
-        return frame;
-    }
-    inline void EndFrame(u32 prevFrame)
-    {
-        StackData *ptr = &firstStack;
-        u32 stackIndex = prevFrame / stackSize;
-        while (ptr != NULL)
-        {
-            if (prevFrame < stackSize)
-            {
-                ptr->head = prevFrame;
-                prevFrame = 0;
-            }
-            else
-            {
-                prevFrame -= stackSize;
-            }
-            ptr = ptr->nextStack;
-        }
-    }
-    inline void deinit()
-    {
-        StackData stack = firstStack;
-        while (true)
-        {
-            this->baseAllocator.Free(stack.ptr);
-            if (stack.nextStack != NULL)
-            {
-                stack = *stack.nextStack;
-                stack.nextStack = NULL;
-                baseAllocator.Free(stack.nextStack);
-            }
-            else
-            {
-                break;
-            }
-        }
-        firstStack = StackData();
-        stackSize = 0;
-    }
+struct StackAllocatorHeader
+{
+    IAllocator baseAllocator;
+    usize head;
+    usize pageSize;
+    StackPageHeader *currPage;
+};
+struct StackPageHeader
+{
+    StackPageHeader *nextStack;
 };
 struct StackAllocator
 {
-    StackAllocatorImpl *ptr;
+    void *payload;
 
     inline StackAllocator()
     {
-        ptr = NULL;
+        payload = NULL;
     }
-    inline StackAllocator(StackAllocatorImpl *ptr)
+    inline StackAllocator(void *payload)
     {
-        this->ptr = ptr;
+        this->payload = payload;
     }
-    inline StackAllocator(IAllocator baseAllocator, usize stackSize, StackOverflowPolicy overflowPolicy)
+    inline StackAllocator(IAllocator baseAllocator, usize pageSize)
     {
-        ptr = (StackAllocatorImpl *)baseAllocator.Allocate(sizeof(StackAllocatorImpl));
-        *ptr = StackAllocatorImpl(baseAllocator, stackSize, overflowPolicy);
+        payload = baseAllocator.Allocate(sizeof(StackAllocatorHeader) + sizeof(StackPageHeader) + pageSize);
+        StackAllocatorHeader *internals = GetInternals();
+        internals->baseAllocator = baseAllocator;
+        internals->head = 0;
+        internals->pageSize = pageSize;
+        internals->currPage = GetPage(0);
+        internals->currPage->nextStack = NULL;
     }
+
+    inline StackAllocatorHeader *GetInternals()
+    {
+        return (StackAllocatorHeader *)payload;
+    }
+    inline StackPageHeader *GetPage(u32 index)
+    {
+        StackPageHeader *result = (StackPageHeader *)((u8 *)payload + sizeof(StackAllocatorHeader));
+        while (index > 0 && result != NULL)
+        {
+            result = result->nextStack;
+            index--;
+        }
+        return result;
+    }
+    inline void *GetPageAlloc(u32 index)
+    {
+        return (u8*)GetPage(index) + sizeof(StackPageHeader);
+    }
+
     inline void deinit()
     {
-        if (ptr == NULL)
+        if (payload == NULL)
         {
             return;
         }
-        IAllocator baseAllocator = ptr->baseAllocator;
-        ptr->deinit();
-        baseAllocator.Free(ptr);
+        IAllocator baseAllocator = ((StackAllocatorHeader *)payload)->baseAllocator;
+
+        //dont need to free first pageHeader as that is under payload itself
+        StackPageHeader *pageHeader = (StackPageHeader *)((u8*)payload + sizeof(StackAllocatorHeader));
+        pageHeader = pageHeader->nextStack;
+
+        while (pageHeader != NULL)
+        {
+            StackPageHeader *old = pageHeader;
+            pageHeader = pageHeader->nextStack;
+            baseAllocator.Free(old);
+        }
+        baseAllocator.Free(payload);
     }
-    inline u32 BeginFrame()
+    inline usize BeginFrame()
     {
-        return ptr->BeginFrame();
+        return GetInternals()->head;
     }
-    inline void EndFrame(u32 frame)
+    inline void EndFrame(usize frame)
     {
-        ptr->EndFrame(frame);
+        StackAllocatorHeader *header = GetInternals();
+        header->head = frame;
+        header->currPage = GetPage(frame / header->pageSize);
     }
     inline IAllocator AsAllocator()
     {
-        return IAllocator(ptr, &StackAllocator_Allocate, &StackAllocator_Free);
+        return IAllocator(payload, &StackAllocator_Allocate, &StackAllocator_Free);
     }
 };
 
-void* StackAllocator_Allocate(void* instance, usize bytes)
+inline void* StackAllocator_Allocate(void* instance, usize bytes)
 {
-    StackAllocatorImpl *impl = (StackAllocatorImpl *)instance;
-    if (bytes >= impl->stackSize)
+    StackAllocator self = StackAllocator(instance);
+    StackAllocatorHeader *header = self.GetInternals();
+
+    if (bytes >= header->pageSize)
     {
         return NULL;
     }
-    StackData *stackToUse = &impl->firstStack;
-    while (stackToUse->head + bytes >= impl->stackSize)
+    usize posInCurrPage = header->head % header->pageSize;
+    usize spaceLeftInCurrPage = header->pageSize - posInCurrPage;
+    if (spaceLeftInCurrPage < bytes)
     {
-        if (impl->policy == StackOverflowPolicy_AssertFalse)
+        header->head += spaceLeftInCurrPage;
+        if (header->currPage->nextStack == NULL)
         {
-            assert(false);
-            return NULL;
+            header->currPage->nextStack = (StackPageHeader *)header->baseAllocator.Allocate(sizeof(StackPageHeader) + header->pageSize);
+            header->currPage->nextStack->nextStack = NULL;
         }
-        else if (impl->policy == StackOverflowPolicy_ReturnNull)
-        {
-            return NULL;
-        }
-        else
-        {
-            if (stackToUse->nextStack == NULL)
-            {
-                stackToUse->head = impl->stackSize;
-                stackToUse->nextStack = (StackData *)impl->baseAllocator.Allocate(sizeof(StackData));
-                stackToUse->nextStack->head = 0;
-                stackToUse->nextStack->nextStack = NULL;
-                stackToUse->nextStack->ptr = impl->baseAllocator.Allocate(impl->stackSize);
-            }
-            stackToUse = stackToUse->nextStack;
-        }
+        header->currPage = header->currPage->nextStack;
     }
-    void *result = (u8 *)stackToUse->ptr + stackToUse->head;
-    stackToUse->head += bytes;
+    u8 *result = (u8 *)&header->currPage[1];
+    result += posInCurrPage;
+    header->head += bytes;
+
     return result;
 }
-void StackAllocator_Free(void* instance, void* ptr)
+inline void StackAllocator_Free(void* instance, void* ptr)
 {
 
 }
