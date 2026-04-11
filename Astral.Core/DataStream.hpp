@@ -18,6 +18,10 @@ def_delegate(IDataStreamReadStringFunc, string, void *self, IAllocator allocator
 def_delegate(IDataStreamPassStringFunc, void, void *self);
 
 def_delegate(IDataStreamWriteFunc, void, void *self, const void *value, usize elementSize, usize writeCount);
+def_delegate(IDataStreamWriteTextFormattedFunc, void, void *self, const char *str, va_list args);
+
+def_delegate(IDataStreamFlushFunc, void, void *self);
+def_delegate(IDataStreamCloseFunc, void, void *self);
 
 struct IDataStream
 {
@@ -29,6 +33,10 @@ struct IDataStream
     IDataStreamPassStringFunc passStringFunc;
 
     IDataStreamWriteFunc writeFunc;
+    IDataStreamWriteTextFormattedFunc writeTextFormattedFunc;
+
+    IDataStreamFlushFunc flushFunc;
+    IDataStreamCloseFunc closeFunc;
 
     template<typename T>
     inline void Write(T value)
@@ -58,6 +66,13 @@ struct IDataStream
     inline void WriteText(text str)
     {
         writeFunc(instance, str, 1, strlen(str) + 1);
+    }
+    inline void WriteFormatted(text str, ...)
+    {
+        va_list args;
+        va_start(args, str);
+        this->writeTextFormattedFunc(this->instance, str, args);
+        va_end(args);
     }
     inline void WriteByte(u8 value)
     {
@@ -116,6 +131,21 @@ struct IDataStream
     {
         jumpFunc(instance, jumpOffset, relative);
     }
+
+    inline void Flush()
+    {
+        if (this->flushFunc != NULL)
+        {
+            flushFunc(this->instance);
+        }
+    }
+    inline void deinit()
+    {
+        if (this->closeFunc != NULL)
+        {
+            this->closeFunc(this->instance);
+       }
+    }
 };
 
 inline usize FILE_Read(void *self, void *output, usize elementSize, usize readCount)
@@ -172,6 +202,18 @@ inline void FILE_Write(void *self, const void *value, usize elementSize, usize w
     FILE *fs = (FILE *)self;
     fwrite(value, elementSize, writeCount, fs);
 }
+inline void FILE_Flush(void *self)
+{
+    fflush((FILE *)self);
+}
+inline void FILE_Deinit(void *self)
+{
+    fclose((FILE *)self);
+}
+inline void FILE_WriteTextFormatted(void *self, const char *str, va_list args)
+{
+    vfprintf((FILE *)self, str, args);
+}
 inline IDataStream GetFileDataStream(FILE *fs)
 {
     IDataStream result = {};
@@ -180,6 +222,8 @@ inline IDataStream GetFileDataStream(FILE *fs)
     result.readStringFunc = &FILE_ReadString;
     result.jumpFunc = &FILE_Jump;
     result.getCurrPosFunc = &FILE_GetCurrPos;
+    result.flushFunc = NULL;
+    result.closeFunc = &FILE_Deinit;
     return result;
 }
 inline IDataStream GetWriteFileDataStream(FILE *fs)
@@ -189,5 +233,8 @@ inline IDataStream GetWriteFileDataStream(FILE *fs)
     result.jumpFunc = &FILE_Jump;
     result.getCurrPosFunc = &FILE_GetCurrPos;
     result.writeFunc = &FILE_Write;
+    result.writeTextFormattedFunc = &FILE_WriteTextFormatted;
+    result.flushFunc = &FILE_Flush;
+    result.closeFunc = &FILE_Deinit;
     return result;
 }

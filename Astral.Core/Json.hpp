@@ -329,7 +329,7 @@ namespace Json
 
     struct JsonWriter
     {
-        FILE *stream;
+        IDataStream stream;
         JsonTokenType previousToken;
         collections::List<JsonTokenType> indentTypes;
         bool shouldIndent;
@@ -337,7 +337,7 @@ namespace Json
 
         inline JsonWriter(IAllocator allocator, FILE *fileStream, bool writerShouldIndent)
         {
-            stream = fileStream;
+            stream = GetWriteFileDataStream(fileStream);
             previousToken = JsonToken_Invalid;
             shouldIndent = writerShouldIndent;
             indentTypes = collections::List<JsonTokenType>(allocator);
@@ -345,8 +345,8 @@ namespace Json
         }
         inline void SaveAndCloseFile()
         {
-            fflush(stream);
-            fclose(stream);
+            stream.Flush();
+            stream.deinit();
         }
         inline void deinit()
         {
@@ -358,7 +358,7 @@ namespace Json
             {
                 for (usize i = 0; i < indentTypes.count; i++)
                 {
-                    fprintf(stream, " ");
+                    stream.WriteByte(' ');
                 }
             }
         }
@@ -387,17 +387,17 @@ namespace Json
                 {
                     if (previousToken == JsonToken_PropertyName)
                     {
-                        fprintf(stream, ":\n");
+                        stream.WriteText(":\n");
                     }
                     else if (previousToken != JsonToken_LBracket)
                     {
-                        fprintf(stream, ",\n");
+                        stream.WriteText(",\n");
                     }
                     else
-                        fprintf(stream, "\n");
+                        stream.WriteText("\n");
                 }
                 WriteIndents();
-                fprintf(stream, "{");
+                stream.WriteText("{");
                 previousToken = JsonToken_LBrace;
                 indentTypes.Add(JsonToken_LBrace);
                 return true;
@@ -419,12 +419,14 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBrace)
                 {
-                    fprintf(stream, ",\n");
+                    stream.WriteText(",\n");
                 }
                 else
-                    fprintf(stream, "\n");
+                {
+                    stream.WriteText("\n");
+                }
                 WriteIndents();
-                fprintf(stream, "\"%s\"", chars);
+                stream.WriteFormatted("\"%s\"", chars);
                 previousToken = JsonToken_PropertyName;
                 return true;
             }
@@ -434,7 +436,7 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": %lli", value);
+                stream.WriteFormatted(": %lli", value);
                 previousToken = JsonToken_IntegerLiteral;
                 return true;
             }
@@ -442,9 +444,9 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBracket)
                 {
-                    fprintf(stream, ", ");
+                    stream.WriteText(", ");
                 }
-                fprintf(stream, "%lli", value);
+                stream.WriteFormatted("%lli", value);
                 previousToken = JsonToken_IntegerLiteral;
                 return true;
             }
@@ -454,7 +456,7 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": %llu", value);
+                stream.WriteFormatted(": %llu", value);
                 previousToken = JsonToken_UIntegerLiteral;
                 return true;
             }
@@ -462,9 +464,9 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBracket)
                 {
-                    fprintf(stream, ", ");
+                    stream.WriteText(", ");
                 }
-                fprintf(stream, "%llu", value);
+                stream.WriteFormatted("%llu", value);
                 previousToken = JsonToken_UIntegerLiteral;
                 return true;
             }
@@ -474,7 +476,7 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": %f", value);
+                stream.WriteFormatted(": %f", value);
                 previousToken = JsonToken_FloatLiteral;
                 return true;
             }
@@ -482,9 +484,9 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBracket)
                 {
-                    fprintf(stream, ", ");
+                    stream.WriteText(", ");
                 }
-                fprintf(stream, "%f", value);
+                stream.WriteFormatted("%f", value);
                 previousToken = JsonToken_FloatLiteral;
                 return true;
             }
@@ -494,7 +496,7 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": %s", value ? "true" : "false");
+                stream.WriteFormatted(": %s", value ? "true" : "false");
                 previousToken = JsonToken_BoolLiteral;
                 return true;
             }
@@ -502,9 +504,9 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBracket)
                 {
-                    fprintf(stream, ", ");
+                    stream.WriteText(", ");
                 }
-                fprintf(stream, "%s", value ? "true" : "false");
+                stream.WriteFormatted("%s", value ? "true" : "false");
                 previousToken = JsonToken_BoolLiteral;
                 return true;
             }
@@ -514,7 +516,7 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": \"%s\"", value);
+                stream.WriteFormatted(": \"%s\"", value);
                 previousToken = JsonToken_StringLiteral;
                 return true;
             }
@@ -522,9 +524,9 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBracket)
                 {
-                    fprintf(stream, ", ");
+                    stream.WriteText(", ");
                 }
-                fprintf(stream, "\"%s\"", value);
+                stream.WriteFormatted("\"%s\"", value);
                 previousToken = JsonToken_StringLiteral;
                 return true;
             }
@@ -534,7 +536,7 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": null");
+                stream.WriteText(": null");
                 previousToken = JsonToken_NullLiteral;
                 return true;
             }
@@ -542,9 +544,9 @@ namespace Json
             {
                 if (previousToken != JsonToken_LBracket)
                 {
-                    fprintf(stream, ", ");
+                    stream.WriteText(", ");
                 }
-                fprintf(stream, "null");
+                stream.WriteText("null");
                 previousToken = JsonToken_NullLiteral;
                 return true;
             }
@@ -554,10 +556,10 @@ namespace Json
         {
             if (LatestIndentType() == JsonToken_LBrace)
             {
-                fprintf(stream, "\n");
+                stream.WriteText("\n");
                 indentTypes.RemoveAt_Swap(indentTypes.count - 1);
                 WriteIndents();
-                fprintf(stream, "}");
+                stream.WriteText("}");
                 previousToken = JsonToken_RBrace;
                 return true;
             }
@@ -567,14 +569,14 @@ namespace Json
         {
             if (previousToken == JsonToken_PropertyName)
             {
-                fprintf(stream, ": [");
+                stream.WriteText(": [");
                 previousToken = JsonToken_LBracket;
                 indentTypes.Add(JsonToken_LBracket);
                 return true;
             }
             else if (LatestIndentType() == JsonToken_LBracket)
             {
-                fprintf(stream, ", [");
+                stream.WriteText(", [");
                 previousToken = JsonToken_LBracket;
                 indentTypes.Add(JsonToken_LBracket);
                 return true;
@@ -588,10 +590,10 @@ namespace Json
                 indentTypes.RemoveAt_Swap(indentTypes.count - 1);
                 if (previousToken == JsonToken_RBrace)
                 {
-                    fprintf(stream, "\n");
+                    stream.WriteText("\n");
                     WriteIndents();
                 }
-                fprintf(stream, "]");
+                stream.WriteText("]");
                 previousToken = JsonToken_RBracket;
                 return true;
             }

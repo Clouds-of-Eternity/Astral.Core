@@ -4,6 +4,7 @@
 #include "UTF8Utils.hpp"
 #include "string.hpp"
 #include "DataStream.hpp"
+#include "StringBuilder.hpp"
 
 typedef collections::List<u8> ByteStream;
 
@@ -187,14 +188,25 @@ inline usize ByteStreamReader_GetCurrPosFunc(void *self)
 struct ByteStreamWriter
 {
     ByteStream bytes;
+    StringBuilder sb;
 
     inline ByteStreamWriter()
     {
         bytes = ByteStream();
+        sb = StringBuilder();
+        this->sb = StringBuilder();
     }
     inline ByteStreamWriter(IAllocator allocator)
     {
         bytes = ByteStream(allocator);
+        sb = StringBuilder(allocator);
+        this->sb = StringBuilder(allocator);
+    }
+    inline ByteStreamWriter(IAllocator allocator, usize initialSize)
+    {
+        bytes = ByteStream(allocator, initialSize);
+        sb = StringBuilder(allocator);
+        this->sb = StringBuilder(allocator);
     }
     template<typename T>
     inline void Write(T instance)
@@ -294,6 +306,19 @@ inline void ByteStreamWriter_Write(void *self, const void *value, usize elementS
     writer->bytes.EnsureArrayCapacity(writer->bytes.count + totalSize);
     memcpy(writer->bytes.ptr + writer->bytes.count, value, totalSize);
     writer->bytes.count += totalSize;
+}
+inline void ByteStreamWriter_WriteTextFormatted(void *self, const char *str, ...)
+{
+    ByteStreamWriter *writer = (ByteStreamWriter *)self;
+    va_list args;
+    va_start(args, str);
+    
+    writer->sb.Clear();
+    writer->sb.AppendVA(str, args);
+    writer->WriteArray(writer->sb.buffer.ptr, writer->sb.buffer.count);
+    writer->WriteByte('\0');
+
+    va_end(args);
 }
 inline u8 ByteStreamWriter_Jump(void *self, i64 jumpOffset, DataStreamJumpRelative relative)
 {

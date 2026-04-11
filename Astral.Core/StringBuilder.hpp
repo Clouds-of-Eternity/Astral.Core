@@ -99,6 +99,16 @@ struct StringBuilder
         va_end(args);
         return *this;
     }
+    inline StringBuilder &AppendVA(text format, va_list args)
+    {
+        char chars[256];
+        i32 len = vsnprintf(chars, 256, format, args);
+        buffer.EnsureArrayCapacity(buffer.count + len);
+        memcpy(buffer.ptr + buffer.count, chars, len);
+        buffer.count += len;
+
+        return *this;
+    }
     inline StringBuilder &AppendfLong(text format, ...)
     {
         va_list args;
