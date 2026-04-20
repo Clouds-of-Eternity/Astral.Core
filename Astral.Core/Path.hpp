@@ -125,7 +125,8 @@ namespace path
 
             replaced.deinit();
 
-            return string(allocator, path.buffer + actualLastIndex + 1, path.length - actualLastIndex - 1);
+            //-2 because string constructor expects no null terminator
+            return string(allocator, path.buffer + actualLastIndex + 1, path.length - actualLastIndex - 2);
         }
 
         replaced.deinit();

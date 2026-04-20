@@ -7,6 +7,7 @@
 #endif
 
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
+#define ExportOtherFile(filePath)
 #define BeginExports()
 #define EndExport()
 #define suppressGC
