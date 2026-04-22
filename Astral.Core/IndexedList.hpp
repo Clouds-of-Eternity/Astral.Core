@@ -69,6 +69,14 @@ namespace collections
                 freeIndices.Add(index);
             }
         }
+        inline void RemoveResetDefault(u32 index, T defaultValue)
+        {
+            if (index < list.count)
+            {
+                list[index] = defaultValue;
+                freeIndices.Add(index);
+            }
+        }
         inline void RemoveAndDeinit(u32 index)
         {
             if (index < list.count)

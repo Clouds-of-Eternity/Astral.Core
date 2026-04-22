@@ -333,7 +333,6 @@ namespace Json
         JsonTokenType previousToken;
         collections::List<JsonTokenType> indentTypes;
         bool shouldIndent;
-        bool isBinary;
 
         inline JsonWriter(IAllocator allocator, FILE *fileStream, bool writerShouldIndent)
         {
@@ -341,7 +340,13 @@ namespace Json
             previousToken = JsonToken_Invalid;
             shouldIndent = writerShouldIndent;
             indentTypes = collections::List<JsonTokenType>(allocator);
-            isBinary = false;
+        }
+        inline JsonWriter(IAllocator allocator, IDataStream dataStream, bool writerShouldIndent)
+        {
+            stream = dataStream;
+            previousToken = JsonToken_Invalid;
+            shouldIndent = writerShouldIndent;
+            indentTypes = collections::List<JsonTokenType>(allocator);
         }
         inline void SaveAndCloseFile()
         {
