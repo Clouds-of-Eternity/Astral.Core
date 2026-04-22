@@ -88,7 +88,7 @@ struct ObjectPool
         {
             this->freeSlots.allocator.Free(brackets[i]);
         }
-        this->freeSlots.allocator.freeFunction(brackets);
+        this->freeSlots.allocator.freeFunction(this->freeSlots.allocator.instance, brackets);
         freeSlots.deinit();
     }
 };
