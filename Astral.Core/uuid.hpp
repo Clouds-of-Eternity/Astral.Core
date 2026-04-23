@@ -119,13 +119,13 @@ struct uuid
         return result;
     }
 
-    inline bool operator==(uuid other)
+    inline bool operator==(uuid other) const
     {
         u64 *asPointer = (u64 *)this;
         u64 *otherAsPointer = (u64 *)&other;
         return asPointer[0] == otherAsPointer[0] && asPointer[1] == otherAsPointer[1];
     }
-    inline bool operator!=(uuid other)
+    inline bool operator!=(uuid other) const
     {
         u64 *asPointer = (u64 *)this;
         u64 *otherAsPointer = (u64 *)&other;
@@ -142,7 +142,7 @@ struct uuid
     {
         return Murmur3(byte, 16);
     }
-    inline void GetAsString(char *buffer)
+    inline void GetAsString(char *buffer) const
     {
         buffer[8] = '-';
         buffer[13] = '-';
@@ -183,7 +183,7 @@ struct uuid
 #undef SET_BUFFER
     }
 
-    inline string ToString(IAllocator allocator)
+    inline string ToString(IAllocator allocator) const
     {
         char buffers[UUID_STR_LEN];
         buffers[UUID_STR_LEN - 1] = '\0';
