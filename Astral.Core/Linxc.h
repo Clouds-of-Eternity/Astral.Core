@@ -11,6 +11,7 @@
 #define BeginExports()
 #define EndExport()
 #define suppressGC
+#define dotnet_ignore
 
 #ifdef __cplusplus
 #define exportC extern "C"
