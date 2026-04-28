@@ -56,6 +56,10 @@ struct StringRentalBuffer
         usize len = strlen(str);
         return Rent(str, len);
     }
+    inline string RentFromCharSlice(CharSlice str)
+    {
+        return Rent(str.buffer, str.length);
+    }
     inline void Return(string str)
     {
         usize index = 0;

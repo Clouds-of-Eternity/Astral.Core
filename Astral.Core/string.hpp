@@ -561,7 +561,7 @@ struct CharSlice
     {
         return string(allocator, buffer + startIndex, length);
     }
-    inline void CopyTo(char *output, bool addNullTerminator)
+    inline void CopyTo(char *output, bool addNullTerminator) const
     {
         memcpy(output, buffer, length);
         if (addNullTerminator)

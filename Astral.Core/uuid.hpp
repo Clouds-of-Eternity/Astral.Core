@@ -31,9 +31,21 @@ struct uuid
         Random tempRand = Random::init(seed);
         return New(&tempRand);
     }
+    inline static uuid NewFromCharSliceHash(CharSlice stringInput)
+    {
+        u32 seed = Murmur3((const u8 *)stringInput.buffer, stringInput.length);
+        Random tempRand = Random::init(seed);
+        return New(&tempRand);
+    }
     inline static uuid NewFromStringHashFunction(text stringInput, u32(customHashFunction)(const u8 *, usize))
     {
         u32 seed = customHashFunction((const u8 *)stringInput, strlen(stringInput));
+        Random tempRand = Random::init(seed);
+        return New(&tempRand);
+    }
+    inline static uuid NewFromCharSliceHashFunction(CharSlice stringInput, u32(customHashFunction)(const u8 *, usize))
+    {
+        u32 seed = customHashFunction((const u8 *)stringInput.buffer, stringInput.length);
         Random tempRand = Random::init(seed);
         return New(&tempRand);
     }
