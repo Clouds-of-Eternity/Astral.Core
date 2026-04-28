@@ -553,6 +553,22 @@ struct CharSlice
     {
         return *this != str.buffer;
     }
+    inline CharSlice Slice(u32 startIndex, u32 length) const
+    {
+        return CharSlice(buffer + startIndex, length);
+    }
+    inline string Slice(IAllocator allocator, u32 startIndex, u32 length) const
+    {
+        return string(allocator, buffer + startIndex, length);
+    }
+    inline void CopyTo(char *output, bool addNullTerminator)
+    {
+        memcpy(output, buffer, length);
+        if (addNullTerminator)
+        {
+            output[length] = '\0';
+        }
+    }
 
     inline bool StartsWith(text other) const
     {
