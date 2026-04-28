@@ -202,9 +202,10 @@ namespace io
         return file;
     }
 
-    inline collections::Array<string> GetFilesInDirectory(IAllocator allocator, const char *dirPath)
+    inline u32 OutputFilesInDirectory(IAllocator allocator, const char *dirPath, collections::List<string> *output)
     {
         //this
+        u32 resultCount = 0;
         ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
         Scope(ArenaAllocator, arenaAlloc);
 
@@ -212,16 +213,15 @@ namespace io
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
-        char sPath[1024];
+        char sPath[256];
         sprintf(sPath, "%s/*.*", dirPath);
 
         HANDLE handle = FindFirstFileA(sPath, &findFileResult);
         if (handle == INVALID_HANDLE_VALUE)
         {
-            return collections::Array<string>();
+            return 0;
         }
 
-        collections::List<string> results = collections::List<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
@@ -229,12 +229,11 @@ namespace io
                 //printf("%s\n", &findFileResult.cFileName[0]);
                 string replaced = ReplaceChar(tempAllocator, &findFileResult.cFileName[0], '\\', '/');
 
-                string fullPath = string(tempAllocator, dirPath);
-                fullPath.Append("/");
-                fullPath.Append(replaced.buffer);
+                string fullPath = string::Format(tempAllocator, "%s/%s", dirPath, replaced.buffer);
                 if (!io::DirectoryExists(fullPath.buffer))
                 {
-                    results.Add(fullPath.Clone(allocator));
+                    output->Add(fullPath.Clone(allocator));
+                    resultCount++;
                 }
             }
             if (!FindNextFileA(handle, &findFileResult))
@@ -245,10 +244,8 @@ namespace io
 
         FindClose(handle);
 
-        return results.ToOwnedArrayWith(allocator);
+        return resultCount;
 #else
-        collections::List<string> results = collections::List<string>(tempAllocator);
-
         struct dirent *dent;
         DIR *srcdir = opendir(dirPath);
         while((dent = readdir(srcdir)) != NULL)
@@ -266,20 +263,28 @@ namespace io
 
             if (!S_ISDIR(st.st_mode))
             {
-                //dircount++
-                string fullPath = string(tempAllocator, dirPath);
-                fullPath.Append("/");
-                fullPath.Append(dent->d_name);
-                results.Add(fullPath.Clone(allocator));
+                resultCount++;
+                output->Add(string::Format(allocator, "%s/%s", dirPath, dent->d_name));
             }
         }
 
-        return results.ToOwnedArrayWith(allocator);
+        return resultCount;
 #endif
     }
-
-    inline collections::Array<string> GetFoldersInDirectory(IAllocator allocator, const char *dirPath)
+    /// @brief Retrieves an array of all files in a given directory.
+    /// @param allocator The allocator to use
+    /// @param dirPath The directory to check
+    /// @return An array of full file paths
+    inline collections::Array<string> GetFilesInDirectory(IAllocator allocator, const char *dirPath)
     {
+        collections::List<string> paths = collections::List<string>(GetCAllocator());
+        OutputFilesInDirectory(allocator, dirPath, &paths);
+        return paths.ToOwnedArrayWith(allocator);
+    }
+
+    inline u32 OutputFoldersInDirectory(IAllocator allocator, const char *dirPath, collections::List<string> *output)
+    {
+        u32 resultCount = 0;
         ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
         Scope(ArenaAllocator, arenaAlloc);
 
@@ -287,16 +292,15 @@ namespace io
 
 #if WINDOWS
         WIN32_FIND_DATAA findFileResult;
-        char sPath[1024];
+        char sPath[256];
         sprintf(sPath, "%s/*.*", dirPath);
 
         HANDLE handle = FindFirstFileA(sPath, &findFileResult);
         if (handle == INVALID_HANDLE_VALUE)
         {
-            return collections::Array<string>();
+            return 0;
         }
 
-        collections::List<string> results = collections::List<string>(tempAllocator);
         while (true)
         {
             if (strcmp(findFileResult.cFileName, ".") != 0 && strcmp(findFileResult.cFileName, "..") != 0)
@@ -304,12 +308,11 @@ namespace io
                 //printf("%s\n", &findFileResult.cFileName[0]);
                 string replaced = ReplaceChar(tempAllocator, &findFileResult.cFileName[0], '\\', '/');
 
-                string fullPath = string(tempAllocator, dirPath);
-                fullPath.Append("/");
-                fullPath.Append(replaced.buffer);
+                string fullPath = string::Format(tempAllocator, "%s/%s", dirPath, replaced.buffer);
                 if (io::DirectoryExists(fullPath.buffer))
                 {
-                    results.Add(fullPath.Clone(allocator));
+                    resultCount++;
+                    output->Add(fullPath.Clone(allocator));
                 }
             }
             if (!FindNextFileA(handle, &findFileResult))
@@ -320,9 +323,8 @@ namespace io
 
         FindClose(handle);
 
-        return results.ToOwnedArrayWith(allocator);
+        return resultCount;
 #else
-        collections::List<string> results = collections::List<string>(tempAllocator);
         struct dirent *dir;
         DIR *srcdir = opendir(dirPath);
         if (srcdir != NULL) 
@@ -342,42 +344,45 @@ namespace io
 
                 if (S_ISDIR(st.st_mode))
                 {
-                    string fullPath = string(tempAllocator, dirPath);
-                    fullPath.Append("/");
-                    fullPath.Append(dir->d_name);
-                    results.Add(fullPath.Clone(GetCAllocator()));
+                    resultCount++;
+                    output->Add(string::Format(tempAllocator, "%s/%s", dirPath, dir->d_name));
                 }
             }
             closedir(srcdir);
         }
 
-        return results.ToOwnedArrayWith(allocator);
+        return resultCount;
 #endif
     }
+    /// @brief Retrieves an array of all sub-directories in a given directory.
+    /// @param allocator The allocator to use
+    /// @param dirPath The directory to check
+    /// @return An array of full directory paths
+    inline collections::Array<string> GetFoldersInDirectory(IAllocator allocator, const char *dirPath)
+    {
+        collections::List<string> paths = collections::List<string>(GetCAllocator());
+        OutputFoldersInDirectory(allocator, dirPath, &paths);
+        return paths.ToOwnedArrayWith(allocator);
+    }
 
+    /// @brief Gets all files within the given directory.
+    /// @param allocator The allocator to use
+    /// @param dirPath The directory to check
+    /// @return An array of full file paths
     inline collections::Array<string> GetFilesInDirectoryRecursive(IAllocator allocator, const char* dirPath)
     {
         ArenaAllocator arena = ArenaAllocator(GetCAllocator());
-        IAllocator alloc = arena.AsAllocator();
-        collections::List<string> results = collections::List<string>(alloc);
-        collections::List<string> foldersToProcess = collections::List<string>(alloc);
-        foldersToProcess.Add(string(alloc, dirPath));
+        IAllocator tempAllocator = arena.AsAllocator();
+        collections::List<string> results = collections::List<string>(tempAllocator, 32);
+        collections::List<string> foldersToProcess = collections::List<string>(tempAllocator, 32);
+        foldersToProcess.Add(string(tempAllocator, dirPath));
 
         while (foldersToProcess.count > 0)
         {
-            string folder = foldersToProcess.ptr[0];
-            foldersToProcess.RemoveAt_Swap(0);
+            string folder = foldersToProcess.Pop();
 
-            collections::Array<string> filesInThisDir = GetFilesInDirectory(alloc, folder.buffer);
-            for (usize i = 0; i < filesInThisDir.length; i++)
-            {
-                results.Add(filesInThisDir[i].Clone(allocator));
-            }
-            collections::Array<string> foldersInThisDir = GetFoldersInDirectory(alloc, folder.buffer);
-            for (usize i = 0; i < foldersInThisDir.length; i++)
-            {
-                foldersToProcess.Add(foldersInThisDir[i]);
-            }
+            OutputFilesInDirectory(allocator, folder.buffer, &results);
+            OutputFoldersInDirectory(tempAllocator, folder.buffer, &foldersToProcess);
         }
         collections::Array<string> finalArray = results.ToClonedArray(allocator);
         arena.deinit();
