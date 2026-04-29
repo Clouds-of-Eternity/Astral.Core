@@ -62,6 +62,10 @@ struct StringRentalBuffer
     }
     inline void Return(string str)
     {
+        if (str.buffer == NULL || str.length <= 1)
+        {
+            return;
+        }
         usize index = 0;
         usize size = 16;
         while (size <= str.length)
