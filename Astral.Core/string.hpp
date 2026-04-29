@@ -443,10 +443,14 @@ struct string
 
         char *buffer = (char *)allocator.Allocate(requiredBytes);
         vsnprintf(buffer, requiredBytes, input, args);
+        buffer[requiredBytes - 1] = '\0';
 
         va_end(args);
+        string result = string();
+        result.allocator = allocator;
+        result.buffer = buffer;
+        result.length = requiredBytes;
 
-        string result = string(allocator, buffer, requiredBytes);
         return result;
     }
 
@@ -502,7 +506,11 @@ struct CharSlice
     inline CharSlice(const char* stringLiteral)
     {
         buffer = stringLiteral;
-        length = strlen(stringLiteral);
+        if (stringLiteral == NULL)
+        {
+            length = 0;
+        }
+        else length = strlen(stringLiteral);
     }
     inline CharSlice(const char* stringLiteral, usize literalLength)
     {
