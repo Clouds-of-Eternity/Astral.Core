@@ -1,9 +1,15 @@
 #pragma once
 #include "Linxc.h"
-#include <stdlib.h>
+#include "AllocationDebugging.hpp"
 
 #define KiB_SIZE 1024
 #define MiB_SIZE (KiB_SIZE * 1024)
+#ifndef DEFAULT_ALLOC
+#define DEFAULT_ALLOC(bytes) malloc(bytes)
+#endif
+#ifndef DEFAULT_FREE
+#define DEFAULT_FREE(ptr) free(ptr)
+#endif
 
 def_delegate(allocFunc, void *, void *, usize);
 def_delegate(freeFunc, void, void *, void *);
@@ -11,11 +17,11 @@ def_delegate(freeFunc, void, void *, void *);
 //these dont matter if it's inlined or not since we're indirectly calling them anyways
 inline void* CAllocator_Allocate(void* instance, usize bytes)
 {
-    return malloc(bytes);
+    return DEFAULT_ALLOC(bytes);
 }
 inline void CAllocator_Free(void* instance, void* ptr)
 {
-    free(ptr);
+    DEFAULT_FREE(ptr);
 }
 
 #define FREEPTR(ptr) FreeAndSetNull((void**)&ptr)
@@ -51,6 +57,16 @@ struct IAllocator
         this->instance = instance;
         this->allocFunction = AllocateFunc;
         this->freeFunction = freeFunc;
+    }
+    template <typename T>
+    inline T *AllocateInstanceOf()
+    {
+        return (T *)Allocate(sizeof(T));
+    }
+    template <typename T>
+    inline T *AllocateInstancesOf(usize num)
+    {
+        return (T *)Allocate(sizeof(T) * num);
     }
 
     inline bool operator==(IAllocator other)
