@@ -97,9 +97,9 @@ namespace collections
             EnsureArrayCapacity(atIndex + 1);
 
             ptr[atIndex] = item;
-            if (self->count <= atIndex)
+            if (this->count <= atIndex)
             {
-                self->count = atIndex + 1;
+                this->count = atIndex + 1;
             }
             return ptr[atIndex];
         }

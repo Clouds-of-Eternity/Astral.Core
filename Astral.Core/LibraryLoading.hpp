@@ -15,9 +15,9 @@ inline void *LoadMod(const char_t *path)
     HMODULE h = LoadLibraryW(path);
     return (void*)h;
 }
-inline void *GetFuncPointer(void *h, const char *name)
+inline AnyFunctionPointer GetFuncPointer(void *h, const char *name)
 {
-    void *f = GetProcAddress((HMODULE)h, name);
+    AnyFunctionPointer f = (AnyFunctionPointer)GetProcAddress((HMODULE)h, name);
     return f;
 }
 inline void UnloadMod(void* library)
@@ -39,9 +39,9 @@ inline void *LoadMod(const char_t *path)
     void *h = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
     return h;
 }
-inline void *GetFuncPointer(void *h, const char *name)
+inline AnyFunctionPointer GetFuncPointer(void *h, const char *name)
 {
-    void *f = dlsym(h, name);
+    AnyFunctionPointer f = (AnyFunctionPointer)dlsym(h, name);
     return f;
 }
 inline void UnloadMod(void* library)

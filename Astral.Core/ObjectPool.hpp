@@ -34,7 +34,7 @@ struct ObjectPool
     inline ObjectPool(IAllocator allocator,  InstanceGeneratorFunc generatorFunc, u32 bracketsCapacity)
     {
         this->generatorFunc = generatorFunc;
-        this->bracketsCapacity = bracketsCapacity;
+        bracketCapacity = bracketsCapacity;
         brackets = (void **)allocator.Allocate(sizeof(void *));
         brackets[0] = allocator.Allocate(sizeof(u32) + sizeof(T) * bracketCapacity);
         *((u32 *)brackets[0]) = 0;

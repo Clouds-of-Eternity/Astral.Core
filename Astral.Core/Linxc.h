@@ -49,3 +49,4 @@ typedef size_t usize;
 
 typedef const char *text;
 typedef const char *u8text;
+typedef void (*AnyFunctionPointer)();
