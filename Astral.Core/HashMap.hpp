@@ -233,6 +233,28 @@ namespace collections
             }
             return false;
         }
+        V Pop(K key)
+        {
+            u32 hash = hashFunc(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (eqlFunc(buckets[index].entries.Get(i)->key, key))
+                    {
+                        V result = buckets[index].entries[i].value;
+                        buckets[index].entries.RemoveAt_Swap(i);
+
+                        count--;
+
+                        return result;
+                    }
+                }
+            }
+            return V();
+        }
 
         V *Get(K key) const
         {
