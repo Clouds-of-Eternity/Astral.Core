@@ -535,6 +535,10 @@ struct CharSlice
     }
     inline bool operator==(const CharSlice str) const
     {
+        if (str.buffer == NULL)
+        {
+            return buffer == NULL;
+        }
         if (str.length != length)
         {
             return false;
@@ -543,23 +547,7 @@ struct CharSlice
     }
     inline bool operator!=(const CharSlice str) const
     {
-        if (str.buffer == NULL && buffer == NULL)
-        {
-            return false;
-        }
-        if (str.buffer == NULL || buffer == NULL || str.length != length)
-        {
-            return true;
-        }
-        return memcmp(str.buffer, buffer, length) != 0;
-    }
-    inline bool operator==(const string str) const
-    {
-        return *this == str.buffer;
-    }
-    inline bool operator!=(const string str) const
-    {
-        return *this != str.buffer;
+        return !(*this == str);
     }
     inline CharSlice Slice(u32 startIndex, u32 length) const
     {
