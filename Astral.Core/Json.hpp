@@ -409,6 +409,37 @@ namespace Json
             }
             return false;
         }
+        inline bool WritePropertyNameCharSlice(CharSlice slice)
+        {
+            if (
+            previousToken == JsonToken_LBrace
+            || previousToken == JsonToken_RBrace
+            || previousToken == JsonToken_RBracket
+            || previousToken == JsonToken_BoolLiteral 
+            || previousToken == JsonToken_UIntegerLiteral
+            || previousToken == JsonToken_IntegerLiteral 
+            || previousToken == JsonToken_FloatLiteral 
+            || previousToken == JsonToken_NullLiteral 
+            || previousToken == JsonToken_StringLiteral)
+            {
+                if (previousToken != JsonToken_LBrace)
+                {
+                    stream.WriteText(",\n");
+                }
+                else
+                {
+                    stream.WriteText("\n");
+                }
+                WriteIndents();
+                stream.WriteByte('\"');
+                stream.WriteCharSlice(slice);
+                stream.WriteByte('\"');
+                //stream.WriteFormatted("\"%s\"", chars);
+                previousToken = JsonToken_PropertyName;
+                return true;
+            }
+            return false;
+        }
         inline bool WritePropertyName(const char* chars)
         {
             if (

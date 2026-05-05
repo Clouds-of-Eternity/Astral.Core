@@ -600,6 +600,30 @@ struct CharSlice
         }
         return false;
     }
+    inline bool FindFirst(char character, usize *outputIndex)
+    {
+        for (usize i = 0; i <= length; i++)
+        {
+            if (buffer[i] == character)
+            {
+                *outputIndex = i;
+                return true;
+            }
+        }
+        return false;
+    }
+    inline bool FindLast(char character, usize *outputIndex)
+    {
+        for (i64 i = length - 1; i >= 0; i--)
+        {
+            if (buffer[i] == character)
+            {
+                *outputIndex = i;
+                return true;
+            }
+        }
+        return false;
+    }
 
     inline u64 ToU64() const
     {

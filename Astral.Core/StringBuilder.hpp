@@ -192,6 +192,10 @@ struct StringBuilder
             this->buffer.RemoveManyAt(index, diff);
         }
     }
+    inline CharSlice ToCharSlice()
+    {
+        return CharSlice(buffer.ptr, buffer.count);
+    }
     inline string ToString(IAllocator stringAllocator, bool alsoClear = false)
     {
         string str = string(stringAllocator);
