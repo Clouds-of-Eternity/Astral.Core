@@ -63,6 +63,24 @@ struct IDataStream
         writeFunc(instance, str.buffer, 1, str.length);
         writeFunc(instance, &nullTerm, 1, 1);
     }
+    inline void WriteCharSliceApostropheSensitive(CharSlice str)
+    {
+        const char nullTerm = '\0';
+        text apostrophe = "\\\"";
+        for (u32 i = 0; i < str.length; i++)
+        {
+            if (i < str.length - 1)
+            {
+                if (str.buffer[i] == '\"')
+                {
+                    writeFunc(instance, apostrophe, 1, 2);
+                    continue;
+                }
+            }
+            writeFunc(instance, &str.buffer[i], 1, 1);
+        }
+        writeFunc(instance, &nullTerm, 1, 1);
+    }
     inline void WriteText(text str)
     {
         writeFunc(instance, str, 1, strlen(str) + 1);
@@ -202,6 +220,16 @@ inline void FILE_Write(void *self, const void *value, usize elementSize, usize w
     FILE *fs = (FILE *)self;
     fwrite(value, elementSize, writeCount, fs);
 }
+//Special case that ignores null terminators
+inline void TextFILE_Write(void *self, const void *value, usize elementSize, usize writeCount)
+{
+    if (elementSize == 1 && writeCount == 1 && ((const char *)value)[0] == '\0')
+    {
+        return;
+    }
+    FILE *fs = (FILE *)self;
+    fwrite(value, elementSize, writeCount, fs);
+}
 inline void FILE_Flush(void *self)
 {
     fflush((FILE *)self);
@@ -226,13 +254,13 @@ inline IDataStream GetFileDataStream(FILE *fs)
     result.closeFunc = &FILE_Deinit;
     return result;
 }
-inline IDataStream GetWriteFileDataStream(FILE *fs)
+inline IDataStream GetWriteFileDataStream(FILE *fs, bool isWritingTextFile)
 {
     IDataStream result = {};
     result.instance = fs;
     result.jumpFunc = &FILE_Jump;
     result.getCurrPosFunc = &FILE_GetCurrPos;
-    result.writeFunc = &FILE_Write;
+    result.writeFunc = isWritingTextFile ? TextFILE_Write : &FILE_Write;
     result.writeTextFormattedFunc = &FILE_WriteTextFormatted;
     result.flushFunc = &FILE_Flush;
     result.closeFunc = &FILE_Deinit;

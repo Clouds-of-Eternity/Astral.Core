@@ -336,7 +336,7 @@ namespace Json
 
         inline JsonWriter(IAllocator allocator, FILE *fileStream, bool writerShouldIndent)
         {
-            stream = GetWriteFileDataStream(fileStream);
+            stream = GetWriteFileDataStream(fileStream, true);
             previousToken = JsonToken_Invalid;
             shouldIndent = writerShouldIndent;
             indentTypes = collections::List<JsonTokenType>(allocator);

@@ -242,4 +242,46 @@ namespace Maths
 		float num = A.X * B.Y - A.Y * B.X;
 		return Vec2((0.0f - C.Y) * num, C.X * num);
 	}
+
+	inline u8 CharHexToByte(char charAt)
+	{
+		if (charAt >= '0' && charAt <= '9')
+		{
+			return charAt - '0';
+		}
+		else
+		{
+			if (charAt >= 'A' && charAt <= 'F')
+			{
+				return charAt - 'A' + 10;
+			}
+			else if (charAt >= 'a' && charAt <= 'f')
+			{
+				return charAt - 'a' + 10;
+			}
+		}
+		return 0;
+	}
+	inline u8 HexToByte(text hex)
+	{
+		return (u8)(CharHexToByte(hex[1]) + CharHexToByte(hex[0]) * 16);
+	}
+	inline u32 HexToDecimal(text hex, u32 length)
+	{
+		u32 result = 0;
+		u32 inverse = 0;
+		for (i32 i = length - 1; i >= 0; i--)
+		{
+			u32 nibble = CharHexToByte(hex[i]);
+			
+			u64 power16 = 1;
+			for (u32 j = 0; j < inverse; j++)
+			{
+				power16 *= 16;
+			}
+			result += nibble * power16;
+			inverse++;
+		}
+		return result;
+	}
 }
