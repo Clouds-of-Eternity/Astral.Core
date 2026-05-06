@@ -762,23 +762,22 @@ inline option<usize> FindLast(const char *buffer, char character)
     return result;
 }
 
-inline string ReplaceChar(IAllocator allocator, const char* input, char toReplace, char replaceWith)
+inline string ReplaceChar(IAllocator allocator, CharSlice input, char toReplace, char replaceWith)
 {
-    usize inputLength = strlen(input) + 1;
     string str = string(allocator);
-    char* buffer = (char*)allocator.Allocate(inputLength);
+    char* buffer = (char*)allocator.Allocate(input.length + 1);
 
     usize index = 0;
-    for (usize i = 0; i < inputLength - 1; i++)
+    for (usize i = 0; i < input.length; i++)
     {
-        if (input[i] == toReplace)
+        if (input.buffer[i] == toReplace)
         {
             if (replaceWith != '\0')
             {
                 buffer[index++] = replaceWith;
             }
         }
-        else buffer[index++] = input[i];
+        else buffer[index++] = input.buffer[i];
     }
     
     buffer[index++] = '\0';
@@ -787,20 +786,19 @@ inline string ReplaceChar(IAllocator allocator, const char* input, char toReplac
     str.buffer = buffer;
     return str;
 }
-inline string ReplaceCharWithString(IAllocator allocator, const char* input, char toReplace, const char* replaceWith)
+inline string ReplaceCharWithString(IAllocator allocator, CharSlice input, char toReplace, const char* replaceWith)
 {
     usize replaceWithLength = strlen(replaceWith);
     if (replaceWithLength == 1)
     {
         return ReplaceChar(allocator, input, toReplace, replaceWith[0]);
     }
-    usize inputLength = strlen(input) + 1;
     usize lengthDiff = replaceWithLength - 1;
-    usize outputLength = inputLength;
+    usize outputLength = input.length + 1;
 
-    for (usize i = 0; i < inputLength - 1; i++)
+    for (usize i = 0; i < input.length; i++)
     {
-        if (input[i] == toReplace)
+        if (input.buffer[i] == toReplace)
         {
             outputLength += lengthDiff;
         }
@@ -811,9 +809,9 @@ inline string ReplaceCharWithString(IAllocator allocator, const char* input, cha
     str.length = outputLength;
 
     usize at = 0;
-    for (usize i = 0; i < inputLength; i++)
+    for (usize i = 0; i < input.length; i++)
     {
-        if (input[i] == toReplace)
+        if (input.buffer[i] == toReplace)
         {
             strcpy(&buffer[at], replaceWith);
             at += replaceWithLength;
@@ -821,7 +819,7 @@ inline string ReplaceCharWithString(IAllocator allocator, const char* input, cha
         }
         else 
         {
-            buffer[at] = input[i];
+            buffer[at] = input.buffer[i];
             at += 1;
         }
     }
@@ -829,6 +827,46 @@ inline string ReplaceCharWithString(IAllocator allocator, const char* input, cha
     buffer[outputLength - 1] = '\0';
 
     str.buffer = buffer;
+    return str;
+}
+inline string ReplaceStringWithChar(IAllocator allocator, CharSlice input, const char *toReplace, char replaceWith)
+{
+    usize toReplaceLength = strlen(toReplace);
+    if (toReplaceLength == 1)
+    {
+        return ReplaceChar(allocator, input, toReplace[0], replaceWith);
+    }
+    usize outputLength = input.length;
+
+    for (usize i = 0; i < input.length; i++)
+    {
+        if (i < input.length - toReplaceLength)
+        {
+            if (memcmp(input.buffer + i, toReplace, toReplaceLength) == 0)
+            {
+                outputLength -= toReplaceLength - 1;
+            }
+        }
+    }
+
+    string str = string(allocator);
+    char* buffer = (char*)allocator.Allocate(outputLength);
+    str.length = outputLength;
+
+    usize at = 0;
+    for (usize i = 0; i < input.length; i++)
+    {
+        if (memcmp(input.buffer + i, toReplace, toReplaceLength) == 0)
+        {
+            buffer[at] = replaceWith;
+            i += toReplaceLength - 1;
+        }
+        else 
+        {
+            buffer[at] = input.buffer[i];
+        }
+        at++;
+    }
     return str;
 }
 
