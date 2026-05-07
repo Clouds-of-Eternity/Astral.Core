@@ -29,19 +29,54 @@ struct CharSlice;
 inline i64 TextToI64(const char* buffer, usize length)
 {
     i64 result = 0;
+    i64 exponent = 0;
+    bool hasExponent = false;
     u32 index = 1;
     for (i32 i = (i32)length - 1; i >= 0; i--)
     {
-        if (buffer[i] >= '0' && buffer[i] <= '9')
+        if (hasExponent)
+        {
+            i64 amount = index * (buffer[i] - (i64)'0');
+            exponent += amount;
+            index *= 10;
+        }
+        else if (buffer[i] == 'e' || buffer[i] == 'E')
+        {
+            hasExponent = true;
+            index = 1;
+        }
+        else if (buffer[i] >= '0' && buffer[i] <= '9')
         {
             i64 amount = index * (buffer[i] - (i64)'0');
             result += amount;
             index *= 10;
         }
     }
-    if (buffer[0] == '-')
+    if (hasExponent)
     {
-        result *= -1;
+        i64 temp = exponent;
+        exponent = result;
+        result = temp;
+
+        if (buffer[0] == '-')
+        {
+            result *= -1;
+        }
+
+        //if exponent 10, add 10 zeroes to the back
+        i64 exponentMult = 1;
+        for (u32 i = 0; i < exponent; i++)
+        {
+            exponentMult *= 10;
+        }
+        result *= exponentMult;
+    }
+    else
+    {
+        if (buffer[0] == '-')
+        {
+            result *= -1;
+        }
     }
     return result;
 }
@@ -49,14 +84,40 @@ inline u64 TextToU64(const char* buffer, usize length)
 {
     u64 result = 0;
     u32 index = 1;
+    u64 exponent = 0;
+    bool hasExponent = false;
     for (i32 i = (i32)length - 1; i >= 0; i--)
     {
-        if (buffer[i] >= '0' && buffer[i] <= '9')
+        if (hasExponent)
+        {
+            i64 amount = index * (buffer[i] - (i64)'0');
+            exponent += amount;
+            index *= 10;
+        }
+        else if (buffer[i] == 'e' || buffer[i] == 'E')
+        {
+            hasExponent = true;
+            index = 1;
+        }
+        else if (buffer[i] >= '0' && buffer[i] <= '9')
         {
             i64 amount = index * (buffer[i] - (u64)'0');
             result += amount;
             index *= 10;
         }
+    }
+    if (hasExponent)
+    {
+        u64 temp = exponent;
+        exponent = result;
+        result = temp;
+        //if exponent 10, add 10 zeroes to the back
+        u64 exponentMult = 1;
+        for (u32 i = 0; i < exponent; i++)
+        {
+            exponentMult *= 10;
+        }
+        result *= exponentMult;
     }
     return result;
 }

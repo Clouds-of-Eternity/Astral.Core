@@ -5,6 +5,7 @@
 #include "ctype.h"
 #include "stdio.h"
 #include "ByteStreamOps.hpp"
+#include "NumericTypeChecking.hpp"
 
 namespace Json
 {
@@ -54,7 +55,7 @@ namespace Json
             this->fileContents = contents.buffer;
             this->length = contents.length;
             this->currentIndex = 0;
-            this->currentLine = 0;
+            this->currentLine = 1;
         }
         inline string GetString(IAllocator allocator, JsonToken token)
         {
@@ -800,46 +801,34 @@ Json::JsonToken Json::JsonTokenizer::Next()
         currentIndex++;
         result.endIndex = currentIndex;
     }
-    else if (fileContents[currentIndex] == '-')
+    else if (CharIsPossibleNumericMember(fileContents[currentIndex]))
     {
-        currentIndex++;
-        if (isdigit(fileContents[currentIndex]))
+        usize start = currentIndex;
+        do
         {
-            result.tokenType = JsonToken_IntegerLiteral;
-            while (isdigit(fileContents[currentIndex]) || fileContents[currentIndex] == '.')
-            {
-                if (fileContents[currentIndex] == '.')
-                {
-                    //cannot do 0..0
-                    if (result.tokenType == JsonToken_FloatLiteral)
-                    {
-                        result.tokenType = JsonToken_Invalid;
-                        return result;
-                    }
-                    result.tokenType = JsonToken_FloatLiteral;
-                }
-                currentIndex += 1;
-                result.endIndex = currentIndex;
-            }
+            currentIndex++;
         }
-    }
-    else if (isdigit(fileContents[currentIndex]))
-    {
-        result.tokenType = JsonToken_UIntegerLiteral;
-        while (isdigit(fileContents[currentIndex]) || fileContents[currentIndex] == '.')
+        while (CharIsPossibleNumericMember(fileContents[currentIndex]));
+
+        CharSlice numericStr = CharSlice(fileContents + start, currentIndex - start);
+        NumericType numericType = CheckStringNumericType(numericStr);
+
+        result.endIndex = currentIndex;
+        if (numericType == NumericType_None)
         {
-            if (fileContents[currentIndex] == '.')
-            {
-                //cannot do 0..0
-                if (result.tokenType == JsonToken_FloatLiteral)
-                {
-                    result.tokenType = JsonToken_Invalid;
-                    return result;
-                }
-                result.tokenType = JsonToken_FloatLiteral;
-            }
-            currentIndex += 1;
-            result.endIndex = currentIndex;
+            result.tokenType = Json::JsonToken_Invalid;
+        }
+        else if (numericType == NumericType_UInteger)
+        {
+            result.tokenType = Json::JsonToken_UIntegerLiteral;
+        }
+        else if (numericType == NumericType_Integer)
+        {
+            result.tokenType = Json::JsonToken_IntegerLiteral;
+        }
+        else
+        {
+            result.tokenType = Json::JsonToken_FloatLiteral;
         }
     }
     else if (currentIndex + 4 < this->length && 
