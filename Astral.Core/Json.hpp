@@ -801,36 +801,6 @@ Json::JsonToken Json::JsonTokenizer::Next()
         currentIndex++;
         result.endIndex = currentIndex;
     }
-    else if (CharIsPossibleNumericMember(fileContents[currentIndex]))
-    {
-        usize start = currentIndex;
-        do
-        {
-            currentIndex++;
-        }
-        while (CharIsPossibleNumericMember(fileContents[currentIndex]));
-
-        CharSlice numericStr = CharSlice(fileContents + start, currentIndex - start);
-        NumericType numericType = CheckStringNumericType(numericStr);
-
-        result.endIndex = currentIndex;
-        if (numericType == NumericType_None)
-        {
-            result.tokenType = Json::JsonToken_Invalid;
-        }
-        else if (numericType == NumericType_UInteger)
-        {
-            result.tokenType = Json::JsonToken_UIntegerLiteral;
-        }
-        else if (numericType == NumericType_Integer)
-        {
-            result.tokenType = Json::JsonToken_IntegerLiteral;
-        }
-        else
-        {
-            result.tokenType = Json::JsonToken_FloatLiteral;
-        }
-    }
     else if (currentIndex + 4 < this->length && 
     fileContents[currentIndex] == 't' && 
     fileContents[currentIndex + 1] == 'r' && 
@@ -861,6 +831,36 @@ Json::JsonToken Json::JsonTokenizer::Next()
         currentIndex += 5;
         result.endIndex = currentIndex;
         result.tokenType = JsonToken_BoolLiteral;
+    }
+    else if (CharIsPossibleNumericMember(fileContents[currentIndex]))
+    {
+        usize start = currentIndex;
+        do
+        {
+            currentIndex++;
+        }
+        while (CharIsPossibleNumericMember(fileContents[currentIndex]));
+
+        CharSlice numericStr = CharSlice(fileContents + start, currentIndex - start);
+        NumericType numericType = CheckStringNumericType(numericStr);
+
+        result.endIndex = currentIndex;
+        if (numericType == NumericType_None)
+        {
+            result.tokenType = Json::JsonToken_Invalid;
+        }
+        else if (numericType == NumericType_UInteger)
+        {
+            result.tokenType = Json::JsonToken_UIntegerLiteral;
+        }
+        else if (numericType == NumericType_Integer)
+        {
+            result.tokenType = Json::JsonToken_IntegerLiteral;
+        }
+        else
+        {
+            result.tokenType = Json::JsonToken_FloatLiteral;
+        }
     }
 
     return result;
