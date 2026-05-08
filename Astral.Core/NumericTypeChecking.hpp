@@ -22,6 +22,7 @@ inline NumericType CheckStringNumericType(CharSlice input)
     bool startedWithZero = false;
     bool expectingHex = false;
     bool expectingBin = false;
+    bool encounteredPeriod = false;
     for (u32 i = 0; i < input.length; i++)
     {
         if (expectingHex)
@@ -32,7 +33,7 @@ inline NumericType CheckStringNumericType(CharSlice input)
                 return NumericType_None;
             }
         }
-        if (expectingBin)
+        else if (expectingBin)
         {
             if (input.buffer[i] != '1' && input.buffer[i] != '0')
             {
@@ -162,18 +163,16 @@ inline NumericType CheckStringNumericType(CharSlice input)
             }
             else if (input.buffer[i] == '.')
             {
-                if (result != NumericType_Float)
-                {
-                    //-0.0 or 1.0 is valid
-                    result = NumericType_Float;
-                    //0.e is not valid
-                    ifExponentExpectDigitFirst = true;
-                }
-                else
+                //-0.0 or 1.0 is valid
+                result = NumericType_Float;
+                //0.e is not valid
+                ifExponentExpectDigitFirst = true;
+                if (encounteredPeriod)
                 {
                     //0..0 is invalid
                     return NumericType_None;
                 }
+                encounteredPeriod = true;
             }
             else return NumericType_None;
         }

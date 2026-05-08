@@ -868,14 +868,13 @@ Json::JsonToken Json::JsonTokenizer::Next()
 }
 bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, JsonElement *result)
 {
-    JsonToken peekNext = tokenizer->PeekNext();
+    JsonToken peekNext = tokenizer->Next();
 
     switch (peekNext.tokenType)
     {
         case JsonToken_StringLiteral:
         {
             *result = JsonElement(tokenizer->GetString(allocator, peekNext));
-            tokenizer->Next();
             return true;
         }
         case JsonToken_IntegerLiteral:
@@ -885,7 +884,6 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             *((i64 *)&result->data) = TextToI64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
             result->dataLength = -(i32)JsonToken_IntegerLiteral;
 
-            tokenizer->Next();
             return true;
         }
         case JsonToken_UIntegerLiteral:
@@ -895,7 +893,6 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             result->data = TextToU64(tokenizer->fileContents + peekNext.startIndex, peekNext.endIndex - peekNext.startIndex);
             result->dataLength = -(i32)JsonToken_UIntegerLiteral;
 
-            tokenizer->Next();
             return true;
         }
         case JsonToken_FloatLiteral:
@@ -910,7 +907,6 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
 
             result->dataLength = -(i32)JsonToken_FloatLiteral;
 
-            tokenizer->Next();
             return true;
         }
         case JsonToken_NullLiteral:
@@ -918,7 +914,6 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             *result = JsonElement();
             result->dataLength = -(i32)JsonToken_NullLiteral;
 
-            tokenizer->Next();
             return true;
         }
         case JsonToken_BoolLiteral:
@@ -926,7 +921,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             *result = JsonElement();
             result->data = (u64)(strncmp(tokenizer->fileContents + peekNext.startIndex, "true", peekNext.endIndex - peekNext.startIndex) == 0);
             result->dataLength = -(i32)JsonToken_BoolLiteral;
-            tokenizer->Next();
+
             return true;
         }
         case JsonToken_LBracket:
@@ -934,7 +929,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             IAllocator cAllocator = GetCAllocator();
 
             collections::List<JsonProperty> arrayMembers = collections::List<JsonProperty>(cAllocator);
-            tokenizer->Next();
+
             //empty array
             if (tokenizer->PeekNext().tokenType == JsonToken_RBracket)
             {
@@ -982,7 +977,6 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
         case JsonToken_LBrace:
         {
             *result = JsonElement();
-            tokenizer->Next();
 
             collections::List<JsonProperty> childObjectsOrdered = collections::List<JsonProperty>(GetCAllocator());
 
@@ -1010,7 +1004,7 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
                 }
                 subElementResult.key = tokenizer->GetString(allocator, propertyNameToken);
                 childObjectsOrdered.Add(subElementResult);
-
+                
                 if (tokenizer->PeekNext().tokenType == JsonToken_Comma)
                 {
                     tokenizer->Next();
