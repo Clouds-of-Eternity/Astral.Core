@@ -87,10 +87,30 @@ struct IDataStream
     }
     inline void WriteFormatted(text str, ...)
     {
-        va_list args;
-        va_start(args, str);
-        this->writeTextFormattedFunc(this->instance, str, args);
-        va_end(args);
+        //Certain implementations cannot provide variadic function pointers with C calling conventions, so as
+        //a fallback, use a 'manual' write function instead.
+        if (writeTextFormattedFunc == NULL)
+        {
+            va_list args;
+            va_start(args, str);
+            i32 requiredBytes = vsnprintf(NULL, 0, str, args);
+            requiredBytes += 1;
+
+            char *buffer = (char *)DEFAULT_ALLOC(requiredBytes);
+            vsnprintf(buffer, requiredBytes, str, args);
+            buffer[requiredBytes - 1] = '\0';
+
+            va_end(args);
+            writeFunc(instance, buffer, 1, requiredBytes);
+            DEFAULT_FREE(buffer);
+        }
+        else
+        {
+            va_list args;
+            va_start(args, str);
+            this->writeTextFormattedFunc(this->instance, str, args);
+            va_end(args);
+        }
     }
     inline void WriteByte(u8 value)
     {

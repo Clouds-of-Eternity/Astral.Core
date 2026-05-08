@@ -333,20 +333,20 @@ namespace Json
         IDataStream stream;
         JsonTokenType previousToken;
         collections::List<JsonTokenType> indentTypes;
-        bool shouldIndent;
+        u8 indentsCount;
 
-        inline JsonWriter(IAllocator allocator, FILE *fileStream, bool writerShouldIndent)
+        inline JsonWriter(IAllocator allocator, FILE *fileStream, u8 indentsCount)
         {
             stream = GetWriteFileDataStream(fileStream, true);
             previousToken = JsonToken_Invalid;
-            shouldIndent = writerShouldIndent;
+            this->indentsCount = indentsCount;
             indentTypes = collections::List<JsonTokenType>(allocator);
         }
-        inline JsonWriter(IAllocator allocator, IDataStream dataStream, bool writerShouldIndent)
+        inline JsonWriter(IAllocator allocator, IDataStream dataStream, u8 indentsCount)
         {
             stream = dataStream;
             previousToken = JsonToken_Invalid;
-            shouldIndent = writerShouldIndent;
+            this->indentsCount = indentsCount;
             indentTypes = collections::List<JsonTokenType>(allocator);
         }
         inline void SaveAndCloseFile()
@@ -360,9 +360,9 @@ namespace Json
         }
         inline void WriteIndents()
         {
-            if (shouldIndent)
+            if (indentsCount > 0)
             {
-                for (usize i = 0; i < indentTypes.count; i++)
+                for (usize i = 0; i < indentTypes.count * indentsCount; i++)
                 {
                     stream.WriteByte(' ');
                 }
@@ -611,14 +611,15 @@ namespace Json
                 indentTypes.Add(JsonToken_LBracket);
                 return true;
             }
-            else if (LatestIndentType() == JsonToken_LBracket)
+            else if (previousToken != JsonToken_LBracket)
             {
-                stream.WriteText(", [");
-                previousToken = JsonToken_LBracket;
-                indentTypes.Add(JsonToken_LBracket);
-                return true;
+                stream.WriteText(", ");
             }
-            return false;
+
+            stream.WriteText("[");
+            previousToken = JsonToken_LBracket;
+            indentTypes.Add(JsonToken_LBracket);
+            return true;
         }
         inline bool WriteEndArray()
         {
