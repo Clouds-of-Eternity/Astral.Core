@@ -680,7 +680,7 @@ struct CharSlice
         usize len = strlen(other);
         if (this->length >= len)
         {
-            return strcmp(this->buffer + this->length - len, other) == 0;
+            return memcmp(this->buffer + this->length - len, other, len) == 0;
         }
         return false;
     }
