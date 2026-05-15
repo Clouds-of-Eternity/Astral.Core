@@ -388,14 +388,14 @@ struct string
     {
         return string(allocator, this->buffer, this->length - 1);
     }
-    inline wchar_t* ToWString(IAllocator allocator)
+    inline wchar_t* ToWString(IAllocator allocator) const
     {
         wchar_t *result = (wchar_t *)allocator.Allocate(sizeof(wchar_t) * length);
         swprintf(result, length, L"%hs", buffer);
         result[length - 1] = L'\0';
         return result;
     }
-    inline char_t* ToOSString(IAllocator allocator)
+    inline char_t* ToOSString(IAllocator allocator) const
     {
 #ifdef WINDOWS
         return ToWString(allocator);
@@ -403,7 +403,7 @@ struct string
         return Clone(allocator).buffer;
 #endif
     }
-    inline bool StartsWith(const char* other)
+    inline bool StartsWith(const char* other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
@@ -420,7 +420,7 @@ struct string
         }
         return memcmp(this->buffer, other, len) == 0;
     }
-    inline bool EndsWith(const char* other)
+    inline bool EndsWith(const char* other) const
     {
         if (this->buffer == NULL || other == NULL)
         {

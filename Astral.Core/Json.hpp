@@ -117,7 +117,7 @@ namespace Json
             arrayElements = collections::Array<JsonProperty>();
         }
         
-        inline JsonTokenType CheckValueType()
+        inline JsonTokenType CheckValueType() const
         {
             if (dataLength < 0)
             {
@@ -125,7 +125,7 @@ namespace Json
             }
             return JsonToken_StringLiteral;
         }
-        inline i8 GetInt8()
+        inline i8 GetInt8() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -133,7 +133,7 @@ namespace Json
             }
             return *(i8 *)&data;
         }
-        inline u8 GetUint8()
+        inline u8 GetUint8() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -141,7 +141,7 @@ namespace Json
             }
             return *(u8 *)&data;
         }
-        inline i16 GetInt16()
+        inline i16 GetInt16() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -149,7 +149,7 @@ namespace Json
             }
             return *(i16 *)&data;
         }
-        inline u16 GetUint16()
+        inline u16 GetUint16() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -157,7 +157,7 @@ namespace Json
             }
             return *(u16 *)&data;
         }
-        inline i32 GetInt32()
+        inline i32 GetInt32() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -165,7 +165,7 @@ namespace Json
             }
             return *(i32 *)&data;
         }
-        inline u32 GetUint32()
+        inline u32 GetUint32() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -173,7 +173,7 @@ namespace Json
             }
             return *(u32 *)&data;
         }
-        inline i64 GetInt64()
+        inline i64 GetInt64() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -181,7 +181,7 @@ namespace Json
             }
             return *(i64 *)&data;
         }
-        inline u64 GetUint64()
+        inline u64 GetUint64() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -189,7 +189,7 @@ namespace Json
             }
             return data;
         }
-        inline bool GetBool()
+        inline bool GetBool() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -197,7 +197,7 @@ namespace Json
             }
             return (bool)data;
         }
-        inline float GetFloat()
+        inline float GetFloat() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -214,7 +214,7 @@ namespace Json
             double asDouble = *(double *)&data;
             return (float)asDouble;
         }
-        inline double GetDouble()
+        inline double GetDouble() const
         {
             if (elementType != JsonElement_Property)
             {
@@ -230,7 +230,7 @@ namespace Json
             }
             return *(double *)&data;
         }
-        inline string GetString(IAllocator allocator)
+        inline string GetString(IAllocator allocator) const
         {
             if (dataLength < 0)
             {
@@ -267,7 +267,7 @@ namespace Json
             charSlices.deinit();
             return result;
         }
-        inline string GetStringRaw(IAllocator allocator)
+        inline string GetStringRaw(IAllocator allocator) const
         {
             if (dataLength < 0)
             {
@@ -275,7 +275,7 @@ namespace Json
             }
             return string(allocator, (char *)data);
         }
-        inline string AsString()
+        inline string AsString() const
         {
             if (dataLength <= 0)
             {
@@ -304,8 +304,8 @@ namespace Json
             }
             return result;
         }
-        JsonElement *GetProperty(string propertyName);
-        JsonElement *GetProperty(text propertyName);
+        JsonElement *GetProperty(string propertyName) const;
+        JsonElement *GetProperty(text propertyName) const;
 
         /// @brief Parses all child objects recursively, collecting their properties 
         /// and aggregating them into raw byte data
@@ -642,30 +642,30 @@ namespace Json
 
 #ifdef ASTRALCORE_JSON_IMPL
 
-Json::JsonElement *Json::JsonElement::GetProperty(text propertyName)
+Json::JsonElement *Json::JsonElement::GetProperty(text propertyName) const
 {
     if (this->elementType == JsonElement_Object)
     {
         for (u32 i = 0; i < arrayElements.length; i++)
         {
-            if (arrayElements[i].key == propertyName)
+            if (arrayElements.data[i].key == propertyName)
             {
-                return &arrayElements[i].value;
+                return &arrayElements.data[i].value;
             }
         }
         //return childObjects.Get(propertyName);
     }
     return NULL;
 }
-Json::JsonElement *Json::JsonElement::GetProperty(string propertyName)
+Json::JsonElement *Json::JsonElement::GetProperty(string propertyName) const
 {
     if (this->elementType == JsonElement_Object)
     {
         for (u32 i = 0; i < arrayElements.length; i++)
         {
-            if (arrayElements[i].key == propertyName)
+            if (arrayElements.data[i].key == propertyName)
             {
-                return &arrayElements[i].value;
+                return &arrayElements.data[i].value;
             }
         }
         //return childObjects.Get(propertyName);
