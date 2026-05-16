@@ -146,21 +146,41 @@ struct string
         this->buffer = (char*)allocator.Allocate(length);
         this->length = length;
     }
+    inline char &operator[](usize index)
+    {
+        return buffer[index];
+    }
     inline string(IAllocator myAllocator, const char* source)
     {
         this->allocator = myAllocator;
-        this->length = strlen(source) + 1;
-        this->buffer = (char *)myAllocator.Allocate(this->length);
-        strcpy(this->buffer, source);
-        this->buffer[this->length - 1] = '\0';
+        if (source != NULL)
+        {
+            this->length = strlen(source) + 1;
+            this->buffer = (char *)myAllocator.Allocate(this->length);
+            memcpy(this->buffer, source, this->length - 1);
+            this->buffer[this->length - 1] = '\0';
+        }
+        else
+        {
+            this->length = 0;
+            this->buffer = NULL;
+        }
     }
     inline string(IAllocator myAllocator, const char* source, usize length)
     {
         this->allocator = myAllocator;
-        this->buffer = (char*)myAllocator.Allocate(length + 1);
-        this->buffer[length] = '\0';
-        this->length = length + 1;
-        memcpy(this->buffer, source, length);
+        if (length == 0 || source == NULL)
+        {
+            buffer = NULL;
+            this->length = 0;
+        }
+        else
+        {
+            this->buffer = (char*)myAllocator.Allocate(length + 1);
+            this->buffer[length] = '\0';
+            this->length = length + 1;
+            memcpy(this->buffer, source, length);
+        }
     }
 
     inline void deinit()
@@ -609,6 +629,10 @@ struct CharSlice
     inline bool operator!=(const CharSlice str) const
     {
         return !(*this == str);
+    }
+    inline char operator[](usize index) const
+    {
+        return buffer[index];
     }
     inline CharSlice Slice(u32 startIndex, u32 length) const
     {

@@ -7,6 +7,7 @@
 #include "List.hpp"
 #include "ArenaAllocator.hpp"
 #include "Scope.hpp"
+#include "Path.hpp"
 
 #include <sys/stat.h>   // For stat().
 
@@ -137,69 +138,54 @@ namespace io
         return false;
     }
 
-    inline void RecursiveCreateDirectories(const char* finalDirPath)
+    /// @brief Recursively creates all directories up to and including the provided absolute path
+    /// @return True if the creation was successful, false if all directories already exist
+    /// or if any directory had failed to create.
+    inline bool RecursiveCreateDirectories(CharSlice finalDirPath)
     {
-        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
-        IAllocator alloc = arena.AsAllocator();
-
-        collections::Array<string> paths = SplitString(alloc, finalDirPath, '/');
-        if (paths.length <= 1) //C:/ is not a valid file
+        if (finalDirPath.length <= 1)
         {
-            return;
+            return false;
         }
-        string currentPath = paths.data[0].Clone(alloc);
+        bool result = true;
+        char *chars = (char *)DEFAULT_ALLOC(finalDirPath.length + 1);
+        chars[finalDirPath.length] = '\0';
 
-        for (usize i = 0; i < paths.length; i++)
+        for (usize i = 0; i < finalDirPath.length; i++)
         {
-            if (i > 0)
+            if (finalDirPath[i] == '\\' || finalDirPath[i] == '/')
             {
-                currentPath.Append("/");
-                currentPath.Append(paths.data[i].buffer);
+                chars[i] = '\0';
+                if (!io::DirectoryExists(chars))
+                {
+                    result = io::NewDirectory(chars);
+                    if (!result)
+                    {
+                        break;
+                    }
+                }
             }
-            if (!io::DirectoryExists(currentPath.buffer))
-            {
-                io::NewDirectory(currentPath.buffer);
-            }
+            chars[i] = finalDirPath[i];
         }
 
-        arena.deinit();
+        DEFAULT_FREE(chars);
+        return result;
     }
 
-    inline FILE* CreateDirectoriesAndFile(const char* path)
+    inline FILE* CreateDirectoriesAndFile(CharSlice absolutePath, bool writeBinary)
     {
-        ArenaAllocator arena = ArenaAllocator(GetCAllocator());
-        IAllocator alloc = arena.AsAllocator();
-        collections::Array<string> paths = SplitString(alloc, path, '/');
-        if (paths.length <= 1) //C:/ is not a valid file
+        CharSlice dirPath = path::GetDirectory(absolutePath);
+        if (dirPath.length > 0 && !RecursiveCreateDirectories(dirPath))
         {
             return NULL;
         }
-        FILE* file = NULL;
-        string currentPath = paths.data[0].Clone(alloc);
-        for (usize i = 0; i < paths.length; i++)
-        {
-            if (i > 0)
-            {
-                currentPath.Append("/");
-                currentPath.Append(paths.data[i].buffer);
-            }
-            if (i < paths.length - 1)
-            {
-                if (!io::DirectoryExists(currentPath.buffer))
-                {
-                    io::NewDirectory(currentPath.buffer);
-                }
-            }
-            else
-            {
-                //create file
-                file = fopen(currentPath.buffer, "w");
-                break;
-            }
-        }
+        char *chars = (char *)DEFAULT_ALLOC(absolutePath.length + 1);
+        memcpy(chars, absolutePath.buffer, absolutePath.length);
+        chars[absolutePath.length] = '\0';
 
-        arena.deinit();
-        return file;
+        FILE *result = fopen(chars, writeBinary ? "wb" : "w");
+        DEFAULT_FREE(chars);
+        return result;
     }
 
     inline u32 OutputFilesInDirectory(IAllocator allocator, const char *dirPath, collections::List<string> *output)

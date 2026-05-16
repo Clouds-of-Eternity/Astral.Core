@@ -123,7 +123,7 @@ namespace Json
             {
                 return (JsonTokenType)(-dataLength);
             }
-            return JsonToken_StringLiteral;
+            return Json::JsonToken_StringLiteral;
         }
         inline i8 GetInt8() const
         {
