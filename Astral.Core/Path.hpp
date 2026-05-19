@@ -136,7 +136,7 @@ namespace path
         {
             if (path[i] == '/' || path[i] == '\\')
             {
-                actualLastIndex = i;
+                actualLastIndex = i + 1;
             }
         }
 
