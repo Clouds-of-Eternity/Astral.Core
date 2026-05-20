@@ -33,6 +33,16 @@ constexpr float Radian2Degree = 180.0f / 3.1415927f;
 
 namespace Maths
 {
+	template<typename T>
+	inline T Max(T A, T B)
+	{
+		return A > B ? A : B;
+	}
+	template<typename T>
+	inline T Min(T A, T B)
+	{
+		return A < B ? A : B;
+	}
 	u64 inline rotl64(u64 value, u64 amount)
 	{
 		amount %= 64;
