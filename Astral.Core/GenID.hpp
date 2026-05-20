@@ -23,13 +23,14 @@ struct GenIDSource
 
     inline bool CheckValid(IDType IDInstance) const
     {
-        return IDInstance.generation != 0 && IDInstance.ID < cacheData.list.count && cacheData.list.ptr[IDInstance.ID].currentGeneration == IDInstance.generation;
+        return IDInstance.generation != 0 && IDInstance.ID < cacheData.list.count && cacheData.list.ptr[IDInstance.ID].isAlive && cacheData.list.ptr[IDInstance.ID].currentGeneration == IDInstance.generation;
     }
     inline void DeleteID(IDType IDInstance)
     {
         if (CheckValid(IDInstance))
         {
             cacheData[IDInstance.ID].currentGeneration++;
+            cacheData[IDInstance.ID].isAlive = false;
             cacheData.Remove(IDInstance.ID);
         }
     }
@@ -48,6 +49,7 @@ struct GenIDSource
         {
             generation = cacheData[index].currentGeneration;
         }
+        cacheData[index].isAlive = true;
 
         const IDType result = {index, generation};
         return result;
