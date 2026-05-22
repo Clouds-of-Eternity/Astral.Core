@@ -45,8 +45,11 @@ struct BumpAllocator
     }
     inline void deinit()
     {
-        IAllocator baseAllocator = GetInternals()->baseAllocator;
-        baseAllocator.Free(payload);
+        if (payload != NULL)
+        {
+            IAllocator baseAllocator = GetInternals()->baseAllocator;
+            baseAllocator.Free(payload);
+        }
     }
 };
 
