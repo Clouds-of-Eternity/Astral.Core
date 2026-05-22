@@ -190,7 +190,6 @@ namespace io
 
     inline u32 OutputFilesInDirectory(IAllocator allocator, const char *dirPath, collections::List<string> *output)
     {
-        //this
         u32 resultCount = 0;
         ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
         Scope(ArenaAllocator, arenaAlloc);
