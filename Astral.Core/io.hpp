@@ -8,6 +8,7 @@
 #include "ArenaAllocator.hpp"
 #include "Scope.hpp"
 #include "Path.hpp"
+#include "UTF8Utils.hpp"
 
 #include <sys/stat.h>   // For stat().
 
@@ -59,36 +60,69 @@ namespace io
     inline string ReadFile(IAllocator allocator, const char* path, bool isBinary)
     {
         string result = string(allocator);
-        if (!isBinary)
+        FILE *fs = fopen(path, "rb");
+        if (fs != NULL)
         {
-            FILE *fs = fopen(path, "r");
-            if (fs != NULL)
+            #ifdef WINDOWS
+            if (!isBinary)
             {
                 usize size = GetFileSize(fs);
 
                 char* buffer = (char*)allocator.Allocate(size + 1);
                 if (buffer != NULL)
                 {
-                    fread(buffer, sizeof(char), size, fs);
-                    
-                    buffer[size] = '\0';
+                    char chars[258];
+                    //2 bytes of padding
+                    chars[256] = '\0';
+                    chars[257] = '\0';
+                    usize index = 0;
+                    usize actualSize = 0;
+                    while (index < size)
+                    {
+                        //Read blocks of 256 characters at once.
+                        //Since we have to iterate over the entire output of each read anyways, the
+                        //main purpose of this is to reduce the number of file IO calls (in this case, fread)
+                        //that must be done.
+                        usize totalRead = fread(chars, sizeof(char), 256, fs);
+                        actualSize += totalRead;
+                        if (totalRead == 0)
+                        {
+                            break;
+                        }
+                        for (usize i = 0; i < totalRead; i++)
+                        {
+                            char curr = chars[i];
+                            char next = chars[i + 1];
+
+                            if (curr == '\r' && next == '\n')
+                            {
+                                buffer[index] = '\n';
+                                i++;
+                            }
+                            else if (curr == '\r')
+                            {
+                                buffer[index] = '\n';
+                            }
+                            else
+                            {
+                                buffer[index] = curr;
+                            }
+                            index++;
+                        }
+                    }
+
+                    //preprocessing
+                    buffer[actualSize] = '\0';
                     result.buffer = buffer;
-                    result.length = size + 1;
+                    result.length = actualSize + 1;
                 }
 
                 fclose(fs);
             }
-        }
-        else
-        {
-            FILE *fs = fopen(path, "rb");
-            if (fs != NULL)
+            else
+            #endif
             {
-                usize size = 0;
-                fseek(fs, 0, SEEK_END);
-                size = (usize)ftell(fs);
-
-                fseek(fs, 0, SEEK_SET);
+                usize size = GetFileSize(fs);
 
                 char* buffer = (char*)allocator.Allocate(size + 1);
                 if (buffer != NULL)
