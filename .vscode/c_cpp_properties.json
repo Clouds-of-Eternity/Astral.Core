@@ -11,8 +11,7 @@
             ],
             "cStandard": "c23",
             "cppStandard": "c++14",
-            "intelliSenseMode": "windows-clang-x64",
-            "windowsSdkVersion": "10.0.26100.0"
+            "intelliSenseMode": "windows-clang-x64"
         }
     ]
 }
