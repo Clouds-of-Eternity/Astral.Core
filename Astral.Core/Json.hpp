@@ -604,18 +604,20 @@ namespace Json
         }
         inline bool WriteStartArray()
         {
-            if (previousToken == JsonToken_PropertyName)
+            if (previousToken != JsonToken_Invalid)
             {
-                stream.WriteText(": [");
-                previousToken = JsonToken_LBracket;
-                indentTypes.Add(JsonToken_LBracket);
-                return true;
+                if (previousToken == JsonToken_PropertyName)
+                {
+                    stream.WriteText(": [");
+                    previousToken = JsonToken_LBracket;
+                    indentTypes.Add(JsonToken_LBracket);
+                    return true;
+                }
+                else if (previousToken != JsonToken_LBracket)
+                {
+                    stream.WriteText(", ");
+                }
             }
-            else if (previousToken != JsonToken_LBracket)
-            {
-                stream.WriteText(", ");
-            }
-
             stream.WriteText("[");
             previousToken = JsonToken_LBracket;
             indentTypes.Add(JsonToken_LBracket);
