@@ -680,7 +680,7 @@ namespace Maths
 			return result;
 		}
 #endif
-		inline Matrix4x4 operator*(const Matrix4x4 &other)
+		inline Matrix4x4 operator*(const Matrix4x4 &other) const
 		{
 #ifdef USE_SSE
 			Maths::Matrix4x4 m;
@@ -725,7 +725,7 @@ namespace Maths
 			return *this;
 		}
 
-		inline bool operator==(const Matrix4x4 other)
+		inline bool operator==(const Matrix4x4 other) const
 		{
 			return M11 == other.M11 && M22 == other.M22 && M33 == other.M33 && M44 == other.M44 &&
 				M12 == other.M12 && M13 == other.M13 && M14 == other.M14 &&
@@ -733,7 +733,7 @@ namespace Maths
 				M31 == other.M31 && M32 == other.M32 && M34 == other.M34 &&
 				M41 == other.M41 && M42 == other.M42 && M43 == other.M43;
 		}
-		inline bool operator!=(const Matrix4x4 other)
+		inline bool operator!=(const Matrix4x4 other) const
 		{
 			return (M11 != other.M11 || M12 != other.M12 || M13 != other.M13 || M14 != other.M14 ||
 				M21 != other.M21 || M22 != other.M22 || M23 != other.M23 || M24 != other.M24 ||
@@ -741,7 +741,7 @@ namespace Maths
 				M41 != other.M41 || M42 != other.M42 || M43 != other.M43 || M44 != other.M44);
 		}
 
-		inline Vec4 Transform(Vec4 vec4)
+		inline Vec4 Transform(Vec4 vec4) const
 		{
             return Vec4(
             vec4.X * M11 + vec4.Y * M21 + vec4.Z * M31 + vec4.W * M41,
@@ -749,7 +749,7 @@ namespace Maths
             vec4.X * M13 + vec4.Y * M23 + vec4.Z * M33 + vec4.W * M43,
             vec4.X * M14 + vec4.Y * M24 + vec4.Z * M34 + vec4.W * M44);
 		}
-        inline Vec3 Transform(Vec3 vec3)
+        inline Vec3 Transform(Vec3 vec3) const
         {
 			Maths::Vec4 asVec4 = Maths::Vec4(vec3, 1.0f);
 			asVec4 = Transform(asVec4);
