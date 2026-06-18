@@ -67,7 +67,7 @@ namespace collections
             }
             return option<usize>();
         }
-        Array<T> Clone(IAllocator allocator)
+        Array<T> Clone(IAllocator allocator) const
         {
             Array<T> result = Array<T>(allocator, this->length);
             for (usize i = 0; i < length; i++)
@@ -76,7 +76,7 @@ namespace collections
             }
             return result;
         }
-        Array<T> CloneAdd(IAllocator allocator, Array<T> other)
+        Array<T> CloneAdd(IAllocator allocator, Array<T> other) const
         {
             Array<T> result = Array<T>(allocator, this->length + other.length);
             for (usize i = 0; i < length; i++)
