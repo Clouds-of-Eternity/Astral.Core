@@ -330,6 +330,10 @@ namespace Maths
         {
             return Maths::Vec3(X, Y, Z);
         }
+        inline Maths::Vec2 ToVector2() const
+        {
+            return Maths::Vec2(X, Y);
+        }
 
         inline vec4 ToCVec() const
         {
