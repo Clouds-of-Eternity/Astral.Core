@@ -304,12 +304,13 @@ namespace io
     inline u32 OutputFoldersInDirectory(IAllocator allocator, const char *dirPath, collections::List<string> *output)
     {
         u32 resultCount = 0;
+
+#if WINDOWS
         ArenaAllocator arenaAlloc = ArenaAllocator(GetCAllocator());
         Scope(ArenaAllocator, arenaAlloc);
 
         IAllocator tempAllocator = arenaAlloc.AsAllocator();
-
-#if WINDOWS
+        
         WIN32_FIND_DATAA findFileResult;
         char sPath[256];
         sprintf(sPath, "%s/*.*", dirPath);
@@ -364,7 +365,7 @@ namespace io
                 if (S_ISDIR(st.st_mode))
                 {
                     resultCount++;
-                    output->Add(string::Format(tempAllocator, "%s/%s", dirPath, dir->d_name));
+                    output->Add(string::Format(allocator, "%s/%s", dirPath, dir->d_name));
                 }
             }
             closedir(srcdir);

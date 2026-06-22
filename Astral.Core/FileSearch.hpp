@@ -3,6 +3,8 @@
 
 #if WINDOWS
 #include "Shlwapi.h"
+#elif MACOS
+#include "fnmatch.h"
 #endif
 
 namespace io
