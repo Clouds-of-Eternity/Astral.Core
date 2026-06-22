@@ -10,23 +10,23 @@ typedef struct IndexedList
     List freeIndices;
 } IndexedList;
 
-inline IndexedList IndexedList_Empty()
+static inline IndexedList IndexedList_Empty()
 {
     const IndexedList result = {};
     return result;
 }
-inline IndexedList IndexedList_Create(IAllocator allocator, size_t itemSize)
+static inline IndexedList IndexedList_Create(IAllocator allocator, size_t itemSize)
 {
     IndexedList result;
     result.list = List_Create(allocator, itemSize);
     result.freeIndices = List_Create(allocator, sizeof(uint32_t));
     return result;
 }
-inline void *IndexedList_Get(IndexedList *self, size_t index)
+static inline void *IndexedList_Get(IndexedList *self, size_t index)
 {
     return (uint8_t *)self->list.ptr + index * self->list.itemSize;
 }
-inline uint32_t IndexedList_Add(IndexedList *self, const void *item)
+static inline uint32_t IndexedList_Add(IndexedList *self, const void *item)
 {
     if (self->freeIndices.count == 0)
     {
@@ -38,7 +38,7 @@ inline uint32_t IndexedList_Add(IndexedList *self, const void *item)
     memcpy(slot, item, self->list.itemSize);
     return intoIndex;
 }
-inline uint32_t IndexedList_AddDefaultZeroInitialized(IndexedList *self)
+static inline uint32_t IndexedList_AddDefaultZeroInitialized(IndexedList *self)
 {
     if (self->freeIndices.count == 0)
     {
@@ -50,7 +50,7 @@ inline uint32_t IndexedList_AddDefaultZeroInitialized(IndexedList *self)
     memset(slot, 0, self->list.itemSize);
     return intoIndex;
 }
-inline uint32_t IndexedList_AddDefault(IndexedList *self, bool *created)
+static inline uint32_t IndexedList_AddDefault(IndexedList *self, bool *created)
 {
     if (self->freeIndices.count == 0)
     {
@@ -62,14 +62,14 @@ inline uint32_t IndexedList_AddDefault(IndexedList *self, bool *created)
     uint32_t intoIndex = *(uint32_t*)List_Pop(&self->freeIndices);
     return intoIndex;
 }
-inline void IndexedList_Remove(IndexedList *self, uint32_t index)
+static inline void IndexedList_Remove(IndexedList *self, uint32_t index)
 {
     if (index < self->list.count)
     {
         List_Add(&self->freeIndices, &index);
     }
 }
-inline void *IndexedList_RemoveAndReturn(IndexedList *self, uint32_t index)
+static inline void *IndexedList_RemoveAndReturn(IndexedList *self, uint32_t index)
 {
     if (index < self->list.count)
     {
@@ -80,12 +80,12 @@ inline void *IndexedList_RemoveAndReturn(IndexedList *self, uint32_t index)
     }
     return NULL;
 }
-inline void IndexedList_Deinit(IndexedList *self)
+static inline void IndexedList_Deinit(IndexedList *self)
 {
     List_Deinit(&self->list);
     List_Deinit(&self->freeIndices);
 }
-inline void IndexedList_Clear(IndexedList *self)
+static inline void IndexedList_Clear(IndexedList *self)
 {
     List_Clear(&self->list);
     List_Clear(&self->freeIndices);

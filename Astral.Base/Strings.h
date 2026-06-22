@@ -25,12 +25,12 @@ typedef struct CharSlice
     size_t length;
 } CharSlice;
 
-inline string StringEmpty()
+static inline string StringEmpty()
 {
     const string result = {};
     return result;
 }
-inline string StringFrom(IAllocator allocator, const char *input)
+static inline string StringFrom(IAllocator allocator, const char *input)
 {
     const size_t len = strlen(input) + 1;
     char *buffer = (char *)IAllocator_Allocate(allocator, len);
@@ -39,7 +39,7 @@ inline string StringFrom(IAllocator allocator, const char *input)
 
     return result;
 }
-inline string StringFromSlice(IAllocator allocator, const char *input, size_t length)
+static inline string StringFromSlice(IAllocator allocator, const char *input, size_t length)
 {
     char *buffer = (char *)IAllocator_Allocate(allocator, length + 1);
     memcpy(buffer, input, length);
@@ -48,11 +48,11 @@ inline string StringFromSlice(IAllocator allocator, const char *input, size_t le
 
     return result;
 }
-inline string StringFromCharSlice(IAllocator allocator, CharSlice charSlice)
+static inline string StringFromCharSlice(IAllocator allocator, CharSlice charSlice)
 {
     return StringFromSlice(allocator, charSlice.buffer, charSlice.length);
 }
-inline string StringFromCharSlices(IAllocator allocator, CharSlice *slices, size_t numSlices)
+static inline string StringFromCharSlices(IAllocator allocator, CharSlice *slices, size_t numSlices)
 {
     string result;
     size_t totalBytes = 1;
@@ -70,7 +70,7 @@ inline string StringFromCharSlices(IAllocator allocator, CharSlice *slices, size
     }
     return result;
 }
-inline string StringFromLength(IAllocator allocator, size_t lengthNoNullTerminator)
+static inline string StringFromLength(IAllocator allocator, size_t lengthNoNullTerminator)
 {
     char *buffer = (char *)IAllocator_Allocate(allocator, lengthNoNullTerminator);
     buffer[lengthNoNullTerminator] = '\0';
@@ -78,13 +78,13 @@ inline string StringFromLength(IAllocator allocator, size_t lengthNoNullTerminat
     
     return result;
 }
-inline void String_Deinit(string *self)
+static inline void String_Deinit(string *self)
 {
     if (self->buffer != NULL)
     IAllocator_Free(self->allocator, self->buffer);
 }
 
-inline string String_AppendText(string self, const char *toAppend)
+static inline string String_AppendText(string self, const char *toAppend)
 {
     const size_t toAppendLen = strlen(toAppend);
     const size_t newStrLen = self.length + toAppendLen;
@@ -101,7 +101,7 @@ inline string String_AppendText(string self, const char *toAppend)
     string result = {self.allocator, buffer, newStrLen};
     return result;
 }
-inline string String_PrependText(string self, const char *toPrepend)
+static inline string String_PrependText(string self, const char *toPrepend)
 {
     const size_t toPrependLen = strlen(toPrepend);
     const size_t newStrLen = self.length + toPrependLen;
@@ -116,16 +116,16 @@ inline string String_PrependText(string self, const char *toPrepend)
     string result = {self.allocator, buffer, newStrLen};
     return result;
 }
-inline string String_AppendStr(string self, const string toAppend)
+static inline string String_AppendStr(string self, const string toAppend)
 {
     return String_AppendText(self, toAppend.buffer);
 }
-inline string String_PrependStr(string self, const string toPrepend)
+static inline string String_PrependStr(string self, const string toPrepend)
 {
     return String_PrependText(self, toPrepend.buffer);
 }
 
-inline string StringFormat(IAllocator allocator, const char *input, ...)
+static inline string StringFormat(IAllocator allocator, const char *input, ...)
 {
     va_list args;
     va_start(args, input);
@@ -140,11 +140,11 @@ inline string StringFormat(IAllocator allocator, const char *input, ...)
     string result = {allocator, buffer, (size_t)requiredBytes};
     return result;
 }
-inline string StringClone(IAllocator newAllocator, const string str)
+static inline string StringClone(IAllocator newAllocator, const string str)
 {
     return StringFrom(newAllocator, str.buffer);
 }
-inline bool StringStartsWith(string self, const char* other)
+static inline bool StringStartsWith(string self, const char* other)
 {
     if (self.buffer == NULL || other == NULL)
     {
@@ -161,7 +161,7 @@ inline bool StringStartsWith(string self, const char* other)
     }
     return memcmp(self.buffer, other, len) == 0;
 }
-inline bool StringEndsWith(string self, const char* other)
+static inline bool StringEndsWith(string self, const char* other)
 {
     if (self.buffer == NULL || other == NULL)
     {
@@ -178,7 +178,7 @@ inline bool StringEndsWith(string self, const char* other)
     }
     return false;
 }
-inline bool StringEqls(string A, string B)
+static inline bool StringEqls(string A, string B)
 {
     if (A.buffer == NULL || B.buffer == NULL)
     {
@@ -186,7 +186,7 @@ inline bool StringEqls(string A, string B)
     }
     return A.length == B.length && memcmp(A.buffer, B.buffer, A.length) == 0;
 }
-inline bool StringEqlsCharSlice(string A, CharSlice B)
+static inline bool StringEqlsCharSlice(string A, CharSlice B)
 {
     if (A.buffer == NULL || B.buffer == NULL)
     {
@@ -197,7 +197,7 @@ inline bool StringEqlsCharSlice(string A, CharSlice B)
     //for the memcmp to be valid
     return (A.length - 1) == B.length && memcmp(A.buffer, B.buffer, A.length - 1) == 0;
 }
-inline uint32_t StringHash(string A)
+static inline uint32_t StringHash(string A)
 {
     uint32_t hash = 7;
     if (A.length > 0)
@@ -209,7 +209,7 @@ inline uint32_t StringHash(string A)
     }
     return hash;
 }
-inline uint32_t StringHashMurmur3(string A)
+static inline uint32_t StringHashMurmur3(string A)
 {
     if (A.length == 0)
     {
@@ -218,27 +218,27 @@ inline uint32_t StringHashMurmur3(string A)
     return Murmur3((const uint8_t *)A.buffer, A.length - 1);
 }
 
-inline bool StringPtr_Eqls(const void *A, const void *B)
+static inline bool StringPtr_Eqls(const void *A, const void *B)
 {
     return StringEqls(*(string *)A, *(string *)B);
 }
-inline uint32_t StringPtr_Hash(const void *A)
+static inline uint32_t StringPtr_Hash(const void *A)
 {
     return StringHash(*(string *)A);
 }
-inline uint32_t StringPtr_HashMurmur3(const void *A)
+static inline uint32_t StringPtr_HashMurmur3(const void *A)
 {
     return StringHashMurmur3(*(string *)A);
 }
 
-inline wchar_t* StringToWChar(string self, IAllocator allocator)
+static inline wchar_t* StringToWChar(string self, IAllocator allocator)
 {
     wchar_t *result = (wchar_t *)IAllocator_Allocate(allocator, sizeof(wchar_t) * self.length);
     swprintf(result, self.length, L"%hs", self.buffer);
     result[self.length - 1] = L'\0';
     return result;
 }
-inline char_t* StringToOSChars(string self, IAllocator allocator)
+static inline char_t* StringToOSChars(string self, IAllocator allocator)
 {
 #ifdef WINDOWS
     return StringToWChar(self, allocator);
@@ -247,7 +247,7 @@ inline char_t* StringToOSChars(string self, IAllocator allocator)
 #endif
 }
 
-inline Array SplitStringOnChar(IAllocator allocator, const char* input, char toSplitOn)
+static inline Array SplitStringOnChar(IAllocator allocator, const char* input, char toSplitOn)
 {
     size_t count = 1;
     size_t i = 0;
@@ -290,7 +290,7 @@ inline Array SplitStringOnChar(IAllocator allocator, const char* input, char toS
 
     return results;
 }
-inline Array SplitStringOnAnyChar(IAllocator allocator, const char* input, const char *toSplitOn)
+static inline Array SplitStringOnAnyChar(IAllocator allocator, const char* input, const char *toSplitOn)
 {
     size_t splitCharsCount = strlen(toSplitOn);
 
@@ -351,7 +351,7 @@ inline Array SplitStringOnAnyChar(IAllocator allocator, const char* input, const
 
     return results;
 }
-inline string ReplaceChar(IAllocator allocator, const char* input, char toReplace, char replaceWith)
+static inline string ReplaceChar(IAllocator allocator, const char* input, char toReplace, char replaceWith)
 {
     size_t inputLength = strlen(input) + 1;
 
@@ -377,7 +377,7 @@ inline string ReplaceChar(IAllocator allocator, const char* input, char toReplac
     str.buffer = buffer;
     return str;
 }
-inline string ReplaceCharWithString(IAllocator allocator, const char* input, char toReplace, const char* replaceWith)
+static inline string ReplaceCharWithString(IAllocator allocator, const char* input, char toReplace, const char* replaceWith)
 {
     size_t replaceWithLength = strlen(replaceWith);
     if (replaceWithLength == 1)
@@ -423,7 +423,7 @@ inline string ReplaceCharWithString(IAllocator allocator, const char* input, cha
     return str;
 }
 
-inline bool StringFindLast(string str, char character, size_t *outIndex)
+static inline bool StringFindLast(string str, char character, size_t *outIndex)
 {
     for (int64_t i = (int64_t)str.length - 1; i >= 0; i--)
     {
@@ -435,7 +435,7 @@ inline bool StringFindLast(string str, char character, size_t *outIndex)
     }
     return false;
 }
-inline bool StringFindAnyFromEnd(string str, const char *characters, size_t *outIndex)
+static inline bool StringFindAnyFromEnd(string str, const char *characters, size_t *outIndex)
 {
     size_t charLen = strlen(characters);
 
@@ -452,7 +452,7 @@ inline bool StringFindAnyFromEnd(string str, const char *characters, size_t *out
     }
     return false;
 }
-inline bool StringFindFirst(string str, char character, size_t *outIndex)
+static inline bool StringFindFirst(string str, char character, size_t *outIndex)
 {
     for (size_t i = 0; i < str.length; i++)
     {
@@ -464,7 +464,7 @@ inline bool StringFindFirst(string str, char character, size_t *outIndex)
     }
     return false;
 }
-inline bool StringFindAnyFromStart(string str, const char *characters, size_t *outIndex)
+static inline bool StringFindAnyFromStart(string str, const char *characters, size_t *outIndex)
 {
     size_t charLen = strlen(characters);
 
@@ -482,7 +482,7 @@ inline bool StringFindAnyFromStart(string str, const char *characters, size_t *o
     return false;
 }
 
-inline bool LitFindLast(const char *str, char character, size_t *outIndex)
+static inline bool LitFindLast(const char *str, char character, size_t *outIndex)
 {
     size_t len = strlen(str) + 1;
     for (int64_t i = (int64_t)len; i >= 0; i--)
@@ -495,7 +495,7 @@ inline bool LitFindLast(const char *str, char character, size_t *outIndex)
     }
     return false;
 }
-inline bool LitFindFirst(const char *str, char character, size_t *outIndex)
+static inline bool LitFindFirst(const char *str, char character, size_t *outIndex)
 {
     size_t len = strlen(str);
     for (size_t i = 0; i < len; i++)
@@ -509,18 +509,18 @@ inline bool LitFindFirst(const char *str, char character, size_t *outIndex)
     return false;
 }
 
-inline CharSlice CharSliceEmpty()
+static inline CharSlice CharSliceEmpty()
 {
     const CharSlice result = {};
     return result;
 }
-inline CharSlice CharSliceFrom(const char *input)
+static inline CharSlice CharSliceFrom(const char *input)
 {
     const CharSlice result = {input, strlen(input)};
     return result;
 }
 
-inline bool CharSliceEqls(CharSlice A, CharSlice B)
+static inline bool CharSliceEqls(CharSlice A, CharSlice B)
 {
     if (A.buffer == NULL || B.buffer == NULL)
     {
@@ -528,7 +528,7 @@ inline bool CharSliceEqls(CharSlice A, CharSlice B)
     }
     return A.length == B.length && (A.buffer == B.buffer || memcmp(A.buffer, B.buffer, A.length) == 0);
 }
-inline uint32_t CharSliceHash(CharSlice A)
+static inline uint32_t CharSliceHash(CharSlice A)
 {
     uint32_t hash = 7;
     if (A.length > 0)
@@ -540,7 +540,7 @@ inline uint32_t CharSliceHash(CharSlice A)
     }
     return hash;
 }
-inline uint32_t CharSliceHashMurmur3(CharSlice A)
+static inline uint32_t CharSliceHashMurmur3(CharSlice A)
 {
     if (A.length == 0)
     {
@@ -549,20 +549,20 @@ inline uint32_t CharSliceHashMurmur3(CharSlice A)
     return Murmur3((const uint8_t *)A.buffer, A.length - 1);
 }
 
-inline bool CharSlicePtr_Eqls(const void *A, const void *B)
+static inline bool CharSlicePtr_Eqls(const void *A, const void *B)
 {
     return CharSliceEqls(*(CharSlice *)A, *(CharSlice *)B);
 }
-inline uint32_t CharSlicePtr_Hash(const void *A)
+static inline uint32_t CharSlicePtr_Hash(const void *A)
 {
     return CharSliceHash(*(CharSlice *)A);
 }
-inline uint32_t CharSlicePtr_HashMurmur3(const void *A)
+static inline uint32_t CharSlicePtr_HashMurmur3(const void *A)
 {
     return CharSliceHashMurmur3(*(CharSlice *)A);
 }
 
-inline int64_t CharsToI64(const char* buffer, size_t length)
+static inline int64_t CharsToI64(const char* buffer, size_t length)
 {
     int64_t result = 0;
     uint32_t index = 1;
@@ -581,7 +581,7 @@ inline int64_t CharsToI64(const char* buffer, size_t length)
     }
     return result;
 }
-inline uint64_t CharsToU64(const char* buffer, size_t length)
+static inline uint64_t CharsToU64(const char* buffer, size_t length)
 {
     uint64_t result = 0;
     uint32_t index = 1;
@@ -596,19 +596,19 @@ inline uint64_t CharsToU64(const char* buffer, size_t length)
     }
     return result;
 }
-inline int64_t StringToI64(string str)
+static inline int64_t StringToI64(string str)
 {
     return CharsToI64(str.buffer, str.length - 1);
 }
-inline uint64_t StringToU64(string str)
+static inline uint64_t StringToU64(string str)
 {
     return CharsToU64(str.buffer, str.length - 1);
 }
-inline int64_t CharSliceToI64(CharSlice slice)
+static inline int64_t CharSliceToI64(CharSlice slice)
 {
     return CharsToI64(slice.buffer, slice.length);
 }
-inline uint64_t CharSliceToU64(CharSlice slice)
+static inline uint64_t CharSliceToU64(CharSlice slice)
 {
     return CharsToU64(slice.buffer, slice.length);
 }

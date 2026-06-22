@@ -5,7 +5,7 @@
 #include <string.h>
 #include <wchar.h>
 
-inline bool IsValidUTF8(const char *utf8, size_t lengthToCheck)
+static inline bool IsValidUTF8(const char *utf8, size_t lengthToCheck)
 {
     size_t index = 0;
     while (index < lengthToCheck)
@@ -35,7 +35,7 @@ inline bool IsValidUTF8(const char *utf8, size_t lengthToCheck)
     return true;
 }
 
-inline bool UTF8GetCharPointAt(const char *utf8, size_t index, uint32_t *result)
+static inline bool UTF8GetCharPointAt(const char *utf8, size_t index, uint32_t *result)
 {
     char startingByte = utf8[index];
     if ((startingByte & 0b11111000) == 0b11110000)
@@ -61,7 +61,7 @@ inline bool UTF8GetCharPointAt(const char *utf8, size_t index, uint32_t *result)
 
     return false;
 }
-inline uint32_t UTF8GetCharPoint(const char *utf8, size_t *index)
+static inline uint32_t UTF8GetCharPoint(const char *utf8, size_t *index)
 {
     uint32_t result = 0;
     char startingByte = utf8[*index];
@@ -87,7 +87,7 @@ inline uint32_t UTF8GetCharPoint(const char *utf8, size_t *index)
     }
     return result;
 }
-inline void ByteToBits(uint8_t byte, char* results)
+static inline void ByteToBits(uint8_t byte, char* results)
 {
     results[0] = (byte >> 7) ? '1' : '0';
     results[1] = ((byte >> 6) & 1) ? '1' : '0';
@@ -99,7 +99,7 @@ inline void ByteToBits(uint8_t byte, char* results)
     results[7] = (byte & 1) ? '1' : '0';
 }
 
-inline uint8_t CharPointToUTF8(uint32_t charPoint, char *output)
+static inline uint8_t CharPointToUTF8(uint32_t charPoint, char *output)
 {
     if (charPoint <= 0x7F) {
         output[0] = charPoint;
@@ -126,7 +126,7 @@ inline uint8_t CharPointToUTF8(uint32_t charPoint, char *output)
     return 0;
 }
 
-inline uint32_t *UTF8To32(IAllocator alloc, const char *inputText, size_t *outputStringLength)
+static inline uint32_t *UTF8To32(IAllocator alloc, const char *inputText, size_t *outputStringLength)
 {
     uint32_t *maxSizeString = (uint32_t *)IAllocator_Allocate(alloc, 4 * (strlen(inputText) + 1));
     size_t index = 0;
@@ -145,7 +145,7 @@ inline uint32_t *UTF8To32(IAllocator alloc, const char *inputText, size_t *outpu
     *outputStringLength = i + 1;
     return maxSizeString;
 }
-inline uint8_t *UTF32To8(IAllocator alloc, const uint32_t *inputText, size_t inputStringLength, size_t *outputStringLength)
+static inline uint8_t *UTF32To8(IAllocator alloc, const uint32_t *inputText, size_t inputStringLength, size_t *outputStringLength)
 {
     uint8_t *maxSizeString = (uint8_t *)IAllocator_Allocate(alloc, inputStringLength * 4 + 1);
     size_t index = 0;
@@ -175,18 +175,18 @@ inline uint8_t *UTF32To8(IAllocator alloc, const uint32_t *inputText, size_t inp
     *outputStringLength = index + 1;
     return maxSizeString;
 }
-inline Array UTF8To32Array(IAllocator alloc, const char *inputText)
+static inline Array UTF8To32Array(IAllocator alloc, const char *inputText)
 {
     size_t arrayLength;
     uint32_t *ptr = UTF8To32(alloc, inputText, &arrayLength);
     return Array_CreateFromExisting(alloc, ptr, sizeof(uint32_t), arrayLength);
 }
-inline uint8_t *UTF32ArrayTo8(IAllocator alloc, Array inputText)
+static inline uint8_t *UTF32ArrayTo8(IAllocator alloc, Array inputText)
 {
     size_t outputStrLen;
     return UTF32To8(alloc, (const uint32_t *)inputText.ptr, inputText.length, &outputStrLen);
 }
-inline Array UTF32ArrayTo8Array(IAllocator alloc, Array inputText)
+static inline Array UTF32ArrayTo8Array(IAllocator alloc, Array inputText)
 {
     Array result;
     result.allocator = alloc;
@@ -194,7 +194,7 @@ inline Array UTF32ArrayTo8Array(IAllocator alloc, Array inputText)
 
     return result;
 }
-inline wchar_t *UTF8ToWChar(IAllocator alloc, const char *inputText)
+static inline wchar_t *UTF8ToWChar(IAllocator alloc, const char *inputText)
 {
     wchar_t *maxSizeString = (wchar_t *)IAllocator_Allocate(alloc, 4 * (strlen(inputText) + 1));
     size_t index = 0;
@@ -212,7 +212,7 @@ inline wchar_t *UTF8ToWChar(IAllocator alloc, const char *inputText)
     maxSizeString[i] = 0;
     return maxSizeString;
 }
-inline uint8_t *WCharToUTF8(IAllocator alloc, const wchar_t *inputText)
+static inline uint8_t *WCharToUTF8(IAllocator alloc, const wchar_t *inputText)
 {
     size_t len = wcslen(inputText);
     uint8_t *maxSizeString = (uint8_t *)IAllocator_Allocate(alloc, len * 4 + 1);

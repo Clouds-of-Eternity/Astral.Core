@@ -52,7 +52,7 @@ string PathStrSwapExtension(IAllocator allocator, const string path, const char*
         else return StringClone(allocator, path);
     }
 }
-inline string PathSwapExtension(IAllocator allocator, const char *path, const char* newExtension)
+static inline string PathSwapExtension(IAllocator allocator, const char *path, const char* newExtension)
 {
     string str = RENTSTR(path);
 
@@ -64,7 +64,7 @@ inline string PathSwapExtension(IAllocator allocator, const char *path, const ch
 }
 
 /// @brief Gets the extension of a given path string object, including the leading '.'
-inline string PathStrGetExtension(IAllocator allocator, string path)
+static inline string PathStrGetExtension(IAllocator allocator, string path)
 {
     size_t dotPosition = path.length + 1; //impossible number
     size_t finalDirPosition = path.length + 1;
@@ -93,7 +93,7 @@ inline string PathStrGetExtension(IAllocator allocator, string path)
     }
 }
 /// @brief Gets the extension of a given path string literal, including the leading '.'
-inline string PathGetExtension(IAllocator allocator, const char *path)
+static inline string PathGetExtension(IAllocator allocator, const char *path)
 {
     string str = RENTSTR(path);
 
@@ -104,7 +104,7 @@ inline string PathGetExtension(IAllocator allocator, const char *path)
     return ext;
 }
 
-inline string PathStrGetDirectory(IAllocator allocator, string path)
+static inline string PathStrGetDirectory(IAllocator allocator, string path)
 {
     size_t actualLastIndex = 0;
     if (!StringFindAnyFromEnd(path, "/\\", &actualLastIndex))
@@ -113,7 +113,7 @@ inline string PathStrGetDirectory(IAllocator allocator, string path)
     }
     return StringFromSlice(allocator, path.buffer, actualLastIndex);
 }
-inline string PathGetDirectory(IAllocator allocator, const char *path)
+static inline string PathGetDirectory(IAllocator allocator, const char *path)
 {
     string str = RENTSTR(path);
 
@@ -124,7 +124,7 @@ inline string PathGetDirectory(IAllocator allocator, const char *path)
     return directory;
 }
 
-inline string PathStrGetFileName(IAllocator allocator, string path)
+static inline string PathStrGetFileName(IAllocator allocator, string path)
 {
     size_t lastIndex;
     bool hasLast = StringFindAnyFromEnd(path, "/\\", &lastIndex);
@@ -134,7 +134,7 @@ inline string PathStrGetFileName(IAllocator allocator, string path)
     }
     return StringClone(allocator, path);
 }
-inline string PathGetFileName(IAllocator allocator, const char *path)
+static inline string PathGetFileName(IAllocator allocator, const char *path)
 {
     string str = RENTSTR(path);
 

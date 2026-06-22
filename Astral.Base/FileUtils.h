@@ -17,7 +17,7 @@
 #include <dirent.h>
 #endif
 
-inline long IOGetFileSize(FILE* ptr)
+static inline long IOGetFileSize(FILE* ptr)
 {
     // TODO (Chris): Assert
     if (ptr == NULL)
@@ -47,7 +47,7 @@ inline long IOGetFileSize(FILE* ptr)
     return size;
 }
 
-inline string IOReadFile(IAllocator allocator, const char* path, bool isBinary)
+static inline string IOReadFile(IAllocator allocator, const char* path, bool isBinary)
 {
     string result = {allocator, NULL, 0};
     if (!isBinary)
@@ -96,11 +96,11 @@ inline string IOReadFile(IAllocator allocator, const char* path, bool isBinary)
     }
     return result;
 }
-inline bool IOFileExists(const char *path)
+static inline bool IOFileExists(const char *path)
 {
     return access(path, 0) == 0;
 }
-inline bool IODirectoryExists(const char* path)
+static inline bool IODirectoryExists(const char* path)
 {
     if (access(path, 0) == 0) 
     {
@@ -113,7 +113,7 @@ inline bool IODirectoryExists(const char* path)
     return false;
 }
 
-inline bool IONewDirectory(const char* path)
+static inline bool IONewDirectory(const char* path)
 {
     if (!IODirectoryExists(path))
     {
@@ -126,7 +126,7 @@ inline bool IONewDirectory(const char* path)
     }
     return false;
 }
-inline void IORecursiveCreateDirectories(const char* finalDirPath)
+static inline void IORecursiveCreateDirectories(const char* finalDirPath)
 {
     ArenaAllocator arena = ArenaAllocator_Create(GetCAllocator());
     IAllocator alloc = ArenaAllocator_AsAllocator(&arena);
@@ -153,7 +153,7 @@ inline void IORecursiveCreateDirectories(const char* finalDirPath)
     ArenaAllocator_Deinit(&arena);
 }
 
-inline Array GetFilesInDirectory(IAllocator allocator, const char *dirPath)
+static inline Array GetFilesInDirectory(IAllocator allocator, const char *dirPath)
 {
     //this
     ArenaAllocator arenaAlloc = ArenaAllocator_Create(GetCAllocator());

@@ -17,18 +17,18 @@ typedef struct ByteStreamReader
 
 } ByteStreamReader;
 
-inline ByteStreamReader ByteStreamReader_Empty()
+static inline ByteStreamReader ByteStreamReader_Empty()
 {
     const ByteStreamReader result = {};
     return result;
 }
-inline ByteStreamReader ByteStreamReader_Create(const uint8_t *bytes, size_t startPosition, size_t size)
+static inline ByteStreamReader ByteStreamReader_Create(const uint8_t *bytes, size_t startPosition, size_t size)
 {
     const ByteStreamReader result = {bytes, startPosition, size};
     return result;
 }
 
-inline const void *ByteStreamReader_Read(ByteStreamReader *self, size_t size)
+static inline const void *ByteStreamReader_Read(ByteStreamReader *self, size_t size)
 {
     if (self->position + size > self->size)
     {
@@ -38,7 +38,7 @@ inline const void *ByteStreamReader_Read(ByteStreamReader *self, size_t size)
     self->position += size;
     return ptr;
 }
-inline uint8_t ByteStreamReader_ReadByte(ByteStreamReader *self)
+static inline uint8_t ByteStreamReader_ReadByte(ByteStreamReader *self)
 {
     if (self->position + 1 > self->size)
     {
@@ -48,23 +48,23 @@ inline uint8_t ByteStreamReader_ReadByte(ByteStreamReader *self)
     self->position += 1;
     return result;
 }
-inline Array ByteStreamReader_ReadArray(ByteStreamReader *self, IAllocator allocator, size_t itemSize, size_t count)
+static inline Array ByteStreamReader_ReadArray(ByteStreamReader *self, IAllocator allocator, size_t itemSize, size_t count)
 {
     Array result = Array_Create(allocator, itemSize, count);
     memcpy(result.ptr, &self->stream[self->position], itemSize * count);
     self->position += itemSize * count;
     return result;
 }
-inline void ByteStreamReader_ReadByteArray(ByteStreamReader *self, uint8_t *out, size_t count)
+static inline void ByteStreamReader_ReadByteArray(ByteStreamReader *self, uint8_t *out, size_t count)
 {
     memcpy(out, &self->stream[self->position], count);
     self->position += count;
 }
-inline uint32_t ByteStreamReader_ReadUTF8(ByteStreamReader *self)
+static inline uint32_t ByteStreamReader_ReadUTF8(ByteStreamReader *self)
 {
     return UTF8GetCharPoint((const char*)self->stream, &self->position);
 }
-inline CharSlice ByteStreamReader_GetCharSlice(ByteStreamReader *self)
+static inline CharSlice ByteStreamReader_GetCharSlice(ByteStreamReader *self)
 {
     size_t length = 0;
     while (self->stream[self->position + length] != 0)
@@ -81,7 +81,7 @@ inline CharSlice ByteStreamReader_GetCharSlice(ByteStreamReader *self)
     self->position += length + 1;
     return result;
 }
-inline void ByteStreamReader_PassString(ByteStreamReader *self)
+static inline void ByteStreamReader_PassString(ByteStreamReader *self)
 {
     size_t length = 0;
     while (self->stream[self->position + length] != 0)
@@ -94,7 +94,7 @@ inline void ByteStreamReader_PassString(ByteStreamReader *self)
     }
     self->position += length + 1;
 }
-inline string ByteStreamReader_GetString(ByteStreamReader *self, IAllocator allocator)
+static inline string ByteStreamReader_GetString(ByteStreamReader *self, IAllocator allocator)
 {
     return StringFromCharSlice(allocator, ByteStreamReader_GetCharSlice(self));
 }
@@ -106,37 +106,37 @@ typedef struct ByteStreamWriter
     List bytes;
 } ByteStreamWriter;
 
-inline ByteStreamWriter ByteStreamWriter_Empty()
+static inline ByteStreamWriter ByteStreamWriter_Empty()
 {
     const ByteStreamWriter result = {};
     return result;
 }
-inline ByteStreamWriter ByteStreamWriter_Create(IAllocator allocator)
+static inline ByteStreamWriter ByteStreamWriter_Create(IAllocator allocator)
 {
     const ByteStreamWriter result = {List_Create(allocator, 1)};
     return result;
 }
-inline void ByteStreamWriter_Write(ByteStreamWriter *self, const void *item, size_t size)
+static inline void ByteStreamWriter_Write(ByteStreamWriter *self, const void *item, size_t size)
 {
     List_EnsureArrayCapacity(&self->bytes, self->bytes.count + size);
     memcpy((uint8_t *)self->bytes.ptr + self->bytes.count, item, size);
     self->bytes.count += size;
 }
-inline void ByteStreamWriter_WriteArray(ByteStreamWriter *self, Array array)
+static inline void ByteStreamWriter_WriteArray(ByteStreamWriter *self, Array array)
 {
     ByteStreamWriter_Write(self, array.ptr, array.itemSize * array.length);
 }
-inline void ByteStreamWriter_WriteByte(ByteStreamWriter *self, uint8_t byte)
+static inline void ByteStreamWriter_WriteByte(ByteStreamWriter *self, uint8_t byte)
 {
     List_Add(&self->bytes, &byte);
 }
-inline void ByteStreamWriter_WriteEmpty(ByteStreamWriter *self, size_t length)
+static inline void ByteStreamWriter_WriteEmpty(ByteStreamWriter *self, size_t length)
 {
     List_EnsureArrayCapacity(&self->bytes, self->bytes.count + length);
     memset(self->bytes.ptr + self->bytes.count, 0, length);
     self->bytes.count += length;
 }
-inline void ByteStreamWriter_WriteStringANSItoU8(ByteStreamWriter *self, string str)
+static inline void ByteStreamWriter_WriteStringANSItoU8(ByteStreamWriter *self, string str)
 {
     for (size_t i = 0; i < str.length; i++)
     {
@@ -145,32 +145,32 @@ inline void ByteStreamWriter_WriteStringANSItoU8(ByteStreamWriter *self, string 
         ByteStreamWriter_Write(self, chars, len);
     }
 }
-inline void ByteStreamWriter_WriteString(ByteStreamWriter *self, string str)
+static inline void ByteStreamWriter_WriteString(ByteStreamWriter *self, string str)
 {
     ByteStreamWriter_Write(self, str.buffer, str.length);
 }
-inline void ByteStreamWriter_WriteCharSlice(ByteStreamWriter *self, CharSlice str)
+static inline void ByteStreamWriter_WriteCharSlice(ByteStreamWriter *self, CharSlice str)
 {
     ByteStreamWriter_Write(self, str.buffer, str.length);
 }
-inline void ByteStreamWriter_WriteText(ByteStreamWriter *self, const char *text)
+static inline void ByteStreamWriter_WriteText(ByteStreamWriter *self, const char *text)
 {
     ByteStreamWriter_Write(self, text, strlen(text) + 1);
 }
-inline void ByteStreamWriter_Clear(ByteStreamWriter *self)
+static inline void ByteStreamWriter_Clear(ByteStreamWriter *self)
 {
     List_Clear(&self->bytes);
 }
-inline void ByteStreamWriter_Deinit(ByteStreamWriter *self)
+static inline void ByteStreamWriter_Deinit(ByteStreamWriter *self)
 {
     List_Deinit(&self->bytes);
 }
-inline ByteStreamReader ByteStreamWriter_ToReader(ByteStreamWriter *self)
+static inline ByteStreamReader ByteStreamWriter_ToReader(ByteStreamWriter *self)
 {
     return ByteStreamReader_Create((const uint8_t *)self->bytes.ptr, 0, self->bytes.count);
 }
 
-inline void ByteStreamWriter_WriteFile(ByteStreamWriter *self, FILE* file)
+static inline void ByteStreamWriter_WriteFile(ByteStreamWriter *self, FILE* file)
 {
     uint8_t readBuffer[READ_FILE_BUFFER_SIZE];
     uint32_t bytesRead = 0;
@@ -181,7 +181,7 @@ inline void ByteStreamWriter_WriteFile(ByteStreamWriter *self, FILE* file)
     }
 }
 
-inline void *ByteStreamWriter_CloneBytes(IAllocator newAllocator, ByteStreamWriter *self)
+static inline void *ByteStreamWriter_CloneBytes(IAllocator newAllocator, ByteStreamWriter *self)
 {
     void *result = IAllocator_Allocate(newAllocator, self->bytes.count);
     memcpy(result, self->bytes.ptr, self->bytes.count);
@@ -243,7 +243,7 @@ bool ByteStream_Jump(void *self, int64_t jumpOffset, DataStreamJumpRelative rela
     }
     return false;
 }
-inline IDataStream ByteStreamReaderToStream(ByteStreamReader *reader)
+static inline IDataStream ByteStreamReaderToStream(ByteStreamReader *reader)
 {
     IDataStream result;
     result.instance = reader;

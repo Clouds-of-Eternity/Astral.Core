@@ -13,14 +13,14 @@ typedef struct StringPool
     List buffers;
 } StringPool;
 
-inline StringPool StringPool_Create(IAllocator allocator)
+static inline StringPool StringPool_Create(IAllocator allocator)
 {
     StringPool result;
     result.allocator = allocator;
     result.buffers = List_Create(allocator, sizeof(StringPoolBuffer));
     return result;
 }
-inline void StringPool_Deinit(StringPool *self)
+static inline void StringPool_Deinit(StringPool *self)
 {
     for (uint32_t i = 0; i < self->buffers.count; i++)
     {
@@ -35,7 +35,7 @@ inline void StringPool_Deinit(StringPool *self)
     List_Deinit(&self->buffers);
 }
 
-inline string StringPool_RentLength(StringPool *self, const char *str, size_t lengthNoNullTerminator)
+static inline string StringPool_RentLength(StringPool *self, const char *str, size_t lengthNoNullTerminator)
 {
     size_t len = lengthNoNullTerminator;
     
@@ -62,12 +62,12 @@ inline string StringPool_RentLength(StringPool *self, const char *str, size_t le
 
     return result;
 }
-inline string StringPool_Rent(StringPool *self, const char *str)
+static inline string StringPool_Rent(StringPool *self, const char *str)
 {
     size_t len = strlen(str);
     return StringPool_RentLength(self, str, len);
 }
-inline void StringPool_Return(StringPool *self, string str)
+static inline void StringPool_Return(StringPool *self, string str)
 {
     size_t index = 0;
     size_t size = 16;

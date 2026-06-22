@@ -15,17 +15,17 @@ typedef struct Uuid
     uint64_t num2;
 } Uuid;
 
-inline Uuid Uuid_Empty()
+static inline Uuid Uuid_Empty()
 {
     const Uuid result = {};
     return result;
 }
-inline Uuid Uuid_FromU64s(uint64_t num1, uint64_t num2)
+static inline Uuid Uuid_FromU64s(uint64_t num1, uint64_t num2)
 {
     const Uuid result = {num1, num2};
     return result;
 }
-inline Uuid Uuid_FromRandom(Random *randomInstance)
+static inline Uuid Uuid_FromRandom(Random *randomInstance)
 {
     Uuid result;
     uint8_t *bytes = (uint8_t *)&result.num1;
@@ -37,7 +37,7 @@ inline Uuid Uuid_FromRandom(Random *randomInstance)
 
     return result;
 }
-inline Uuid Uuid_FromRandomFunction(RandomNextU64 randomNextFunction)
+static inline Uuid Uuid_FromRandomFunction(RandomNextU64 randomNextFunction)
 {
     Uuid result;
     uint8_t *bytes = (uint8_t *)&result.num1;
@@ -49,19 +49,19 @@ inline Uuid Uuid_FromRandomFunction(RandomNextU64 randomNextFunction)
 
     return result;
 }
-inline Uuid Uuid_FromRandomString(const char *stringInput)
+static inline Uuid Uuid_FromRandomString(const char *stringInput)
 {
     uint32_t seed = Murmur3((const uint8_t *)stringInput, strlen(stringInput));
     Random tempRand = Random_FromSeed(seed);
     return Uuid_FromRandom(&tempRand);
 }
-inline Uuid NewFromStringHashFunction(const char *stringInput, uint32_t(customHashFunction)(const uint8_t *, size_t))
+static inline Uuid NewFromStringHashFunction(const char *stringInput, uint32_t(customHashFunction)(const uint8_t *, size_t))
 {
     uint32_t seed = customHashFunction((const uint8_t *)stringInput, strlen(stringInput));
     Random tempRand = Random_FromSeed(seed);
     return Uuid_FromRandom(&tempRand);
 }
-inline Uuid FromString(const char *text)
+static inline Uuid FromString(const char *text)
 {
     const uint8_t hexToNibble[] = {
         0xff,
@@ -342,27 +342,27 @@ inline Uuid FromString(const char *text)
     }
     return result;
 }
-inline uint32_t UuidHash(Uuid self)
+static inline uint32_t UuidHash(Uuid self)
 {
     return Murmur3((uint8_t *)&self, sizeof(Uuid));
 }
-inline bool UuidEqls(Uuid A, Uuid B)
+static inline bool UuidEqls(Uuid A, Uuid B)
 {
     return A.num1 == B.num1 && A.num2 == B.num2;
 }
 
-inline uint32_t UuidPtr_Hash(const void *self)
+static inline uint32_t UuidPtr_Hash(const void *self)
 {
     return Murmur3((uint8_t *)self, sizeof(Uuid));
 }
-inline bool UuidPtr_Eqls(const void *ID1, const void *ID2)
+static inline bool UuidPtr_Eqls(const void *ID1, const void *ID2)
 {
     const Uuid *A = (Uuid *)ID1;
     const Uuid *B = (Uuid *)ID2;
     return A->num1 == B->num1 && A->num2 == B->num2;
 }
 
-inline void UuidGetAsString(Uuid self, char *buffer)
+static inline void UuidGetAsString(Uuid self, char *buffer)
 {
     buffer[8] = '-';
     buffer[13] = '-';
@@ -404,7 +404,7 @@ inline void UuidGetAsString(Uuid self, char *buffer)
 
 #undef SET_BUFFER
 }
-inline string UuidToString(Uuid self, IAllocator allocator)
+static inline string UuidToString(Uuid self, IAllocator allocator)
 {
     char buffers[UUID_STR_LEN];
     buffers[UUID_STR_LEN - 1] = '\0';

@@ -6,12 +6,12 @@ typedef struct ArenaAllocator
     List *ptrs;
 } ArenaAllocator;
 
-inline ArenaAllocator ArenaAllocator_Empty()
+static inline ArenaAllocator ArenaAllocator_Empty()
 {
     ArenaAllocator result = {NULL};
     return result;
 }
-inline ArenaAllocator ArenaAllocator_Create(IAllocator baseAllocator)
+static inline ArenaAllocator ArenaAllocator_Create(IAllocator baseAllocator)
 {
     List *listPtr = IAllocator_Allocate(baseAllocator, sizeof(List));
     *listPtr = List_Create(baseAllocator, sizeof(void *));
@@ -19,7 +19,7 @@ inline ArenaAllocator ArenaAllocator_Create(IAllocator baseAllocator)
 
     return result;
 }
-inline void ArenaAllocator_Deinit(ArenaAllocator *self)
+static inline void ArenaAllocator_Deinit(ArenaAllocator *self)
 {
     if (self->ptrs != NULL)
     {
@@ -30,7 +30,7 @@ inline void ArenaAllocator_Deinit(ArenaAllocator *self)
     }
 }
 
-inline void* ArenaAllocator_Allocate(void* instance, size_t bytes)
+static inline void* ArenaAllocator_Allocate(void* instance, size_t bytes)
 {
     List *ptrs = (List *)instance;
 
@@ -38,11 +38,11 @@ inline void* ArenaAllocator_Allocate(void* instance, size_t bytes)
     List_Add(ptrs, &result);
     return result;
 }
-inline void ArenaAllocator_Free(void* instance, void* ptr)
+static inline void ArenaAllocator_Free(void* instance, void* ptr)
 {
     //do nothing
 }
-inline IAllocator ArenaAllocator_AsAllocator(const ArenaAllocator *self)
+static inline IAllocator ArenaAllocator_AsAllocator(const ArenaAllocator *self)
 {
     IAllocator result = {self->ptrs, &ArenaAllocator_Allocate, &ArenaAllocator_Free};
 

@@ -14,18 +14,18 @@ typedef struct List
     size_t itemSize;
 } List;
 
-inline List List_Empty()
+static inline List List_Empty()
 {
     List list = {};
     return list;
 }
-inline List List_Create(IAllocator allocator, size_t itemSize)
+static inline List List_Create(IAllocator allocator, size_t itemSize)
 {
     List list = {allocator, NULL, 0, 0, itemSize};
     return list;
 }
 
-inline void List_EnsureArrayCapacity(List *self, size_t minCapacity)
+static inline void List_EnsureArrayCapacity(List *self, size_t minCapacity)
 {
     if (self->capacity < minCapacity)
     {
@@ -48,7 +48,7 @@ inline void List_EnsureArrayCapacity(List *self, size_t minCapacity)
         self->capacity = newCapacity;
     }
 }
-inline void List_EnsureArrayCapacityDefaulted(List *self, size_t minCapacity, const void *defaultItem)
+static inline void List_EnsureArrayCapacityDefaulted(List *self, size_t minCapacity, const void *defaultItem)
 {
     if (self->capacity < minCapacity)
     {
@@ -75,18 +75,18 @@ inline void List_EnsureArrayCapacityDefaulted(List *self, size_t minCapacity, co
         self->capacity = newCapacity;
     }
 }
-inline void List_Add(List *self, const void *item)
+static inline void List_Add(List *self, const void *item)
 {
     List_EnsureArrayCapacity(self, self->count + 1);
     memcpy((uint8_t *)self->ptr + self->itemSize * self->count, item, self->itemSize);
     self->count++;
 }
-inline void List_AddEmpty(List *self)
+static inline void List_AddEmpty(List *self)
 {
     List_EnsureArrayCapacity(self, self->count + 1);
     self->count++;
 }
-inline int64_t List_IndexOf(const List *self, const void *item, ListEqlFunc eqlFunc)
+static inline int64_t List_IndexOf(const List *self, const void *item, ListEqlFunc eqlFunc)
 {
     for (size_t i = 0; i < self->count; i++)
     {
@@ -105,7 +105,7 @@ inline int64_t List_IndexOf(const List *self, const void *item, ListEqlFunc eqlF
     }
     return -1;
 }
-inline void List_RemoveAtPullback(List *self, size_t atIndex)
+static inline void List_RemoveAtPullback(List *self, size_t atIndex)
 {
     if (atIndex >= self->count)
     {
@@ -117,7 +117,7 @@ inline void List_RemoveAtPullback(List *self, size_t atIndex)
     }
     self->count--;
 }
-inline void List_RemoveAtSwap(List *self, size_t atIndex)
+static inline void List_RemoveAtSwap(List *self, size_t atIndex)
 {
     if (atIndex >= self->count)
     {
@@ -129,7 +129,7 @@ inline void List_RemoveAtSwap(List *self, size_t atIndex)
     }
     self->count--;
 }
-inline bool List_RemovePullback(List *self, const void *item, ListEqlFunc eqlFunc)
+static inline bool List_RemovePullback(List *self, const void *item, ListEqlFunc eqlFunc)
 {
     int64_t index = List_IndexOf(self, item, eqlFunc);
     if (index == -1)
@@ -139,7 +139,7 @@ inline bool List_RemovePullback(List *self, const void *item, ListEqlFunc eqlFun
     List_RemoveAtPullback(self, (size_t)index);
     return true;
 }
-inline bool List_RemoveSwap(List *self, const void *item, ListEqlFunc eqlFunc)
+static inline bool List_RemoveSwap(List *self, const void *item, ListEqlFunc eqlFunc)
 {
     int64_t index = List_IndexOf(self, item, eqlFunc);
     if (index == -1)
@@ -149,7 +149,7 @@ inline bool List_RemoveSwap(List *self, const void *item, ListEqlFunc eqlFunc)
     List_RemoveAtSwap(self, (size_t)index);
     return true;
 }
-inline bool List_InsertPushback(List *self, const void *item, int64_t atIndex)
+static inline bool List_InsertPushback(List *self, const void *item, int64_t atIndex)
 {
     if (atIndex > self->count)
     {
@@ -168,7 +168,7 @@ inline bool List_InsertPushback(List *self, const void *item, int64_t atIndex)
 
     return true;
 }
-inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
+static inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
 {
     if (atIndex > self->count)
     {
@@ -185,7 +185,7 @@ inline bool List_InsertSwap(List *self, const void *item, int64_t atIndex)
 
     return true;
 }
-inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
+static inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
 {
     List_EnsureArrayCapacity(self, atIndex + 1);
 
@@ -204,7 +204,7 @@ inline void *List_InsertOverride(List *self, const void *item, int64_t atIndex)
     }
     return intoPos;
 }
-inline void *List_InsertOverride_ArrayDefaulted(List *self, const void *item, int64_t atIndex, const void *arrayDefaultItem)
+static inline void *List_InsertOverride_ArrayDefaulted(List *self, const void *item, int64_t atIndex, const void *arrayDefaultItem)
 {
     List_EnsureArrayCapacityDefaulted(self, atIndex + 1, arrayDefaultItem);
 
@@ -223,21 +223,21 @@ inline void *List_InsertOverride_ArrayDefaulted(List *self, const void *item, in
     }
     return intoPos;
 }
-inline void List_Clear(List *self)
+static inline void List_Clear(List *self)
 {
     self->count = 0;
 }
-inline void *List_Get(List *self, size_t index)
+static inline void *List_Get(List *self, size_t index)
 {
     return (uint8_t *)self->ptr + index * self->itemSize;
 }
-inline void *List_Pop(List *self)
+static inline void *List_Pop(List *self)
 {
     void *result = (uint8_t *)self->ptr + (self->count - 1) * self->itemSize;
     self->count--;
     return result;
 }
-inline void List_Deinit(List *self)
+static inline void List_Deinit(List *self)
 {
     if (self->ptr != NULL)
     {

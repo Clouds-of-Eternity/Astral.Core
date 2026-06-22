@@ -10,12 +10,12 @@ typedef struct Array
     size_t length;
 } Array;
 
-inline Array Array_Empty()
+static inline Array Array_Empty()
 {
     const Array result = {};
     return result;
 }
-inline Array Array_Create(IAllocator allocator, size_t itemSize, size_t length)
+static inline Array Array_Create(IAllocator allocator, size_t itemSize, size_t length)
 {
     Array result;
     result.allocator = allocator;
@@ -29,7 +29,7 @@ inline Array Array_Create(IAllocator allocator, size_t itemSize, size_t length)
     }
     return result;
 }
-inline Array Array_CreateDefaultInitted(IAllocator allocator, size_t itemSize, size_t length)
+static inline Array Array_CreateDefaultInitted(IAllocator allocator, size_t itemSize, size_t length)
 {
     Array result;
     result.allocator = allocator;
@@ -44,23 +44,23 @@ inline Array Array_CreateDefaultInitted(IAllocator allocator, size_t itemSize, s
     }
     return result;
 }
-inline Array Array_CreateFromExisting(IAllocator allocator, void *existingPtr, size_t itemSize, size_t length)
+static inline Array Array_CreateFromExisting(IAllocator allocator, void *existingPtr, size_t itemSize, size_t length)
 {
     const Array result = {allocator, existingPtr, itemSize, length};
     return result;
 }
-inline Array Array_CreateAsContainer(void *existingPtr, size_t itemSize, size_t length)
+static inline Array Array_CreateAsContainer(void *existingPtr, size_t itemSize, size_t length)
 {
     const IAllocator emptyAllocator = {};
     const Array result = {emptyAllocator, existingPtr, itemSize, length};
     return result;
 }
 
-inline void *Array_Get(Array *self, size_t index)
+static inline void *Array_Get(Array *self, size_t index)
 {
     return (uint8_t *)self->ptr + index * self->itemSize;
 }
-inline void Array_Deinit(Array *self)
+static inline void Array_Deinit(Array *self)
 {
     if (self->ptr != NULL)
     {

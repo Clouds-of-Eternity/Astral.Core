@@ -1,7 +1,7 @@
 #pragma once
 #include "Bitwise.h"
 
-inline uint32_t BufferHash(uint8_t *buffer, size_t len)
+static inline uint32_t BufferHash(uint8_t *buffer, size_t len)
 {
     uint32_t hash = 7;
     for (size_t i = 0; i < len; i++)
@@ -11,7 +11,7 @@ inline uint32_t BufferHash(uint8_t *buffer, size_t len)
     return hash;
 }
 
-inline uint32_t CharsHash(const char *ptr)
+static inline uint32_t CharsHash(const char *ptr)
 {
     uint32_t hash = 7;
     size_t i = 0;
@@ -30,25 +30,25 @@ inline uint32_t CharsHash(const char *ptr)
     return hash;
 }
 
-inline uint32_t CombineHash(uint32_t left, uint32_t right)
+static inline uint32_t CombineHash(uint32_t left, uint32_t right)
 {
     return left ^ (right + 0x9e3779b9 + (left << 6) + (left >> 2));
 }
-inline bool IsLittleEndian()
+static inline bool IsLittleEndian()
 {
     int32_t n = 1;
     return *((uint8_t *)&n) == 1;
 }
 
-inline uint16_t ByteSwapU16(uint16_t num)
+static inline uint16_t ByteSwapU16(uint16_t num)
 {
     return ((num & 0xffu) >> 8) | (num << 8);
 }
-inline uint32_t ByteSwapU32(uint32_t num)
+static inline uint32_t ByteSwapU32(uint32_t num)
 {
     return ((num & 0xff000000u) >> 24) | ((num & 0x00ff0000u) >> 8) | ((num & 0x0000ff00u) << 8) | (num << 24);
 }
-inline uint64_t ByteSwapU64(uint64_t num)
+static inline uint64_t ByteSwapU64(uint64_t num)
 {
     num = (num & 0x00000000FFFFFFFFllu) << 32 | (num & 0xFFFFFFFF00000000llu) >> 32;
     num = (num & 0x0000FFFF0000FFFFllu) << 16 | (num & 0xFFFF0000FFFF0000llu) >> 16;
@@ -56,7 +56,7 @@ inline uint64_t ByteSwapU64(uint64_t num)
     return num;
 }
 
-inline uint64_t Murmur2Seeded(const uint8_t *ptr, uint64_t len, uint64_t seed)
+static inline uint64_t Murmur2Seeded(const uint8_t *ptr, uint64_t len, uint64_t seed)
 {
     uint64_t m = 0xc6a4a7935bd1e995llu;
     uint64_t h1 = seed ^ (len * m);
@@ -92,11 +92,11 @@ inline uint64_t Murmur2Seeded(const uint8_t *ptr, uint64_t len, uint64_t seed)
     h1 ^= h1 >> 47;
     return h1;
 }
-inline uint64_t Murmur2(const uint8_t *ptr, uint64_t len)
+static inline uint64_t Murmur2(const uint8_t *ptr, uint64_t len)
 {
     return Murmur2Seeded(ptr, len, 0xc70f6907llu);
 }
-inline uint32_t Murmur3Seeded(const uint8_t *ptr, uint64_t len, uint32_t seed)
+static inline uint32_t Murmur3Seeded(const uint8_t *ptr, uint64_t len, uint32_t seed)
 {
     const uint32_t c1 = 0xcc9e2d51;
     const uint32_t c2 = 0x1b873593;
@@ -146,7 +146,7 @@ inline uint32_t Murmur3Seeded(const uint8_t *ptr, uint64_t len, uint32_t seed)
     h1 ^= h1 >> 16;
     return h1;
 }
-inline uint32_t Murmur3(const uint8_t *ptr, uint64_t len)
+static inline uint32_t Murmur3(const uint8_t *ptr, uint64_t len)
 {
     return Murmur3Seeded(ptr, len, 0xc70f6907);
 }

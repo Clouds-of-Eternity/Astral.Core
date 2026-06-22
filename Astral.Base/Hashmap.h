@@ -18,7 +18,7 @@ typedef struct HashMapBucket
     List entries;
 } HashMapBucket;
 
-inline HashMapBucket HashMapBucket_Create(IAllocator allocator, size_t keySize, size_t valueSize)
+static inline HashMapBucket HashMapBucket_Create(IAllocator allocator, size_t keySize, size_t valueSize)
 {
     HashMapBucket result;
     result.initialized = false;
@@ -42,12 +42,12 @@ typedef struct HashMap
     size_t valueSize;
 } HashMap;
 
-inline HashMap HashMap_Empty()
+static inline HashMap HashMap_Empty()
 {
     HashMap result = {};
     return result;
 }
-inline HashMap HashMap_Create(size_t keySize, size_t valueSize, IAllocator allocator, MapHashFunc hashFunc, MapEqlFunc eqlFunc)
+static inline HashMap HashMap_Create(size_t keySize, size_t valueSize, IAllocator allocator, MapHashFunc hashFunc, MapEqlFunc eqlFunc)
 {
     HashMap result = {allocator, hashFunc, eqlFunc, NULL, 32, 0, 0, keySize, valueSize};
     result.buckets = IAllocator_Allocate(allocator, sizeof(HashMapBucket) * result.bucketsCount);
@@ -59,7 +59,7 @@ inline HashMap HashMap_Create(size_t keySize, size_t valueSize, IAllocator alloc
 }
 #define HASHMAP_CREATE(keyType, valueType, allocator, hashFunc, eqlFunc) HashMap_Create(sizeof(keyType), sizeof(valueType), allocator, hashFunc, eqlFunc)
 
-inline void HashMap_Deinit(HashMap *self)
+static inline void HashMap_Deinit(HashMap *self)
 {
     if (self->buckets != NULL)
     {
@@ -73,7 +73,7 @@ inline void HashMap_Deinit(HashMap *self)
         IAllocator_Free(self->allocator, self->buckets);
     }
 }
-inline void HashMap_Clear(HashMap *self)
+static inline void HashMap_Clear(HashMap *self)
 {
     if (self->buckets != NULL)
     {
@@ -88,7 +88,7 @@ inline void HashMap_Clear(HashMap *self)
         self->count = 0;
     }
 }
-inline void HashMap_EnsureCapacity(HashMap *self)
+static inline void HashMap_EnsureCapacity(HashMap *self)
 {
     if (self->filledBuckets + 1.0f >= self->bucketsCount * HASHMAP_MAX_WEIGHT)
     {
@@ -124,7 +124,7 @@ inline void HashMap_EnsureCapacity(HashMap *self)
     }
 }
 
-inline void *HashMap_Add(HashMap *self, const void *key, const void *value)
+static inline void *HashMap_Add(HashMap *self, const void *key, const void *value)
 {
     HashMap_EnsureCapacity(self);
 
@@ -163,7 +163,7 @@ inline void *HashMap_Add(HashMap *self, const void *key, const void *value)
     return valueOffset;
 }
 
-inline bool HashMap_Remove(HashMap *self, const void *key)
+static inline bool HashMap_Remove(HashMap *self, const void *key)
 {
     uint32_t hash = self->hashFunc(key);
     size_t index = hash % self->bucketsCount;
@@ -186,7 +186,7 @@ inline bool HashMap_Remove(HashMap *self, const void *key)
     }
     return false;
 }
-inline void *HashMap_Get(const HashMap *self, const void *key)
+static inline void *HashMap_Get(const HashMap *self, const void *key)
 {
     uint32_t hash = self->hashFunc(key);
     size_t index = hash % self->bucketsCount;
@@ -205,7 +205,7 @@ inline void *HashMap_Get(const HashMap *self, const void *key)
     }
     return NULL;
 }
-inline bool HashMap_Contains(const HashMap *self, const void *key)
+static inline bool HashMap_Contains(const HashMap *self, const void *key)
 {
     return HashMap_Get(self, key) != NULL;
 }
@@ -220,13 +220,13 @@ typedef struct HashMapIterator
     bool completed;
 } HashMapIterator;
 
-inline HashMapIterator HashMapIterator_From(HashMap *self)
+static inline HashMapIterator HashMapIterator_From(HashMap *self)
 {
     const HashMapIterator result = {self, 0, 0, false};
     return result;
 }
 
-inline void *HashMapIterator_Next(HashMapIterator *self)
+static inline void *HashMapIterator_Next(HashMapIterator *self)
 {
     if (self->i >= self->map->bucketsCount || self->completed)
     {
@@ -251,7 +251,7 @@ inline void *HashMapIterator_Next(HashMapIterator *self)
     return entry;
 }
 
-inline void *HashMapEntry_GetValue(void *entry, HashMap *hashMap)
+static inline void *HashMapEntry_GetValue(void *entry, HashMap *hashMap)
 {
     return (uint8_t *)entry + hashMap->keySize;
 }

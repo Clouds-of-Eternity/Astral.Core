@@ -153,7 +153,7 @@ namespace io
 
             stat(path, &status);
 
-            return (status.st_mode & S_ISDIR) != 0;
+            return S_ISDIR(status.st_mode) != 0;
         }
         return false;
     }

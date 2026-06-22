@@ -15,32 +15,32 @@ typedef struct IAllocator
     freeFunc freeFunction;
 } IAllocator;
 
-inline void* CAllocator_Allocate(void* instance, size_t bytes)
+static inline void* CAllocator_Allocate(void* instance, size_t bytes)
 {
     return malloc(bytes);
 }
-inline void CAllocator_Free(void* instance, void* ptr)
+static inline void CAllocator_Free(void* instance, void* ptr)
 {
     free(ptr);
 }
 
-inline IAllocator GetCAllocator()
+static inline IAllocator GetCAllocator()
 {
     IAllocator result = {NULL, &CAllocator_Allocate, &CAllocator_Free};
     return result;
 }
 
 
-inline IAllocator IAllocator_Make(void *instance, allocFunc allocateFunc, freeFunc freeFunc)
+static inline IAllocator IAllocator_Make(void *instance, allocFunc allocateFunc, freeFunc freeFunc)
 {
     IAllocator result = {instance, allocateFunc, freeFunc};
     return result;
 }
-inline void *IAllocator_Allocate(IAllocator self, size_t bytes)
+static inline void *IAllocator_Allocate(IAllocator self, size_t bytes)
 {
     return self.allocFunction(self.instance, bytes);
 }
-inline void IAllocator_Free(IAllocator self, void *memory)
+static inline void IAllocator_Free(IAllocator self, void *memory)
 {
     self.freeFunction(self.instance, memory);
 }

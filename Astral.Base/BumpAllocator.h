@@ -1,8 +1,8 @@
 #pragma once
 #include "./Allocator.h"
 
-inline void *BumpAllocator_Allocate(void *instance, size_t bytes);
-inline void BumpAllocator_Free(void *instance, void *ptr);
+static inline void *BumpAllocator_Allocate(void *instance, size_t bytes);
+static inline void BumpAllocator_Free(void *instance, void *ptr);
 
 typedef struct BumpAllocatorInternals
 {
@@ -16,21 +16,21 @@ typedef struct BumpAllocator
     void *payload;
 } BumpAllocator;
 
-inline BumpAllocatorInternals *BumpAllocator_GetInternals(BumpAllocator *self)
+static inline BumpAllocatorInternals *BumpAllocator_GetInternals(BumpAllocator *self)
 {
     return (BumpAllocatorInternals *)self->payload;
 }
-inline void *BumpAllocator_GetAllocation(BumpAllocator *self)
+static inline void *BumpAllocator_GetAllocation(BumpAllocator *self)
 {
     return (uint8_t *)self->payload + sizeof(BumpAllocatorInternals);
 }
 
-inline BumpAllocator BumpAllocator_Empty()
+static inline BumpAllocator BumpAllocator_Empty()
 {
     const BumpAllocator result = {};
     return result;
 }
-inline BumpAllocator BumpAllocator_Create(IAllocator baseAllocator, size_t totalRequiredSize)
+static inline BumpAllocator BumpAllocator_Create(IAllocator baseAllocator, size_t totalRequiredSize)
 {
     BumpAllocator result;
     result.payload = IAllocator_Allocate(baseAllocator, sizeof(BumpAllocatorInternals) + totalRequiredSize);
@@ -40,7 +40,7 @@ inline BumpAllocator BumpAllocator_Create(IAllocator baseAllocator, size_t total
     internals->totalSize = totalRequiredSize;
     return result;
 }
-inline void BumpAllocator_Deinit(BumpAllocator *self)
+static inline void BumpAllocator_Deinit(BumpAllocator *self)
 {
     if (self->payload != NULL)
     {
@@ -48,7 +48,7 @@ inline void BumpAllocator_Deinit(BumpAllocator *self)
         IAllocator_Free(baseAllocator, self->payload);
     }
 }
-inline IAllocator BumpAllocator_AsAllocator(BumpAllocator *self)
+static inline IAllocator BumpAllocator_AsAllocator(BumpAllocator *self)
 {
     const IAllocator result = {self->payload, &BumpAllocator_Allocate, &BumpAllocator_Free};
     return result;
