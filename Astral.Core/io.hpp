@@ -18,7 +18,9 @@
 #include <Windows.h>
 #define access _access
 #define stat _stat
-#define S_ISDIR _S_IFDIR
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & _S_IFDIR) != 0)
+#endif
 #endif
 #if POSIX
 #include <unistd.h>
@@ -147,15 +149,12 @@ namespace io
 
     inline bool DirectoryExists(const char* path)
     {
-        if (access(path, 0) == 0) 
-        {
-            struct stat status;
+        struct stat status;
 
-            stat(path, &status);
+        if (stat(path, &status) != 0)
+            return false;
 
-            return S_ISDIR(status.st_mode) != 0;
-        }
-        return false;
+        return S_ISDIR(status.st_mode);
     }
 
     inline bool NewDirectory(const char* path)
