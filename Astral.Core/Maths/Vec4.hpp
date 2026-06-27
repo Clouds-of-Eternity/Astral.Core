@@ -284,6 +284,29 @@ namespace Maths
             return result;
 #endif
         }
+
+        #ifdef USE_SSE
+        static inline __m128 GetAbsMask(){
+            // with clang, this turns into a 16B load,
+            // with every calling function getting its own copy of the mask
+            __m128i minus1 = _mm_set1_epi32(-1);
+            return _mm_castsi128_ps(_mm_srli_epi32(minus1, 1));
+        }
+        #endif
+
+        static inline Vec4 Abs(Vec4 value)
+        {
+            #ifdef USE_SSE
+            __m128 result = _mm_and_ps(GetAbsMask(), value.asM128);
+            #else
+            return Vec4(fabsf(value.X), fabsf(value.Y), fabsf(value.Z), fabsf(value.W));
+            #endif
+        }
+        static inline bool AlmostEqual(Vec4 A, Vec4 B, float epsilon = 0.01f)
+        {
+            Vec4 diff = Abs(B - A);
+            return diff <= Vec4(epsilon);
+        }
         static inline float Dot(const Vec4 A, const Vec4 B)
         {
             return A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
@@ -305,24 +328,60 @@ namespace Maths
             return Vec4(fmaxf(A.X, B.X), fmaxf(A.Y, B.Y), fmaxf(A.Z, B.Z), fmaxf(A.W, B.W));
 #endif
         }
-        inline bool operator==(const Vec4 other) const
+        inline bool operator==(Vec4 other) const
         {
 #ifdef USE_SSE
             __m128 compareResult = _mm_cmpeq_ps(asM128, other.asM128);
-            return _mm_movemask_ps(compareResult) == 0b1111;
+            return _mm_movemask_ps(compareResult) == 0b1111; //all elements equal
 #else
 
             return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
 #endif
         }
-        inline bool operator!=(const Vec4 other) const
+        inline bool operator!=(Vec4 other) const
         {
 #ifdef USE_SSE
-            __m128 compareResult = _mm_cmpeq_ps(asM128, other.asM128);
-            return _mm_movemask_ps(compareResult) != 0b1111;
+            __m128 compareResult = _mm_cmpneq_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) == 0b1111; //all elements not equal
 #else
 
             return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
+#endif
+        }
+        inline bool operator<(Vec4 other) const
+        {
+#ifdef USE_SSE
+            __m128 compareResult = _mm_cmplt_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) == 0b1111; //all elements true
+#else
+            return X < other.X && Y < other.Y && Z < other.Z && W < other.W;
+#endif
+        }
+        inline bool operator<=(Vec4 other) const
+        {
+#ifdef USE_SSE
+            __m128 compareResult = _mm_cmple_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) == 0b1111;
+#else
+            return X <= other.X && Y <= other.Y && Z <= other.Z && W <= other.W;
+#endif
+        }
+        inline bool operator>(Vec4 other) const
+        {
+#ifdef USE_SSE
+            __m128 compareResult = _mm_cmpgt_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) == 0b1111;
+#else
+            return X > other.X && Y > other.Y && Z > other.Z && W > other.W;
+#endif
+        }
+        inline bool operator>=(Vec4 other) const
+        {
+#ifdef USE_SSE
+            __m128 compareResult = _mm_cmpge_ps(asM128, other.asM128);
+            return _mm_movemask_ps(compareResult) == 0b1111;
+#else
+            return X >= other.X && Y >= other.Y && Z >= other.Z && W >= other.W;
 #endif
         }
 

@@ -108,6 +108,10 @@ namespace Maths
             result.Y = Y * oneOverLength;
             return result;
         }
+        static inline bool AlmostEqual(Vec2 A, Vec2 B, float epsilon = 0.01f)
+        {
+            return fabsf(B.X - A.X) <= epsilon && fabsf(B.Y - A.Y) <= epsilon;
+        }
         static inline float Dot(const Vec2 A, const Vec2 B)
         {
             return A.X * B.X + A.Y * B.Y;

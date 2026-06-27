@@ -155,6 +155,10 @@ namespace Maths
         {
             return Maths::Vec2(X, Y);
         }
+        static inline bool AlmostEqual(Vec3 A, Vec3 B, float epsilon = 0.01f)
+        {
+            return fabsf(B.X - A.X) <= epsilon && fabsf(B.Y - A.Y) <= epsilon && fabsf(B.Z - A.Z) <= epsilon;
+        }
         static inline float Dot(const Vec3 A, const Vec3 B)
         {
             return A.X * B.X + A.Y * B.Y + A.Z * B.Z;
