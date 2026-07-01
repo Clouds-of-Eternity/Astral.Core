@@ -298,6 +298,7 @@ namespace Maths
         {
             #ifdef USE_SSE
             __m128 result = _mm_and_ps(GetAbsMask(), value.asM128);
+            return Vec4(result);
             #else
             return Vec4(fabsf(value.X), fabsf(value.Y), fabsf(value.Z), fabsf(value.W));
             #endif
