@@ -101,7 +101,7 @@ namespace collections
             T *result = &ptr[index];
             return result;
         }
-        inline T GetCopyOr(usize index, T valueOnNotFound)
+        inline T GetCopyOr(usize index, T valueOnNotFound) const
         {
             if (index >= capacity)
             {
