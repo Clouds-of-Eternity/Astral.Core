@@ -268,6 +268,7 @@ inline IDataStream GetFileDataStream(FILE *fs)
     result.instance = fs;
     result.readFunc = &FILE_Read;
     result.readStringFunc = &FILE_ReadString;
+    result.passStringFunc = &FILE_PassString;
     result.jumpFunc = &FILE_Jump;
     result.getCurrPosFunc = &FILE_GetCurrPos;
     result.flushFunc = NULL;
