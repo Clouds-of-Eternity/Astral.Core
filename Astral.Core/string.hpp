@@ -742,6 +742,11 @@ struct CharSlice
     {
         return TextToI64(buffer, length);
     }
+
+    inline string ToString(IAllocator allocator) const
+    {
+        return string(allocator, buffer, length);
+    }
 };
 inline bool string::operator==(const CharSlice other) const
 {

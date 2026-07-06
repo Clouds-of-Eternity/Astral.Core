@@ -258,6 +258,10 @@ namespace collections
 
         V *Get(K key) const
         {
+            if (buckets == NULL || eqlFunc == NULL || hashFunc == NULL)
+            {
+                return NULL;
+            }
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
 
@@ -276,6 +280,10 @@ namespace collections
 
         V GetCopyOr(K key, V valueOnNotFound) const
         {
+            if (buckets == NULL || eqlFunc == NULL || hashFunc == NULL)
+            {
+                return valueOnNotFound;
+            }
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
 
