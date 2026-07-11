@@ -119,6 +119,13 @@ namespace Maths
         {
             return Contains(other.GetTopLeft()) && Contains(other.GetBottomRight());
         }
+        /// @brief Identical behavior to Contains(), but if the X or Y coordinates of the point
+        /// is sitting on the right or bottom edge of the rectangle, it will return false.
+        /// This is helpful for when the Rectangle represents a boundary within an indexed array.
+        inline bool ContainsEntirelyInBounds(Maths::Point2 point) const
+        {
+            return X <= point.X && point.X < X + Width && Y <= point.Y && point.Y < Y + Height;
+        }
     };
 }
 #define EMPTY_RECTANGLE Maths::Rectangle(0, 0, 0, 0)

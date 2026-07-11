@@ -24,20 +24,20 @@ namespace Maths
             X = val;
             Y = val;
         }
-        inline bool operator==(Point2 other)
+        inline bool operator==(Point2 other) const
         {
             return X == other.X && Y == other.Y;
         }
-        inline bool operator !=(Point2 other)
+        inline bool operator !=(Point2 other) const
         {
             return X != other.X || Y != other.Y;
         }
-        inline Point2 operator-()
+        inline Point2 operator-() const
         {
             return Point2(-X, -Y);
         }
 
-        inline Point2 operator+(Point2 B)
+        inline Point2 operator+(Point2 B) const
         {
             return Point2(X + B.X, Y + B.Y);
         }
@@ -46,7 +46,7 @@ namespace Maths
             X += B.X;
             Y += B.Y;
         }
-        inline Point2 operator-(Point2 B)
+        inline Point2 operator-(Point2 B) const
         {
             return Point2(X - B.X, Y - B.Y);
         }
@@ -55,7 +55,7 @@ namespace Maths
             X -= B.X;
             Y -= B.Y;
         }
-        inline Point2 operator*(Point2 B)
+        inline Point2 operator*(Point2 B) const
         {
             return Point2(X * B.X, Y * B.Y);
         }
@@ -64,7 +64,7 @@ namespace Maths
             X *= B.X;
             Y *= B.Y;
         }
-        inline Point2 operator/(Point2 B)
+        inline Point2 operator/(Point2 B) const
         {
             return Point2(X / B.X, Y / B.Y);
         }
