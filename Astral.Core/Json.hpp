@@ -902,7 +902,12 @@ bool Json::ParseJsonElement(IAllocator allocator, JsonTokenizer *tokenizer, Json
             *result = JsonElement();
 
             char floatLiteralStr[32];
-            u32 copied = tokenizer->GetAsString(peekNext, floatLiteralStr, 31);
+            u32 copied = tokenizer->GetAsString(peekNext, floatLiteralStr, 30);
+            if (floatLiteralStr[copied - 1] == '.')
+            {
+                floatLiteralStr[copied] = '0';
+                copied++;
+            }
             floatLiteralStr[copied] = '\0';
             double db = atof(floatLiteralStr);
             *((double *)&result->data) = db;

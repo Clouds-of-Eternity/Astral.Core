@@ -165,8 +165,15 @@ inline NumericType CheckStringNumericType(CharSlice input)
             {
                 //-0.0 or 1.0 is valid
                 result = NumericType_Float;
-                //0.e is not valid
-                ifExponentExpectDigitFirst = true;
+                //0.e is not valid, but 0. will just equate to 0
+                if (i < input.length - 1)
+                {
+                    ifExponentExpectDigitFirst = true;
+                }
+                else
+                {
+                    ifExponentExpectDigitFirst = false;
+                }
                 if (encounteredPeriod)
                 {
                     //0..0 is invalid
