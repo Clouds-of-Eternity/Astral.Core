@@ -243,7 +243,11 @@ inline void FILE_Write(void *self, const void *value, usize elementSize, usize w
 //Special case that ignores null terminators
 inline void TextFILE_Write(void *self, const void *value, usize elementSize, usize writeCount)
 {
-    if (elementSize == 1 && writeCount == 1 && ((const char *)value)[0] == '\0')
+    if (elementSize == 1 && writeCount >= 1 && ((const char *)value)[writeCount - 1] == '\0')
+    {
+        writeCount--;
+    }
+    if (writeCount == 0)
     {
         return;
     }

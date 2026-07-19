@@ -207,9 +207,10 @@ namespace io
 
     inline FILE* CreateDirectoriesAndFile(CharSlice absolutePath, bool writeBinary)
     {
-        CharSlice dirPath = path::GetDirectory(absolutePath);
-        if (dirPath.length > 0 && !RecursiveCreateDirectories(dirPath))
+        string dirPath = path::GetDirectory(absolutePath).ToString(GetCAllocator());
+        if (dirPath.length > 0 && !io::DirectoryExists(dirPath.buffer) && !RecursiveCreateDirectories(dirPath))
         {
+            dirPath.deinit();
             return NULL;
         }
         char *chars = (char *)DEFAULT_ALLOC(absolutePath.length + 1);
@@ -218,6 +219,7 @@ namespace io
 
         FILE *result = fopen(chars, writeBinary ? "wb" : "w");
         DEFAULT_FREE(chars);
+        dirPath.deinit();
         return result;
     }
 
