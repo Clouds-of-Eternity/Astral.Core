@@ -20,6 +20,10 @@ struct StringRentalBuffer
     }
     inline string Rent(text str, usize lengthNoNullTerminator)
     {
+        if (str == NULL)
+        {
+            return string();
+        }
         usize len = lengthNoNullTerminator;
         //each index of stringPool doubles string length
         //at 0: 16 chars
@@ -53,6 +57,10 @@ struct StringRentalBuffer
     }
     inline string Rent(text str)
     {
+        if (str == NULL)
+        {
+            return string();
+        }
         usize len = strlen(str);
         return Rent(str, len);
     }
