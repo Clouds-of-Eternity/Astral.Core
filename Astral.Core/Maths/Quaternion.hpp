@@ -103,17 +103,30 @@ namespace Maths
 			float c = cosf(angle * 0.5f);
 			return Quaternion(axis.X * s, axis.Y * s, axis.Z * s, c);
 		}
+		static inline Quaternion FromRoll(float roll)
+		{
+			const float A = sinf(roll * 0.5f);
+			const float B = cosf(roll * 0.5f);
+
+			Quaternion result = Quaternion();
+			result.X = 0.0f;
+			result.Y = 0.0f;
+			result.Z = A;
+			result.W = B;
+
+			return result;
+		}
 		static inline Quaternion FromYawPitchRoll(float yaw, float pitch, float roll)
 		{
-			Maths::Vec3 sin3 = Maths::Vec3(sinf(roll * 0.5f), sinf(pitch * 0.5f), sinf(yaw * 0.5f));
-			Maths::Vec3 cos3 = Maths::Vec3(cosf(roll * 0.5f), cosf(pitch * 0.5f), cosf(yaw * 0.5f));
+			//Maths::Vec3 sin3 = Maths::Vec3(sinf(roll * 0.5f), sinf(pitch * 0.5f), sinf(yaw * 0.5f));
+			//Maths::Vec3 cos3 = Maths::Vec3(cosf(roll * 0.5f), cosf(pitch * 0.5f), cosf(yaw * 0.5f));
 
-			float sr = sin3.X;
-			float sp = sin3.Y;
-			float sy = sin3.Z;
-			float cr = cos3.X;
-			float cp = cos3.Y;
-			float cy = cos3.Z;
+			const float sr = sinf(roll * 0.5f);
+			const float sp = sinf(pitch * 0.5f);
+			const float sy = sinf(yaw * 0.5f);
+			const float cr = cosf(roll * 0.5f);
+			const float cp = cosf(pitch * 0.5f);
+			const float cy = cosf(yaw * 0.5f);
 
 			Quaternion result;
  
