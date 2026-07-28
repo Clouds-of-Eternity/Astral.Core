@@ -82,7 +82,7 @@ namespace Maths
 			M41 = M42 = M43 = M44 = fill;
 #endif
 		}
-		Matrix4x4(float* m)
+		Matrix4x4(const float* m)
 		{
 #ifdef USE_SSE
 			m128_row1 = _mm_load_ps(m);//_mm_set_ps(m[0], m[1], m[2], m[3]);
