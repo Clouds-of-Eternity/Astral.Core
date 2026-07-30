@@ -59,7 +59,7 @@ namespace collections
         usize filledBuckets;
         usize count;
 
-        HashMap()
+        inline HashMap()
         {
             this->allocator = IAllocator{};
             this->hashFunc = NULL;
@@ -69,7 +69,7 @@ namespace collections
             this->bucketsCount = 32;
             this->buckets = NULL;
         }
-        HashMap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc)
+        inline HashMap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc)
         {
             this->allocator = myAllocator;
             this->hashFunc = hashFunction;
@@ -83,7 +83,7 @@ namespace collections
                 this->buckets[i] = Bucket(this->allocator);
             }
         }
-        HashMap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc, u32 bucketsCount)
+        inline HashMap(IAllocator myAllocator, HashFunc hashFunction, EqlFunc eqlFunc, u32 bucketsCount)
         {
             this->allocator = myAllocator;
             this->hashFunc = hashFunction;
@@ -97,7 +97,7 @@ namespace collections
                 this->buckets[i] = Bucket(this->allocator);
             }
         }
-        void deinit()
+        inline void deinit()
         {
             if (buckets != NULL)
             {
@@ -112,7 +112,7 @@ namespace collections
                 allocator.FREEPTR(buckets);
             }
         }
-        void Clear()
+        inline void Clear()
         {
             if (buckets != NULL)
             {
@@ -126,7 +126,7 @@ namespace collections
                 count = 0;
             }
         }
-        void EnsureCapacity()
+        inline void EnsureCapacity()
         {
             //in all likelihood, we may have to fill an additional bucket
             //on adding a new item. Thus, we may have to resize the underlying buffer if the weight
@@ -162,7 +162,7 @@ namespace collections
             }
         }
 
-        V* Add(K key, V value)
+        inline V* Add(K key, V value)
         {
             EnsureCapacity();
             u32 hash = hashFunc(key);
@@ -190,7 +190,7 @@ namespace collections
             return &buckets[index].entries.Get(buckets[index].entries.count - 1)->value;
         }
 
-        bool Remove(K key)
+        inline bool Remove(K key)
         {
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
@@ -211,7 +211,7 @@ namespace collections
             }
             return false;
         }
-        bool RemoveAndDeinitKey(K key)
+        inline bool RemoveAndDeinitKey(K key)
         {
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
@@ -233,7 +233,7 @@ namespace collections
             }
             return false;
         }
-        V Pop(K key)
+        inline V Pop(K key)
         {
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
@@ -256,7 +256,7 @@ namespace collections
             return V();
         }
 
-        V *Get(K key) const
+        inline V *Get(K key) const
         {
             if (buckets == NULL || eqlFunc == NULL || hashFunc == NULL)
             {
@@ -278,7 +278,7 @@ namespace collections
             return NULL;
         }
 
-        V GetCopyOr(K key, V valueOnNotFound) const
+        inline V GetCopyOr(K key, V valueOnNotFound) const
         {
             if (buckets == NULL || eqlFunc == NULL || hashFunc == NULL)
             {
@@ -300,7 +300,7 @@ namespace collections
             return valueOnNotFound;
         }
 
-        bool Contains(K key)
+        inline bool Contains(K key) const
         {
             u32 hash = hashFunc(key);
             usize index = hash % bucketsCount;
@@ -320,23 +320,136 @@ namespace collections
             return false;
         }
 
-        HashMap<K, V> Clone(IAllocator newAllocator)
+#pragma region collections::HashMap<string, V> specific functions
+#ifdef INCL_STRING
+        inline V *GetWithCharSlice(CharSlice key) const
         {
-            HashMap<K, V> result = HashMap<K, V>(newAllocator, this->hashFunc, this->eqlFunc);
-
-            for (usize i = 0; i < bucketsCount; i++)
+            if (buckets == NULL)
             {
-                if (buckets[i].initialized)
+                return NULL;
+            }
+            u32 hash = CharSliceHash(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
                 {
-                    for (usize j = 0; j < buckets[i].entries.count; j++)
+                    if (buckets[index].entries.Get(i)->key == key)
                     {
-                        result.Add(buckets[i].entries.Get(j)->key, buckets[i].entries.Get(j)->value);
+                        return &buckets[index].entries.Get(i)->value;
                     }
                 }
             }
-
-            return result;
+            return NULL;
         }
+        inline V GetCopyWithCharSliceOr(CharSlice key, V valueOnNotFound) const
+        {
+            if (buckets == NULL)
+            {
+                return valueOnNotFound;
+            }
+            u32 hash = CharSliceHash(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (buckets[index].entries.Get(i)->key == key)
+                    {
+                        return buckets[index].entries.Get(i)->value;
+                    }
+                }
+            }
+            return valueOnNotFound;
+        }
+        inline bool ContainsCharSlice(CharSlice key) const
+        {
+            u32 hash = CharSliceHash(key);
+            usize index = hash % bucketsCount;
+
+            if (!buckets[index].initialized)
+            {
+                return false;
+            }
+
+            for (usize i = 0; i < buckets[index].entries.count; i++)
+            {
+                if (buckets[index].entries.Get(i)->key == key)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        inline bool RemoveWithCharSlice(CharSlice key)
+        {
+            u32 hash = CharSliceHash(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (buckets[index].entries.Get(i)->key == key)
+                    {
+                        buckets[index].entries.RemoveAt_Swap(i);
+
+                        count--;
+
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        inline bool RemoveAndDeinitKeyWithCharSlice(CharSlice key)
+        {
+            u32 hash = CharSliceHash(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (buckets[index].entries.Get(i)->key == key)
+                    {
+                        buckets[index].entries[i].key.deinit();
+                        buckets[index].entries.RemoveAt_Swap(i);
+
+                        count--;
+
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        inline V PopWithCharSlice(CharSlice key)
+        {
+            u32 hash = CharSliceHash(key);
+            usize index = hash % bucketsCount;
+
+            if (buckets[index].initialized)
+            {
+                for (usize i = 0; i < buckets[index].entries.count; i++)
+                {
+                    if (buckets[index].entries.Get(i)->key == key)
+                    {
+                        V result = buckets[index].entries[i].value;
+                        buckets[index].entries.RemoveAt_Swap(i);
+
+                        count--;
+
+                        return result;
+                    }
+                }
+            }
+            return V();
+        }
+#endif
+#pragma endregion
 
         struct Iterator
         {

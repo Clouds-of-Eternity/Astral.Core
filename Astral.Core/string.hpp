@@ -9,6 +9,10 @@
 #include "List.hpp"
 #include <wchar.h>
 
+#ifndef INCL_STRING
+#define INCL_STRING
+#endif
+
 inline const char* digits2(usize value)
 {
     return &"0001020304050607080910111213141516171819"
