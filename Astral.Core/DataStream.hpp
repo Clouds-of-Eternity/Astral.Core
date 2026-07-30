@@ -151,6 +151,10 @@ struct IDataStream
         }
         return readStringFunc(instance, allocator);
     }
+    inline usize GetCurrPos()
+    {
+        return this->getCurrPosFunc(instance);
+    }
     inline void PassString()
     {
         passStringFunc(instance);
