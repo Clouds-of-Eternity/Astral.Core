@@ -586,7 +586,14 @@ struct CharSlice
     inline CharSlice(string str)
     {
         buffer = str.buffer;
-        length = str.length - 1;
+        if (str.length > 0)
+        {
+            length = str.length - 1;
+        }
+        else
+        {
+            length = 0;
+        }
     }
     inline CharSlice(const char* stringLiteral)
     {
