@@ -13,8 +13,15 @@
 
 #ifdef __cplusplus
 #define exportC extern "C"
-#define BeginExports() extern "C" {
-#define EndExports() }
+
+// #ifndef IN_EDITOR
+// #define BeginExports() extern "C" {
+// #define EndExports() }
+// #else
+#define BeginExports()
+#define EndExports()
+// #endif
+
 #else
 #define exportC
 #define BeginExports()
