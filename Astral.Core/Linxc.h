@@ -8,15 +8,17 @@
 
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
 #define ExportOtherFile(filePath)
-#define BeginExports()
-#define EndExport()
 #define suppressGC
 #define dotnet_ignore
 
 #ifdef __cplusplus
 #define exportC extern "C"
+#define BeginExports() extern "C" {
+#define EndExports() }
 #else
 #define exportC
+#define BeginExports()
+#define EndExports()
 #endif
 
 #ifndef DynamicFunction
