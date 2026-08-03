@@ -9,8 +9,23 @@
 #endif
 
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
+
+#ifdef __cplusplus
+#define exportC extern "C"
+
+#ifndef IN_EDITOR
+#define BeginExports() extern "C" {
+#define EndExports() }
+#else
 #define BeginExports()
-#define EndExport()
+#define EndExports()
+#endif
+
+#else
+#define exportC
+#define BeginExports()
+#define EndExports()
+#endif
 
 #ifdef WINDOWS
 #define exportDynamic __declspec(dllexport)

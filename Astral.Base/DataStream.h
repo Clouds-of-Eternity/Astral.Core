@@ -17,6 +17,12 @@ def_delegate(IDataStreamGetCurrPosFunc, size_t, void *self);
 def_delegate(IDataStreamReadStringFunc, string, void *self, IAllocator allocator);
 def_delegate(IDataStreamPassStringFunc, void, void *self);
 
+def_delegate(IDataStreamWriteFunc, void, void *self, const void *value, size_t elementSize, size_t writeCount);
+def_delegate(IDataStreamWriteTextFormattedFunc, void, void *self, const char *str, va_list args);
+
+def_delegate(IDataStreamFlushFunc, void, void *self);
+def_delegate(IDataStreamCloseFunc, void, void *self);
+
 typedef struct IDataStream
 {
     void *instance;
@@ -25,6 +31,12 @@ typedef struct IDataStream
     IDataStreamGetCurrPosFunc getCurrPosFunc;
     IDataStreamReadStringFunc readStringFunc;
     IDataStreamPassStringFunc passStringFunc;
+
+    IDataStreamWriteFunc writeFunc;
+    IDataStreamWriteTextFormattedFunc writeTextFormattedFunc;
+
+    IDataStreamFlushFunc flushFunc;
+    IDataStreamCloseFunc closeFunc;
 } IDataStream;
 
 #define DS_READINTO(varName, streamPtr, type) type varName; streamPtr->readFunc(streamPtr->instance, &varName, sizeof(type), 1)
