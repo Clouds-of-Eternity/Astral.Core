@@ -150,7 +150,7 @@ namespace collections
             }
             return false;
         }
-        bool Contains(T value)
+        bool Contains(T value) const
         {
             u32 hash = hashFunc(value);
             u32 index = hash % bucketsCount;
@@ -172,7 +172,7 @@ namespace collections
             }
             return false;
         }
-        T *GetInstanceOf(T value)
+        T *GetInstanceOf(T value) const
         {
             u32 hash = hashFunc(value);
             u32 index = hash % bucketsCount;
