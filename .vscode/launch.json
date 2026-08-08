@@ -1,0 +1,15 @@
+{
+    "configurations": [
+    {
+        "name": "(Windows) Launch AstralCoreTests",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/Tests/bin/Debug/AstralCoreTest.exe",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}/Tests/bin/Debug",
+        "environment": [],
+        "console": "externalTerminal"
+    }
+    ]
+}

@@ -1,10 +1,11 @@
 #pragma once
-#define VEC2_H
 #include <math.h>
 #include "Maths/CVectors.h"
 
 namespace Maths
 {
+    struct Point2;
+    
     struct Vec2
     {
         float X;
@@ -141,9 +142,128 @@ namespace Maths
             return Vec2(A.X + (B.X - A.X) * amount, A.Y + (B.Y - A.Y) * amount);
         }
 
+        inline Point2 ToPoint2() const;
         inline vec2 ToCVec() const
         {
             return {X, Y};
         }
     };
+
+    struct Point2
+    {
+        i32 X;
+        i32 Y;
+
+        inline Point2()
+        {
+            X = 0;
+            Y = 0;
+        }
+        inline Point2(i32 x, i32 y)
+        {
+            X = x;
+            Y = y;
+        }
+        inline Point2(i32 val)
+        {
+            X = val;
+            Y = val;
+        }
+        inline bool operator==(Point2 other) const
+        {
+            return X == other.X && Y == other.Y;
+        }
+        inline bool operator !=(Point2 other) const
+        {
+            return X != other.X || Y != other.Y;
+        }
+        inline Point2 operator-() const
+        {
+            return Point2(-X, -Y);
+        }
+
+        inline Point2 operator+(Point2 B) const
+        {
+            return Point2(X + B.X, Y + B.Y);
+        }
+        inline void operator+=(Point2 B)
+        {
+            X += B.X;
+            Y += B.Y;
+        }
+        inline Point2 operator-(Point2 B) const
+        {
+            return Point2(X - B.X, Y - B.Y);
+        }
+        inline void operator-=(Point2 B)
+        {
+            X -= B.X;
+            Y -= B.Y;
+        }
+        inline Point2 operator*(Point2 B) const
+        {
+            return Point2(X * B.X, Y * B.Y);
+        }
+        inline void operator*=(Point2 B)
+        {
+            X *= B.X;
+            Y *= B.Y;
+        }
+        inline Point2 operator/(Point2 B) const
+        {
+            return Point2(X / B.X, Y / B.Y);
+        }
+        inline void operator/=(Point2 B)
+        {
+            X /= B.X;
+            Y /= B.Y;
+        }
+
+        static inline float Dot(const Point2 A, const Point2 B)
+        {
+            return A.X * B.X + A.Y * B.Y;
+        }
+        static inline Point2 Max(const Point2 A, const Point2 B)
+        {
+            return Point2(A.X > B.X ? A.X : B.X, A.Y > B.Y ? A.Y : B.Y);
+        }
+        static inline Point2 Min(const Vec2 A, const Vec2 B)
+        {
+            return Point2(A.X < B.X ? A.X : B.X, A.Y < B.Y ? A.Y : B.Y);
+        }
+        static inline float Distance(const Point2 A, const Point2 B)
+        {
+            float dx = B.X - A.X;
+            float dy = B.Y - A.Y;
+            return sqrtf(dx * dx + dy * dy);
+        }
+        static inline float DistanceSquared(const Point2 A, const Point2 B)
+        {
+            float dx = B.X - A.X;
+            float dy = B.Y - A.Y;
+            return dx * dx + dy * dy;
+        }
+        static inline Point2 Lerp(const Point2 A, const Point2 B, const float amount)
+        {
+            return Point2(A.X + (B.X - A.X) * amount, A.Y + (B.Y - A.Y) * amount);
+        }
+        inline Vec2 ToVector2() const
+        {
+            return Vec2(X, Y);
+        }
+    };
+
+    inline bool Point2Eql(Point2 A, Point2 B)
+    {
+        return A.X == B.X && A.Y == B.Y;
+    }
+    inline u32 Point2Hash(Point2 self)
+    {
+        return (u32)(self.X ^ (self.Y + 0x9e3779b9 + (self.X << 6) + (self.X >> 2)));
+    }
+
+    Point2 Vec2::ToPoint2() const
+    {
+        return Point2(X, Y);
+    }
 }

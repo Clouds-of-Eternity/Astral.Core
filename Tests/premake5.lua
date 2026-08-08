@@ -7,7 +7,7 @@ workspace "AstralCoreTests"
     }
     filter "options:clang"
         toolset "clang"
-        buildoptions { "-g", "-gcodeview", "-Wno-deprecated-declarations", "-Werror=return-type" }
+        buildoptions { "-g", "-gcodeview", "-march=native", "-Wno-deprecated-declarations", "-Werror=return-type" }
         linkoptions { "-fuse-ld=lld", "-g" }
 
     filter "system:windows"
@@ -34,6 +34,28 @@ workspace "AstralCoreTests"
         }
         files {
             "**.c"
+        }
+
+        filter "configurations:Debug"
+            defines { "DEBUG" }
+            symbols "On"
+
+        filter "configurations:Release"
+            defines { "NDEBUG" }
+            optimize "On"
+
+    project "AstralCoreTest"
+        kind "ConsoleApp"
+        language "C++"
+        staticruntime "Off"
+        targetdir "bin/%{cfg.buildcfg}"
+        objdir "obj/%{cfg.buildcfg}"
+        includedirs {
+            "../Astral.Core",
+            "./"
+        }
+        files {
+            "**.cpp"
         }
 
         filter "configurations:Debug"

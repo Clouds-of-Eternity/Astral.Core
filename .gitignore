@@ -2,3 +2,4 @@ bin/
 obj/
 Makefile
 *.make
+Astral.Core/Maths/Vec3Impl_SSE.inc

@@ -11,7 +11,8 @@
             ],
             "includePath": [
                 "Astral.Core",
-                "Astral.Base"
+                "Astral.Base",
+                "Tests"
             ],
             "cStandard": "c23",
             "cppStandard": "c++14",
