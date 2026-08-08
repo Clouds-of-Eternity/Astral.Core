@@ -184,20 +184,34 @@ namespace io
         char *chars = (char *)DEFAULT_ALLOC(finalDirPath.length + 1);
         chars[finalDirPath.length] = '\0';
 
-        for (usize i = 0; i < finalDirPath.length; i++)
+        bool skip = false;
+        for (usize i = 0; i < finalDirPath.length + 1; i++)
         {
-            if (finalDirPath[i] == '\\' || finalDirPath[i] == '/')
+            bool last = i == finalDirPath.length;
+            if (finalDirPath[i] == ':')
             {
-                chars[i] = '\0';
-                if (!io::DirectoryExists(chars))
+                skip = true;
+            }
+            else if (finalDirPath[i] == '\\' || finalDirPath[i] == '/' || last)
+            {
+                if (skip)
                 {
-                    result = io::NewDirectory(chars);
-                    if (!result)
+                    skip = false;
+                }
+                else
+                {
+                    chars[i] = '\0';
+                    if (!io::DirectoryExists(chars))
                     {
-                        break;
+                        result = io::NewDirectory(chars);
+                        if (!result)
+                        {
+                            break;
+                        }
                     }
                 }
             }
+            if (!last)
             chars[i] = finalDirPath[i];
         }
 

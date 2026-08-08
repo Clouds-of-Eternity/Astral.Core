@@ -153,4 +153,26 @@ namespace path
         path.deinit();
         return result;
     }
+    // inline string GetFullPath(IAllocator allocator, text relativePathNullTerminated)
+    // {
+    //     #ifdef WINDOWS
+
+    //     char fullPath[MAX_PATH];
+    //     DWORD lastIndex = GetFullPathNameA(relativePathNullTerminated, MAX_PATH, fullPath, NULL);
+    //     fullPath[lastIndex] = '\0';
+    //     return string(GetCAllocator(), fullPath);
+
+    //     #else
+
+    //     char *fullPath = DEFAULT_ALLOC(PATH_MAX);
+    //     string result = string();
+    //     if (realpath(relativePathNullTerminated, fullPath) != NULL)
+    //     {
+    //         result = string(GetCAllocator(), fullPath);
+    //     }
+    //     DEFAULT_FREE(fullPath);
+    //     return result;
+
+    //     #endif
+    // }
 }
