@@ -9,6 +9,10 @@
                 "USE_INTRINSICS",
                 "USE_SSE"
             ],
+            "includePath": [
+                "Astral.Core",
+                "Astral.Base"
+            ],
             "cStandard": "c23",
             "cppStandard": "c++14",
             "intelliSenseMode": "windows-clang-x64"
