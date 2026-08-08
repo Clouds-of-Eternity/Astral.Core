@@ -254,6 +254,24 @@ namespace Maths
         {
             return sqrtf(Dot(*this, *this));
         }
+        inline i32 FindIndexOf(float component) const
+        {
+#ifdef USE_SSE
+            const __m128 component4 = _mm_set1_ps(component);
+            __m128 equals = _mm_cmpeq_ps(asM128, component4);
+            __m128 equalsSign = _mm_and_ps(equals, _mm_setr_ps(1.0f, 2.0f, 3.0f, 4.0f));
+            __m128 hadd0 = _mm_hadd_ps(equalsSign, equalsSign);
+            __m128 hadd1 = _mm_hadd_ps(hadd0, hadd0);
+
+            return (i32)_mm_cvtss_f32(hadd1) - 1;
+#else
+            if (X == component) return 0;
+            if (Y == component) return 1;
+            if (Z == component) return 2;
+            if (W == component) return 3;
+            return -1;
+#endif
+        }
 
         static inline Vec4 Lerp4(const Vec4 A, const Vec4 B, Vec4 amount)
         {
@@ -285,20 +303,10 @@ namespace Maths
 #endif
         }
 
-        #ifdef USE_SSE
-        static inline __m128 GetAbsMask(){
-            // with clang, this turns into a 16B load,
-            // with every calling function getting its own copy of the mask
-            __m128i minus1 = _mm_set1_epi32(-1);
-            return _mm_castsi128_ps(_mm_srli_epi32(minus1, 1));
-        }
-        #endif
-
         static inline Vec4 Abs(Vec4 value)
         {
             #ifdef USE_SSE
-            __m128 result = _mm_and_ps(GetAbsMask(), value.asM128);
-            return Vec4(result);
+            return Vec4(_mm_andnot_ps(_mm_set1_ps(-0.0f), value.asM128));
             #else
             return Vec4(fabsf(value.X), fabsf(value.Y), fabsf(value.Z), fabsf(value.W));
             #endif
@@ -310,9 +318,41 @@ namespace Maths
         }
         static inline float Dot(const Vec4 A, const Vec4 B)
         {
+            #ifdef USE_SSE
+            __m128 mult = _mm_mul_ps(A.asM128, B.asM128);
+            __m128 hadd0 = _mm_hadd_ps(mult, mult);
+            __m128 hadd1 = _mm_hadd_ps(hadd0, hadd0);
+            return _mm_cvtss_f32(hadd1);
+        //     __m128 dotProduct = _mm_dp_ps(A.asM128, B.asM128);
+        //     return _mm_cvtss_f32(dotProduct);
+            #else
             return A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
+            #endif
         }
+        static inline float MinComponent(const Vec4 value)
+        {
+#ifdef USE_SSE
+            __m128 result = value.asM128;
+            result = _mm_min_ps(result, _mm_shuffle_ps(result, result, _MM_SHUFFLE(2, 1, 0, 3)));
+            result = _mm_min_ps(result, _mm_shuffle_ps(result, result, _MM_SHUFFLE(1, 0, 3, 2)));
 
+            return _mm_cvtss_f32(result);
+#else
+            return fminf(fminf(value.X, value.Y), fminf(value.Z, value.W));
+#endif
+        }
+        static inline float MaxComponent(const Vec4 value)
+        {
+#ifdef USE_SSE
+            __m128 result = value.asM128;
+            result = _mm_max_ps(result, _mm_shuffle_ps(result, result, _MM_SHUFFLE(2, 1, 0, 3)));
+            result = _mm_max_ps(result, _mm_shuffle_ps(result, result, _MM_SHUFFLE(1, 0, 3, 2)));
+
+            return _mm_cvtss_f32(result);
+#else
+            return fmaxf(fmaxf(value.X, value.Y), fmaxf(value.Z, value.W));
+#endif
+        }
         static inline Vec4 Min(const Vec4 A, const Vec4 B)
         {
 #ifdef USE_SSE
