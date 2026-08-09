@@ -5,6 +5,7 @@
 #include "Json.hpp"
 #include "Maths/Util.hpp"
 
+#include "CPPTests/GeometryTests.hpp"
 #include "CPPTests/CollectionsTests.hpp"
 //#include "local/PerfTests.hpp"
 
@@ -19,6 +20,7 @@ i32 main()
     #endif
 
     RunCollectionsTests();
+    RunGeometryTests();
     //FindInString();
     // ParseJson5MB();
     // FindInString();

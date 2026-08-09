@@ -31,57 +31,73 @@ namespace Maths
             X = cvec.X;
             Y = cvec.Y;
         }
-        inline Vec2 operator+(const Vec2 other) const
+        inline Vec2 operator+(Vec2 other) const
         {
             return Vec2(X + other.X, Y + other.Y);
         }
-        inline void operator+=(const Vec2 other)
+        inline void operator+=(Vec2 other)
         {
             X += other.X;
             Y += other.Y;
         }
 
-        inline Vec2 operator-(const Vec2 other) const
+        inline Vec2 operator-(Vec2 other) const
         {
             return Vec2(X - other.X, Y - other.Y);
         }
-        inline void operator-=(const Vec2 other)
+        inline void operator-=(Vec2 other)
         {
             X -= other.X;
             Y -= other.Y;
         }
 
-        inline Vec2 operator*(const Vec2 other) const
+        inline Vec2 operator*(Vec2 other) const
         {
             return Vec2(X * other.X, Y * other.Y);
         }
-        inline void operator*=(const Vec2 other)
+        inline void operator*=(Vec2 other)
         {
             X *= other.X;
             Y *= other.Y;
         }
-        inline Vec2 operator*(const float value)
+        inline Vec2 operator*(float value)
         {
             return Vec2(X * value, Y * value);
         }
 
-        inline Vec2 operator/(const Vec2 other) const
+        inline Vec2 operator/(Vec2 other) const
         {
             return Vec2(X / other.X, Y / other.Y);
         }
-        inline void operator/=(const Vec2 other)
+        inline void operator/=(Vec2 other)
         {
             X /= other.X;
             Y /= other.Y;
         }
 
-        inline bool operator==(const Vec2 other) const
+        inline bool operator==(Vec2 other) const
         {
             return X == other.X && Y == other.Y;
         }
-        inline bool operator !=(const Vec2 other) const
+        inline bool operator !=(Vec2 other) const
         {
             return X != other.X || Y != other.Y;
+        }
+        inline bool operator >(Vec2 other) const
+        {
+            return X > other.X && Y > other.Y;
+        }
+        inline bool operator >=(Vec2 other) const
+        {
+            return X >= other.X && Y >= other.Y;
+        }
+        inline bool operator <(Vec2 other) const
+        {
+            return X < other.X && Y < other.Y;
+        }
+        inline bool operator <=(Vec2 other) const
+        {
+            return X <= other.X && Y <= other.Y;
         }
         inline Vec2 operator-()
         {
@@ -113,31 +129,31 @@ namespace Maths
         {
             return fabsf(B.X - A.X) <= epsilon && fabsf(B.Y - A.Y) <= epsilon;
         }
-        static inline float Dot(const Vec2 A, const Vec2 B)
+        static inline float Dot(Vec2 A, Vec2 B)
         {
             return A.X * B.X + A.Y * B.Y;
         }
-        static inline Vec2 Max(const Vec2 A, const Vec2 B)
+        static inline Vec2 Max(Vec2 A, Vec2 B)
         {
             return Vec2(A.X > B.X ? A.X : B.X, A.Y > B.Y ? A.Y : B.Y);
         }
-        static inline Vec2 Min(const Vec2 A, const Vec2 B)
+        static inline Vec2 Min(Vec2 A, Vec2 B)
         {
             return Vec2(A.X < B.X ? A.X : B.X, A.Y < B.Y ? A.Y : B.Y);
         }
-        static inline float Distance(const Vec2 A, const Vec2 B)
+        static inline float Distance(Vec2 A, Vec2 B)
         {
             float dx = B.X - A.X;
             float dy = B.Y - A.Y;
             return sqrtf(dx * dx + dy * dy);
         }
-        static inline float DistanceSquared(const Vec2 A, const Vec2 B)
+        static inline float DistanceSquared(Vec2 A, Vec2 B)
         {
             float dx = B.X - A.X;
             float dy = B.Y - A.Y;
             return dx * dx + dy * dy;
         }
-        static inline Vec2 Lerp(const Vec2 A, const Vec2 B, const float amount)
+        static inline Vec2 Lerp(Vec2 A, Vec2 B, float amount)
         {
             return Vec2(A.X + (B.X - A.X) * amount, A.Y + (B.Y - A.Y) * amount);
         }
@@ -176,6 +192,22 @@ namespace Maths
         inline bool operator !=(Point2 other) const
         {
             return X != other.X || Y != other.Y;
+        }
+        inline bool operator >(Point2 other) const
+        {
+            return X > other.X && Y > other.Y;
+        }
+        inline bool operator >=(Point2 other) const
+        {
+            return X >= other.X && Y >= other.Y;
+        }
+        inline bool operator <(Point2 other) const
+        {
+            return X < other.X && Y < other.Y;
+        }
+        inline bool operator <=(Point2 other) const
+        {
+            return X <= other.X && Y <= other.Y;
         }
         inline Point2 operator-() const
         {
@@ -219,31 +251,31 @@ namespace Maths
             Y /= B.Y;
         }
 
-        static inline float Dot(const Point2 A, const Point2 B)
+        static inline float Dot(Point2 A, Point2 B)
         {
             return A.X * B.X + A.Y * B.Y;
         }
-        static inline Point2 Max(const Point2 A, const Point2 B)
+        static inline Point2 Max(Point2 A, Point2 B)
         {
             return Point2(A.X > B.X ? A.X : B.X, A.Y > B.Y ? A.Y : B.Y);
         }
-        static inline Point2 Min(const Vec2 A, const Vec2 B)
+        static inline Point2 Min(Vec2 A, Vec2 B)
         {
             return Point2(A.X < B.X ? A.X : B.X, A.Y < B.Y ? A.Y : B.Y);
         }
-        static inline float Distance(const Point2 A, const Point2 B)
+        static inline float Distance(Point2 A, Point2 B)
         {
             float dx = B.X - A.X;
             float dy = B.Y - A.Y;
             return sqrtf(dx * dx + dy * dy);
         }
-        static inline float DistanceSquared(const Point2 A, const Point2 B)
+        static inline float DistanceSquared(Point2 A, Point2 B)
         {
             float dx = B.X - A.X;
             float dy = B.Y - A.Y;
             return dx * dx + dy * dy;
         }
-        static inline Point2 Lerp(const Point2 A, const Point2 B, const float amount)
+        static inline Point2 Lerp(Point2 A, Point2 B, float amount)
         {
             return Point2(A.X + (B.X - A.X) * amount, A.Y + (B.Y - A.Y) * amount);
         }

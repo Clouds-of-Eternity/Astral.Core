@@ -1,5 +1,4 @@
 #pragma once
-#include "Linxc.h"
 #include "Maths/Vec3.hpp"
 
 struct BoundingBox

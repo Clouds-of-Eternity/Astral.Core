@@ -30,6 +30,7 @@ workspace "AstralCoreTests"
         objdir "obj/%{cfg.buildcfg}"
         includedirs {
             "../Astral.Core",
+            "../Astral.Plane",
             "./"
         }
         files {

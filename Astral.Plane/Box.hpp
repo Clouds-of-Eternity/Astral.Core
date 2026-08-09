@@ -1,10 +1,9 @@
 #pragma once
-#include "Linxc.h"
 #include "Maths/Vec2.hpp"
-#include "Astral.Plane/Circle.hpp"
 #include "Maths/Util.hpp"
+#include "Circle.hpp"
 
-struct Rectangle;
+struct Rect32;
 
 struct Box
 {
@@ -198,11 +197,17 @@ struct Box
     // INTERSECTIONS
     inline bool Intersects(Box other) const
     {
-        return !(
-            other.X > X + width ||
-            other.X + other.width < X ||
-            other.Y > Y + height ||
-            other.Y + other.height < Y);
+        // return !(
+        //     other.X > X + width ||
+        //     other.X + other.width < X ||
+        //     other.Y > Y + height ||
+        //     other.Y + other.height < Y);
+
+        return 
+            other.X <= X + width &&
+            other.X + other.width >= X &&
+            other.Y <= Y + height &&
+            other.Y + other.height >= Y;
     }
     inline Box IntersectionWith(Box other) const
     {
@@ -339,41 +344,38 @@ struct Box
         return *this;
     }
 
-    inline Rectangle ToRectangle() const
-    {
-        return Rectangle((i32)X, (i32)Y, (i32)width, (i32)height);
-    }
+    inline Rect32 ToRectangle() const;
 };
 
-struct Rectangle
+struct Rect32
 {
     i32 X;
     i32 Y;
     i32 width;
     i32 height;
 
-    inline Rectangle()
+    inline Rect32()
     {
         X = 0.0f;
         Y = 0.0f;
         width = 0.0f;
         height = 0.0f;
     }
-    inline Rectangle(float X, float Y, float width, float height)
+    inline Rect32(float X, float Y, float width, float height)
     {
         this->X = (i32)X;
         this->Y = (i32)Y;
         this->width = (i32)width;
         this->height = (i32)height;
     }
-    inline Rectangle(i32 X, i32 Y, i32 width, i32 height)
+    inline Rect32(i32 X, i32 Y, i32 width, i32 height)
     {
         this->X = X;
         this->Y = Y;
         this->width = width;
         this->height = height;
     }
-    inline Rectangle(Maths::Point2 pos, i32 width, i32 height)
+    inline Rect32(Maths::Point2 pos, i32 width, i32 height)
     {
         if (width < 0)
         {
@@ -390,7 +392,7 @@ struct Rectangle
         this->width = width;
         this->height = height;
     }
-    inline Rectangle(Maths::Point2 topLeft, Maths::Point2 bottomRight)
+    inline Rect32(Maths::Point2 topLeft, Maths::Point2 bottomRight)
     {
         i32 minX = AC_MIN(topLeft.X, bottomRight.X);
         i32 minY = AC_MIN(topLeft.Y, bottomRight.Y);
@@ -414,7 +416,7 @@ struct Rectangle
     {
         return X <= point.X && point.X <= X + width && Y <= point.Y && point.Y <= Y + height;
     }
-    inline bool Contains(Rectangle other) const
+    inline bool Contains(Rect32 other) const
     {
         return Contains(other.GetTopLeft()) && Contains(other.GetBottomRight());
     }
@@ -462,26 +464,26 @@ struct Rectangle
     }
 
     // OPERATIONS
-    inline Rectangle Inflate(i32 x, i32 y) const
+    inline Rect32 Inflate(i32 x, i32 y) const
     {
-        return Rectangle(X - x, Y - y, width + x * 2, height + y * 2);
+        return Rect32(X - x, Y - y, width + x * 2, height + y * 2);
     }
-    inline static Rectangle Union(Rectangle value1, Rectangle value2)
+    inline static Rect32 Union(Rect32 value1, Rect32 value2)
     {
-        if (value1 == Rectangle())
+        if (value1 == Rect32())
         {
             return value2;
         }
         float x = AC_MIN(value1.X, value2.X);
         float y = AC_MIN(value1.Y, value2.Y);
-        return Rectangle(
+        return Rect32(
             x,
             y,
             AC_MAX(value1.X + value1.width, value2.X + value2.width) - x,  // max of rights  - x
             AC_MAX(value1.Y + value1.height, value2.Y + value2.height) - y // max of bottoms - y
         );
     }
-    inline Rectangle Union(Rectangle value2) const
+    inline Rect32 Union(Rect32 value2) const
     {
         return Union(*this, value2);
     }
@@ -499,7 +501,7 @@ struct Rectangle
     }
 
     // INTERSECTIONS
-    inline bool Intersects(Box other) const
+    inline bool Intersects(Rect32 other) const
     {
         return !(
             other.X > X + width ||
@@ -507,9 +509,9 @@ struct Rectangle
             other.Y > Y + height ||
             other.Y + other.height < Y);
     }
-    inline Rectangle IntersectionWith(Rectangle other) const
+    inline Rect32 IntersectionWith(Rect32 other) const
     {
-        Rectangle result = *this;
+        Rect32 result = *this;
         if (result.Y < other.Y)
         {
             result.height -= other.Y - result.Y;
@@ -531,14 +533,14 @@ struct Rectangle
         
         if (result.height <= 0 || result.width <= 0)
         {
-            return Rectangle();
+            return Rect32();
         }
         return result;
     }
-    inline bool CheckIntersectionWith(Rectangle other, Rectangle *output) const
+    inline bool CheckIntersectionWith(Rect32 other, Rect32 *output) const
     {
         bool intersected = false;
-        Rectangle result = *this;
+        Rect32 result = *this;
         if (result.Y < other.Y)
         {
             result.height -= other.Y - result.Y;
@@ -564,7 +566,7 @@ struct Rectangle
         
         if (result.height <= 0 || result.width <= 0)
         {
-            *output = Rectangle();
+            *output = Rect32();
         }
         else *output = result;
 
@@ -576,40 +578,40 @@ struct Rectangle
     }
 
     // OPERATOR OVERLOADS
-    inline Rectangle operator+(Maths::Point2 offset) const
+    inline Rect32 operator+(Maths::Point2 offset) const
     {
-        return Rectangle(X + offset.X, Y + offset.Y, width, height);
+        return Rect32(X + offset.X, Y + offset.Y, width, height);
     }
-    inline Rectangle operator+=(Maths::Point2 offset)
+    inline Rect32 operator+=(Maths::Point2 offset)
     {
         X += offset.X;
         Y += offset.Y;
         return *this;
     }
 
-    inline Rectangle operator-(Maths::Point2 offset) const
+    inline Rect32 operator-(Maths::Point2 offset) const
     {
-        return Rectangle(X - offset.X, Y - offset.Y, width, height);
+        return Rect32(X - offset.X, Y - offset.Y, width, height);
     }
-    inline Rectangle operator-=(Maths::Point2 offset)
+    inline Rect32 operator-=(Maths::Point2 offset)
     {
         X -= offset.X;
         Y -= offset.Y;
         return *this;
     }
 
-    inline bool operator==(Rectangle other) const
+    inline bool operator==(Rect32 other) const
     {
         return X == other.X && Y == other.Y && width == other.width && height == other.height;
     }
-    inline bool operator!=(Rectangle other) const
+    inline bool operator!=(Rect32 other) const
     {
         return X != other.X || Y != other.Y || width != other.width || height != other.height;
     }
 
-    inline Rectangle operator*(Maths::Point2 vec) const
+    inline Rect32 operator*(Maths::Point2 vec) const
     {
-        Rectangle result = Rectangle(this->X * vec.X, this->Y * vec.Y, this->width * vec.X, this->height * vec.Y);
+        Rect32 result = Rect32(this->X * vec.X, this->Y * vec.Y, this->width * vec.X, this->height * vec.Y);
         if (result.width < 0)
         {
             result.X += result.width;
@@ -622,9 +624,14 @@ struct Rectangle
         }
         return result;
     }
-    inline Rectangle operator*=(Maths::Point2 vec)
+    inline Rect32 operator*=(Maths::Point2 vec)
     {
         *this = *this * vec;
         return *this;
     }
 };
+
+Rect32 Box::ToRectangle() const
+{
+    return Rect32((i32)X, (i32)Y, (i32)width, (i32)height);
+}

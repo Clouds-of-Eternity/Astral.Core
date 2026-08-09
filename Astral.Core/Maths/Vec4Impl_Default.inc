@@ -138,6 +138,32 @@ inline i32 FindIndexOf(float component) const
     if (W == component) return 3;
     return -1;
 }
+
+inline bool operator==(Vec4 other) const
+{
+    return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+}
+inline bool operator!=(Vec4 other) const
+{
+    return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
+}
+inline bool operator<(Vec4 other) const
+{
+    return X < other.X && Y < other.Y && Z < other.Z && W < other.W;
+}
+inline bool operator<=(Vec4 other) const
+{
+    return X <= other.X && Y <= other.Y && Z <= other.Z && W <= other.W;
+}
+inline bool operator>(Vec4 other) const
+{
+    return X > other.X && Y > other.Y && Z > other.Z && W > other.W;
+}
+inline bool operator>=(Vec4 other) const
+{
+    return X >= other.X && Y >= other.Y && Z >= other.Z && W >= other.W;
+}
+
 static inline Vec4 Lerp4(const Vec4 A, const Vec4 B, Vec4 amount)
 {
     Vec4 result;
@@ -179,28 +205,4 @@ static inline Vec4 Min(const Vec4 A, const Vec4 B)
 static inline Vec4 Max(const Vec4 A, const Vec4 B)
 {
     return Vec4(fmaxf(A.X, B.X), fmaxf(A.Y, B.Y), fmaxf(A.Z, B.Z), fmaxf(A.W, B.W));
-}
-inline bool operator==(Vec4 other) const
-{
-    return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
-}
-inline bool operator!=(Vec4 other) const
-{
-    return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
-}
-inline bool operator<(Vec4 other) const
-{
-    return X < other.X && Y < other.Y && Z < other.Z && W < other.W;
-}
-inline bool operator<=(Vec4 other) const
-{
-    return X <= other.X && Y <= other.Y && Z <= other.Z && W <= other.W;
-}
-inline bool operator>(Vec4 other) const
-{
-    return X > other.X && Y > other.Y && Z > other.Z && W > other.W;
-}
-inline bool operator>=(Vec4 other) const
-{
-    return X >= other.X && Y >= other.Y && Z >= other.Z && W >= other.W;
 }

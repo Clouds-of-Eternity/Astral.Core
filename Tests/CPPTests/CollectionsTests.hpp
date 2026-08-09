@@ -97,20 +97,10 @@ inline bool TestSegmentedList()
 
 inline void RunCollectionsTests()
 {
-    printf("Executing RunCollectionsTests()...\n----\n");
     ACTestFunc tests[] = {
         TestHashMap,
         TestSegmentedList
     };
-    const usize total = sizeof(tests) / sizeof(ACTestFunc);
-    u32 passes = total;
 
-    for (u32 i = 0; i < total; i++)
-    {
-        if (!tests[i]())
-        {
-            passes--;
-        }
-    }
-    printf("RunCollectionsTests() passed: %u/%u\n", passes, total);
+    AC_RUN_TESTS(RunCollectionsTests, tests);
 }

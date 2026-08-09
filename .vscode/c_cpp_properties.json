@@ -10,7 +10,7 @@
             ],
             "includePath": [
                 "Astral.Core",
-                "Astral.Base",
+                "Astral.Plane",
                 "Tests"
             ],
             "cStandard": "c23",
