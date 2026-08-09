@@ -43,64 +43,64 @@ namespace Maths
 	{
 		return A < B ? A : B;
 	}
-	u64 inline rotl64(u64 value, u64 amount)
+	inline constexpr u64 rotl64(u64 value, u64 amount)
 	{
 		amount %= 64;
 		return (value << amount) | (value >> (64 - amount));
 	}
-	u32 inline rotl32(u32 value, u32 amount)
+	inline constexpr u32 rotl32(u32 value, u32 amount)
 	{
 		amount %= 32;
 		return (value << amount) | (value >> (32 - amount));
 	}
-	u64 inline rotr64(u64 value, u64 amount)
+	inline constexpr u64 rotr64(u64 value, u64 amount)
 	{
 		amount %= 64;
 		return (value >> amount) | (value << (64 - amount));
 	}
-	u32 inline rotr32(u32 value, u32 amount)
+	inline constexpr u32 rotr32(u32 value, u32 amount)
 	{
 		amount %= 32;
 		return (value >> amount) | (value << (32 - amount));
 	}
-	float inline LengthdirX(float len, float dirInRadians)
+	inline float LengthdirX(float len, float dirInRadians)
 	{
 		return cosf(dirInRadians) * len;
 	}
-	float inline LengthdirY(float len, float dirInRadians)
+	inline float LengthdirY(float len, float dirInRadians)
 	{
 		return sinf(dirInRadians) * len;
 	}
-	Vec2 inline Lengthdir(float len, float dirInRadians)
+	inline Vec2 Lengthdir(float len, float dirInRadians)
 	{
 		return Vec2(cosf(dirInRadians) * len, sinf(dirInRadians) * len);
 	}
-	float inline DirectionTowards(Vec2 A, Vec2 B)
+	inline float DirectionTowards(Vec2 A, Vec2 B)
 	{
 		return atan2f(B.Y - A.Y, B.X - A.X);
 	}
-	float inline DirectionTowards(float AX, float AY, float BX, float BY)
+	inline float DirectionTowards(float AX, float AY, float BX, float BY)
 	{
 		return atan2f(BY - AY, BX - AX);
 	}
-	inline i32 Sign(i32 value)
+	inline constexpr i32 Sign(i32 value)
 	{
 		return (0 < value) - (value < 0);
 	}
-	inline i32 Sign(float value)
+	inline constexpr i32 Sign(float value)
 	{
 		return (0.0f < value) - (value < 0.0f);
 	}
-	float inline QuadraticStep(float A, float B, float amount)
+	inline float QuadraticStep(float A, float B, float amount)
 	{
 		float equation = Sign(B - A) * amount * amount + (B < A ? 1.0f : 0.0f);
 		return A + (B - A) * equation;
 	}
-	float inline BarycentricCoords(float A, float B, float C, float amount1, float amount2)
+	inline constexpr float BarycentricCoords(float A, float B, float C, float amount1, float amount2)
 	{
 		return A + (B - A) * amount1 + (C - A) * amount2;
 	}
-	float inline Clamp(float min, float max, float value)
+	inline constexpr float Clamp(float min, float max, float value)
 	{
 		if (value < min)
 		{
@@ -112,7 +112,7 @@ namespace Maths
 		}
 		return value;
 	}
-	i32 inline Clamp(i32 min, i32 max, i32 value)
+	inline constexpr i32 Clamp(i32 min, i32 max, i32 value)
 	{
 		if (value < min)
 		{
@@ -124,39 +124,36 @@ namespace Maths
 		}
 		return value;
 	}
-	float inline Distance(float A, float B)
+	inline float Distance(float A, float B)
 	{
 		return fabsf(B - A);
 	}
-	float inline Hermite(float v1, float t1, float v2, float t2, float amount)
+	inline constexpr float Hermite(float v1, float t1, float v2, float t2, float amount)
 	{
-		double result;
-		double amtCubed = amount * amount * amount;
-		double amtSquared = amount * amount;
-
 		if (amount == 0.0f)
 		{
-			result = v1;
+			return (float)v1;
 		}
 		else if (amount == 1.0f)
 		{
-			result = v2;
+			return (float)v2;
 		}
 		else
 		{
-			result = (2 * v1 - 2 * v2 + t2 + t1) * amtCubed +
+			const double amtCubed = amount * amount * amount;
+			const double amtSquared = amount * amount;
+			return (float)((2 * v1 - 2 * v2 + t2 + t1) * amtCubed +
 				(3 * v2 - 3 * v1 - 2 * t1 - t2) * amtSquared +
 				t1 * amount +
-				v1;
+				v1);
 		}
-		return (float)result;
 	}
-	float inline ModuloFloat(float A, float B)
+	inline float ModuloFloat(float A, float B)
 	{
-		i32 n = (i32)floorl(A / B);
+		i32 n = (i32)floor(A / B);
 		return A - (n * B);
 	}
-	float inline WrapAngle(float angle)
+	inline float WrapAngle(float angle)
 	{
 		if ((angle > -PI) && (angle <= PI))
 			return angle;
@@ -167,11 +164,11 @@ namespace Maths
 			return angle - PI * 2.0f;
 		return angle;
 	}
-	float inline LerpFloat(float current, float designated, float amt)
+	inline constexpr float LerpFloat(float current, float designated, float amt)
 	{
 		return current + (designated - current) * amt;
 	}
-	float inline LerpAngle(float current, float designated, float amt)
+	inline float LerpAngle(float current, float designated, float amt)
 	{
 		if (designated < current)
 		{
@@ -201,7 +198,7 @@ namespace Maths
 		}
 		else return current;
 	}
-	constexpr float Approach(float value, float toApproach, float amount)
+	inline constexpr float Approach(float value, float toApproach, float amount)
 	{
 		return value + (toApproach - value) * amount;
 	}
@@ -223,7 +220,7 @@ namespace Maths
 		curAngle += Clamp(targetAngle - curAngle, -maxChange, maxChange);
 		return WrapAngle(curAngle);
 	}
-	inline static Vec2 RotateAbout(Vec2 thisPoint, Vec2 pivot, float s, float c)
+	inline Vec2 RotateAbout(Vec2 thisPoint, Vec2 pivot, float s, float c)
 	{
 		if (thisPoint == pivot)
 		{
@@ -236,7 +233,7 @@ namespace Maths
 		thisPoint = Vec2(num + pivot.X, num2 + pivot.Y);
 		return thisPoint;
 	}
-	inline static Vec2 RotateAbout(Vec2 thisPoint, Vec2 pivot, float angle)
+	inline Vec2 RotateAbout(Vec2 thisPoint, Vec2 pivot, float angle)
 	{
 		if (thisPoint == pivot)
 		{
@@ -253,7 +250,7 @@ namespace Maths
 		return Vec2((0.0f - C.Y) * num, C.X * num);
 	}
 
-	inline u8 CharHexToByte(char charAt)
+	inline constexpr u8 CharHexToByte(char charAt)
 	{
 		if (charAt >= '0' && charAt <= '9')
 		{
@@ -272,11 +269,11 @@ namespace Maths
 		}
 		return 0;
 	}
-	inline u8 HexToByte(text hex)
+	inline constexpr u8 HexToByte(text hex)
 	{
 		return (u8)(CharHexToByte(hex[1]) + CharHexToByte(hex[0]) * 16);
 	}
-	inline u32 HexToDecimal(text hex, u32 length)
+	inline constexpr u32 HexToDecimal(text hex, u32 length)
 	{
 		u32 result = 0;
 		u32 inverse = 0;

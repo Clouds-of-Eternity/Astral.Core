@@ -6,8 +6,7 @@
             "defines": [
                 "WINDOWS",
                 "DEBUG",
-                "USE_INTRINSICS",
-                "USE_SSE"
+                "FORCE_NO_INTRINSICS"
             ],
             "includePath": [
                 "Astral.Core",

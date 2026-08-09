@@ -7,7 +7,7 @@ workspace "AstralCoreTests"
     }
     filter "options:clang"
         toolset "clang"
-        buildoptions { "-g", "-gcodeview", "-march=native", "-Wno-deprecated-declarations", "-Werror=return-type" }
+        buildoptions { "-g", "-gcodeview", "-march=native", "-Wno-nonportable-include-path", "-Wno-deprecated-declarations", "-Werror=return-type" }
         linkoptions { "-fuse-ld=lld", "-g" }
 
     filter "system:windows"
@@ -22,28 +22,6 @@ workspace "AstralCoreTests"
         defines { "MACOS", "POSIX" }
         system "macosx"
 
-    project "AstralBaseTest"
-        kind "ConsoleApp"
-        language "C"
-        cdialect "C11"
-        staticruntime "Off"
-        targetdir "bin/%{cfg.buildcfg}"
-        objdir "obj/%{cfg.buildcfg}"
-        includedirs {
-            "../Astral.Base"
-        }
-        files {
-            "**.c"
-        }
-
-        filter "configurations:Debug"
-            defines { "DEBUG" }
-            symbols "On"
-
-        filter "configurations:Release"
-            defines { "NDEBUG" }
-            optimize "On"
-
     project "AstralCoreTest"
         kind "ConsoleApp"
         language "C++"
@@ -57,6 +35,7 @@ workspace "AstralCoreTests"
         files {
             "**.cpp"
         }
+        defines "FORCE_NO_INTRINSICS"
 
         filter "configurations:Debug"
             defines { "DEBUG" }

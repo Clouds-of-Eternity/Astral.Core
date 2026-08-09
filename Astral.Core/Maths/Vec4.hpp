@@ -17,11 +17,12 @@ namespace Maths
 #endif
         };
 
-        #ifdef USE_SSE
-        #include "Maths/Vec4Impl_SSE.inc"
-        #else
+        // No vector SSE usage until I git gud with SIMD because it is slower than the default impl
+        // #ifdef USE_SSE
+        // #include "Maths/Vec4Impl_SSE.inc"
+        // #else
         #include "Maths/Vec4Impl_Default.inc"
-        #endif
+        //#endif
 
         inline float Length() const
         {

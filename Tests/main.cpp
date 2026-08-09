@@ -3,11 +3,14 @@
 
 #define ASTRALCORE_JSON_IMPL
 #include "Json.hpp"
-#include "CPPTests/PerfTests.hpp"
+#include "Maths/Util.hpp"
+
+#include "CPPTests/CollectionsTests.hpp"
+//#include "local/PerfTests.hpp"
 
 i32 main()
 {
-    stm_setup();
+    //stm_setup();
 
     #if DEBUG
     printf("Running in DEBUG mode...\n");
@@ -15,14 +18,10 @@ i32 main()
     printf("Running in RELEASE mode...\n");
     #endif
 
-    #ifdef USE_SSE
-    printf("Running with SSE intrinsics support.\n");
-    #else
-    printf("Running with SIMD disabled.\n");
-    #endif
-
+    RunCollectionsTests();
     //FindInString();
-    ParseJson5MB();
+    // ParseJson5MB();
+    // FindInString();
     
     return 0;
 }
