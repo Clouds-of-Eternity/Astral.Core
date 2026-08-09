@@ -67,7 +67,7 @@ inline bool Partitions2D_ClipBoxBox(Box input, Box clip, Box *outputs, u32 *numO
                 //11-
                 //11-
                 //right edge clipped
-                outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, inputBtmRight.X - inputTopLeft.X, input.height);
+                outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, clipTopLeft.X - inputTopLeft.X, input.height);
             }
             else if (btmRightClipped && btmLeftClipped)
             {
@@ -75,7 +75,7 @@ inline bool Partitions2D_ClipBoxBox(Box input, Box clip, Box *outputs, u32 *numO
                 //111
                 //---
                 //bottom edge clipped
-                outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, input.width, clipBtmRight.Y - inputTopLeft.X);
+                outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, input.width, clipTopLeft.Y - inputTopLeft.X);
             }
             else
             {
@@ -83,7 +83,7 @@ inline bool Partitions2D_ClipBoxBox(Box input, Box clip, Box *outputs, u32 *numO
                 //-11
                 //-11
                 //left edge clipped
-                outputs[0] = Box(clipTopLeft.X, inputTopLeft.Y, inputBtmRight.X - clipTopLeft.X, input.height);
+                outputs[0] = Box(clipBtmRight.X, inputTopLeft.Y, inputBtmRight.X - clipBtmRight.X, input.height);
             }
             return true;
         }
@@ -138,9 +138,12 @@ inline bool Partitions2D_ClipBoxBox(Box input, Box clip, Box *outputs, u32 *numO
             //     other.left > right ||
             //     other.right < left ||
             //     other.top > bottom ||
-            //     other.bottom < top);
-            //
-            // = other.left <= right && other.right >= left && other.top <= bottom && other.bottom >= top
+            //     other.bottom < top)
+            // =
+            //     other.X <= X + width &&
+            //     other.X + other.width >= X &&
+            //     other.Y <= Y + height &&
+            //     other.Y + other.height >= Y;
 
             const float left = inputTopLeft.X;
             const float top = inputTopLeft.Y;
@@ -153,25 +156,62 @@ inline bool Partitions2D_ClipBoxBox(Box input, Box clip, Box *outputs, u32 *numO
             const float clipBottom = clipBtmRight.Y;
 
             //box is clipped like a jigsaw
-            if (clipLeft <= right)
+            if (clipLeft <= right && clipRight >= left && clipTop <= bottom && clipBottom >= top)
             {
-                *numOutputs = 3;
-                // 1111
-                // 22--
-                // 22--
-                // 3333
-
-                outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, input.width, clipTopLeft.Y - inputTopLeft.Y);
-                outputs[1] = Box(clipBtmRight.X, clipTopLeft.Y, inputBtmRight.X - clipBtmRight.X, clip.height);
-                outputs[2] = Box(inputTopLeft.X, clipBtmRight.Y, input.width, inputBtmRight.Y - clipBtmRight.Y);
-            }
-            else if (clipRight >= left)
-            {
-                *numOutputs = 3;
-                // 1111
-                // --22
-                // --22
-                // 3333
+                if (clipRight > right)
+                {
+                    // 1111
+                    // 22--
+                    // 22--
+                    // 3333
+                    *numOutputs = 3;
+                    outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, input.width, clipTopLeft.Y - inputTopLeft.Y);
+                    outputs[1] = Box(inputTopLeft.X, clipTopLeft.Y, clipTopLeft.X - inputTopLeft.X, clip.height);
+                    outputs[2] = Box(inputTopLeft.Y, clipBtmRight.Y, input.width, inputBtmRight.Y - clipBtmRight.Y);
+                    return true;
+                }
+                else if (clipLeft < left)
+                {
+                    // 1111
+                    // --22
+                    // --22
+                    // 3333
+                    *numOutputs = 3;
+                    outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, input.width, clipTopLeft.Y - inputTopLeft.Y);
+                    outputs[1] = Box(clipBtmRight.X, clipTopLeft.Y, clip.height, inputBtmRight.X - clipBtmRight.X);
+                    outputs[2] = Box(inputTopLeft.Y, clipBtmRight.Y, input.width, inputBtmRight.Y - clipBtmRight.Y);
+                    return true;
+                }
+                else if (clipTop < top)
+                {
+                    // 1--3
+                    // 1--3
+                    // 1223
+                    // 1223
+                    *numOutputs = 3;
+                    outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, clipTopLeft.X - inputTopLeft.X, input.height);
+                    outputs[1] = Box(clipTopLeft.X, clipBtmRight.Y, clip.width, inputBtmRight.Y - clipBtmRight.Y);
+                    outputs[2] = Box(clipBtmRight.X, inputTopLeft.Y, inputBtmRight.X - clipBtmRight.X, input.height);
+                    return true;
+                }
+                else if (clipBottom > bottom)
+                {
+                    // 1223
+                    // 1223
+                    // 1--3
+                    // 1--3
+                    *numOutputs = 3;
+                    outputs[0] = Box(inputTopLeft.X, inputTopLeft.Y, clipTopLeft.X - inputTopLeft.X, input.height);
+                    outputs[1] = Box(clipTopLeft.X, inputTopLeft.Y, clip.width, clipTopLeft.Y - inputTopLeft.Y);
+                    outputs[2] = Box(clipBtmRight.X, inputTopLeft.Y, inputBtmRight.X - clipBtmRight.X, input.height);
+                    return true;
+                }
+                else
+                {
+                    // anomalous results
+                    *numOutputs = 0;
+                    return false;
+                }
             }
             //no intersection
             else
@@ -180,5 +220,7 @@ inline bool Partitions2D_ClipBoxBox(Box input, Box clip, Box *outputs, u32 *numO
                 return false;
             }
         }
+        *numOutputs = 0;
+        return false;
     }
 }

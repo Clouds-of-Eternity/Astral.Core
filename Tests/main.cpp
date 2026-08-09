@@ -24,6 +24,8 @@ i32 main()
     //FindInString();
     // ParseJson5MB();
     // FindInString();
+
+    printf("----\nTests complete\n");
     
     return 0;
 }
