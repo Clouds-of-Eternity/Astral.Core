@@ -4,6 +4,63 @@
 #include "Box.hpp"
 #include "Partitions2D.hpp"
 
+inline void PrintBoxes(const Box *boxes, u32 numBoxes, float resolution)
+{
+    if (numBoxes == 0)
+    {
+        printf("NIL\n");
+        return;
+    }
+    Maths::Vec2 min = Maths::Vec2(AC_FloatMax);
+    Maths::Vec2 max = Maths::Vec2(AC_FloatMin);
+
+    for (u32 i = 0; i < numBoxes; i++)
+    {
+        min = Maths::Vec2::Min(boxes[i].GetTopLeft(), min);
+        max = Maths::Vec2::Max(boxes[i].GetBottomRight(), max);
+    }
+
+    Maths::Point2 maxPoint = ((max - min) * resolution).ToPoint2();
+
+    for (u32 j = 0; j < maxPoint.Y; j++)
+    {
+        for (u32 i = 0; i < maxPoint.X; i++)
+        {
+            Maths::Vec2 pos = Maths::Vec2((i + 0.5f) / resolution, (j + 0.5f) / resolution) + min;
+            u32 number = 0;
+            for (u32 c = 0; c < numBoxes; c++)
+            {
+                if (boxes[c].Contains(pos))
+                {
+                    number = (c + 1);
+                }
+            }
+            if (number > 0)
+            {
+                char numberChar;
+                if (number < 10)
+                {
+                    numberChar = '0' + number;
+                }
+                else if (number - 10 < 26)
+                {
+                    numberChar = 'a' + (number - 10);
+                }
+                else if (number - 36 < 26)
+                {
+                    numberChar = 'A' + (number - 36);
+                }
+                else assert(false);
+                fputc(numberChar, stdout);
+            }
+            else
+            {
+                fputc('.', stdout);
+            }
+        }
+        fputc('\n', stdout);
+    }
+}
 inline bool TestBoxIntersects()
 {
     printf(" * Running TestBoxIntersects...\n");
@@ -63,6 +120,55 @@ inline bool TestBoxIntersects()
 
     return true;
 }
+inline bool TestBoxTouches()
+{
+    printf(" * Running TestBoxTouches...\n");
+
+    Box box = Box(0.0f, 0.0f, 5.0f, 5.0f);
+    Box checkAgainst[] = {
+        Box(0.0f, 0.0f, 5.0f, 5.0f),
+        Box(5.0f, 0.0f, 5.0f, 5.0f),
+        Box(5.001f, 0.0f, 5.0f, 5.0f),
+        Box(5.01f, 0.0f, 5.0f, 5.0f),
+        Box(4.9f, 0.0f, 5.0f, 5.0f),
+
+        Box(-2.0f, 2.0f, 2.0f, 2.0f),
+        Box(-1.0f, 5.0f, 1.0f, 1.0f),
+        Box(-1.0f, -2.0f, 2.0f, 2.0f),
+
+        Box(0.0f, 4.0f, 2.0f, 3.0f),
+        Box(0.0f, 5.0f, 2.0f, 3.0f)
+    };
+    const i8 intendedResults[] = {
+        -1,
+        2,
+        2,
+        -1,
+        -1,
+
+        0,
+        0, //touching on corner = either (0, 1, 2 or 3) in priority
+        1,
+
+        -1, //left corners equal but ultimately overlaps
+        3 //left corners equal, top/bottom touch (should not be a special case)
+    };
+
+    u32 boxesCount = sizeof(checkAgainst) / sizeof(Box);
+    for (u32 i = 0; i < boxesCount; i++)
+    {
+        i8 touchingEdge = box.Touches(checkAgainst[i], 0.001f);
+        //printf("%u: %i\n", i, touchingEdge);
+        ACASSERT(touchingEdge == intendedResults[i])
+        // if (box.Touches(checkAgainst[i], 0.001f))
+        // {
+        //     printf(" *     Box touches with other box %u\n", i);
+        // }
+        // else printf(" *     Box DOES NOT with other box %u\n", i);
+    }
+
+    return true;
+}
 
 struct TestClipBoxExpectedResult
 {
@@ -101,6 +207,9 @@ inline bool TestClipBoxes()
         {
             ACASSERT(outputs[c] == expectedResults[i].results[c]);
         }
+
+        //PrintBoxes(outputs, numOutputs, 2.0f);
+        //printf("\n");
         // if (Partitions2D_ClipBoxBox(box, clips[i], outputs, &numOutputs))
         // {
         //     printf(" *     Clipped %u, results: %u\n", i, numOutputs);
@@ -117,12 +226,76 @@ inline bool TestClipBoxes()
 
     return true;
 }
+inline bool TestMergeBoxes()
+{
+    printf(" * Running TestMergeBoxes...\n");
+    collections::List<Box> outputBoxes = collections::List<Box>(GetCAllocator(), 64);
+    collections::List<Box> inputBoxes = collections::List<Box>(GetCAllocator(), 64);
+
+    //fully filled in, should merge into single square
+    {
+        for (u32 x = 0; x < 8; x++)
+        {
+            for (u32 y = 0; y < 8; y++)
+            {
+                inputBoxes.Add(Box(x, y, 1.0f, 1.0f));
+            }
+        }
+
+        Partitions2D_MergeBoxes(inputBoxes.ptr, inputBoxes.count, outputBoxes, 0.001f, true, true);
+        ACASSERT(outputBoxes.count == 1);
+
+        PrintBoxes(outputBoxes.ptr, outputBoxes.count, 2.0f);
+        printf("\n");
+
+        inputBoxes.Clear();
+        outputBoxes.Clear();
+    }
+    {
+        for (u32 x = 0; x < 4; x++)
+        {
+            for (u32 y = 0; y < 4; y++)
+            {
+                inputBoxes.Add(Box(x, y, 1.0f, 1.0f));
+            }
+        }
+        inputBoxes.Add(Box(7.0f, -1.0f, 1.0f, 5.0f));
+        inputBoxes.Add(Box(5.5f, -1.0f, 0.6f, 5.0f));
+        
+        for (u32 x = 0; x < 8; x++)
+        {
+            if (x % 2 == 0)
+            {
+                inputBoxes.Add(Box(x, 4.0f, 1.0f, 2.0f));
+                inputBoxes.Add(Box(x, 6.0f, 1.0f, 2.0f));
+            }
+            else
+            {
+                inputBoxes.Add(Box(x, 4.0f, 1.0f, 4.0f));
+            }
+        }
+
+        Partitions2D_MergeBoxes(inputBoxes.ptr, inputBoxes.count, outputBoxes, 0.001f, true, true);
+        ACASSERT(outputBoxes.count == 4);
+
+        PrintBoxes(outputBoxes.ptr, outputBoxes.count, 2.0f);
+        printf("\n");
+
+        inputBoxes.Clear();
+        outputBoxes.Clear();
+    }
+
+    outputBoxes.deinit();
+    return true;
+}
 
 inline void RunGeometryTests()
 {
     ACTestFunc tests[] = {
         TestBoxIntersects,
-        TestClipBoxes
+        TestBoxTouches,
+        TestClipBoxes,
+        TestMergeBoxes
     };
 
     AC_RUN_TESTS(RunGeometryTests, tests);

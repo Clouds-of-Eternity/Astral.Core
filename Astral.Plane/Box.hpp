@@ -195,7 +195,7 @@ struct Box
     }
 
     // INTERSECTIONS
-    inline bool Intersects(Box other) const
+    inline bool Intersects(Box other, float allowedApproximation = 0.0f) const
     {
         // return !(
         //     other.X > X + width ||
@@ -204,10 +204,46 @@ struct Box
         //     other.Y + other.height < Y);
 
         return 
-            other.X <= X + width &&
-            other.X + other.width >= X &&
-            other.Y <= Y + height &&
-            other.Y + other.height >= Y;
+            other.X <= X + width + allowedApproximation &&
+            other.X + other.width >= X - allowedApproximation &&
+            other.Y <= Y + height + allowedApproximation &&
+            other.Y + other.height >= Y - allowedApproximation;
+    }
+    /// @brief Tests if this box and the other box have edges that touch each other but ultimately
+    /// do not overlap.
+    inline i8 Touches(Box other, float allowedApproximation = 0.0f) const
+    {
+        const float otherLeft = other.X;
+        const float otherTop = other.Y;
+        const float otherRight = other.GetRight();
+        const float otherBtm = other.GetBottom();
+
+        const float left = X;
+        const float top = Y;
+        const float right = GetRight();
+        const float btm = GetBottom();
+
+        //left -> other right
+        if (fabsf(left - otherRight) <= allowedApproximation)
+        {
+            return 0;
+        }
+        //top -> other bottom
+        else if (fabsf(otherBtm - top) <= allowedApproximation)
+        {
+            return 1;
+        }
+        //right -> other left
+        else if (fabsf(otherLeft - right) <= allowedApproximation)
+        {
+            return 2;
+        }
+        //bottom -> other top
+        else if (fabsf(otherTop - btm) <= allowedApproximation)
+        {
+            return 3;
+        }
+        else return -1;
     }
     inline Box IntersectionWith(Box other) const
     {
