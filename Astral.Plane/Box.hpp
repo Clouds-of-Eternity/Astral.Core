@@ -450,7 +450,7 @@ struct Rect32
     }
     inline bool Contains(Maths::Point2 point) const
     {
-        return X <= point.X && point.X <= X + width && Y <= point.Y && point.Y <= Y + height;
+        return X <= point.X && point.X < X + width && Y <= point.Y && point.Y < Y + height;
     }
     inline bool Contains(Rect32 other) const
     {
