@@ -99,7 +99,7 @@ namespace Maths
         {
             return X <= other.X && Y <= other.Y;
         }
-        inline Vec2 operator-()
+        inline Vec2 operator-() const
         {
             return Vec2(-X, -Y);
         }
