@@ -125,6 +125,18 @@ inline u64 TextToU64(const char* buffer, usize length)
     }
     return result;
 }
+inline bool IsLineBreak(u32 codepoint)
+{
+    return codepoint == '\n' || codepoint == '\r' || codepoint == '\v' || codepoint == '\f' || codepoint == 8232 || codepoint == 8233;
+}
+inline bool IsWhitespace(u32 codepoint)
+{
+    return codepoint == '\t' || codepoint == ' ' || codepoint == 160 || (codepoint >= 8192 && codepoint <= 8202) || codepoint == 8239 || codepoint == 8287 || codepoint == 12288;
+}
+inline bool IsWhitespaceOrLinebreak(u32 codepoint)
+{
+    return IsWhitespace(codepoint) || IsLineBreak(codepoint);
+}
 
 struct string
 {
@@ -611,16 +623,78 @@ struct CharSlice
     }
     inline char operator[](usize index) const
     {
+        assert(index < length);
         return buffer[index];
     }
-    inline CharSlice Slice(u32 startIndex, u32 length) const
+    inline CharSlice Slice(u32 startIndex) const
     {
-        return CharSlice(buffer + startIndex, length);
+        if (startIndex >= length)
+        {
+            return CharSlice();
+        }
+        return CharSlice(buffer + startIndex, this->length - startIndex);
     }
-    inline string Slice(IAllocator allocator, u32 startIndex, u32 length) const
+    inline CharSlice Slice(u32 startIndex, u32 sliceLength) const
     {
-        return string(allocator, buffer + startIndex, length);
+        if (startIndex + sliceLength > this->length)
+        {
+            return CharSlice();
+        }
+        return CharSlice(buffer + startIndex, sliceLength);
     }
+    
+    inline string Slice(IAllocator allocator, u32 startIndex) const
+    {
+        if (startIndex >= length)
+        {
+            return string();
+        }
+        return string(allocator, buffer + startIndex, this->length - startIndex);
+    }
+    inline string Slice(IAllocator allocator, u32 startIndex, u32 sliceLength) const
+    {
+        if (startIndex + sliceLength > this->length)
+        {
+            return string();
+        }
+        return string(allocator, buffer + startIndex, sliceLength);
+    }
+
+    inline CharSlice TrimStartWhitespace() const
+    {
+        CharSlice result = *this;
+
+        while (result.length > 0)
+        {
+            if (IsWhitespaceOrLinebreak(result.buffer[0]))
+            {
+                result.buffer++;
+                result.length--;
+            }
+            else break;
+        }
+        return result;
+    }
+    inline CharSlice TrimEndWhitespace() const
+    {
+        CharSlice result = *this;
+
+        while (result.length > 0)
+        {
+            if (IsWhitespaceOrLinebreak(result.buffer[result.length - 1]))
+            {
+                result.length--;
+            }
+            else break;
+        }
+        return result;
+    }
+    inline CharSlice TrimStartAndEndWhitespaces() const
+    {
+        CharSlice result = TrimStartWhitespace();
+        return result.TrimEndWhitespace();
+    }
+
     inline void CopyTo(char *output, bool addNullTerminator) const
     {
         memcpy(output, buffer, length);
@@ -1023,4 +1097,37 @@ inline collections::Array<string> SplitString(IAllocator allocator, const char* 
     }
 
     return results.ToOwnedArrayWith(allocator);
+}
+
+inline bool TextIsUint(CharSlice str, bool allowLeadingZeroes)
+{
+    bool foundOtherThanZero = false;
+    for (u32 i = 0; i < str.length; i++)
+    {
+        if (str.buffer[i] == '0')
+        {
+            if (!foundOtherThanZero && !allowLeadingZeroes)
+            {
+                return false;
+            }
+        }
+        else if (str.buffer[i] < '1' || str.buffer[i] > '9')
+        {
+            return false;
+        }
+    }
+    return true;
+}
+inline bool TextIsInt(CharSlice str)
+{
+    if (str.length == 0)
+    {
+        return false;
+    }
+    if (str.buffer[0] == '-')
+    {
+        str.buffer++;
+        str.length--;
+    }
+    return TextIsUint(str, false);
 }
