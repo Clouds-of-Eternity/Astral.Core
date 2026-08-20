@@ -427,40 +427,8 @@ struct string
         return Clone(allocator).buffer;
 #endif
     }
-    inline bool StartsWith(const char* other) const
-    {
-        if (this->buffer == NULL || other == NULL)
-        {
-            if (this->buffer == other)
-            {
-                return true;
-            }
-            return false;
-        }
-        usize len = strlen(other);
-        if (len > length)
-        {
-            return false;
-        }
-        return memcmp(this->buffer, other, len) == 0;
-    }
-    inline bool EndsWith(const char* other) const
-    {
-        if (this->buffer == NULL || other == NULL)
-        {
-            if (this->buffer == other)
-            {
-                return true;
-            }
-            return false;
-        }
-        usize len = strlen(other) + 1;
-        if (this->length >= len)
-        {
-            return strcmp(this->buffer + this->length - len, other) == 0;
-        }
-        return false;
-    }
+    inline bool StartsWith(CharSlice other) const;
+    inline bool EndsWith(CharSlice other) const;
 
     inline bool operator==(text other) const
     {
@@ -766,6 +734,41 @@ inline bool string::operator==(const CharSlice other) const
 inline bool string::operator!=(const CharSlice other) const
 {
     return other != *this;
+}
+inline bool string::StartsWith(CharSlice other) const
+{
+    if (this->buffer == NULL || other.buffer == NULL)
+    {
+        if (this->buffer == other.buffer)
+        {
+            return true;
+        }
+        return false;
+    }
+    usize otherLength = other.length;
+    //>= since charslices do not count null terminators, but strings do.
+    if (otherLength >= length)
+    {
+        return false;
+    }
+    return memcmp(this->buffer, other.buffer, otherLength) == 0;
+}
+inline bool string::EndsWith(CharSlice other) const
+{
+    if (this->buffer == NULL || other.buffer == NULL)
+    {
+        if (this->buffer == other.buffer)
+        {
+            return true;
+        }
+        return false;
+    }
+    usize otherLength = other.length;
+    if (this->length > otherLength)
+    {
+        return memcmp(this->buffer + this->length - 1 - otherLength, other.buffer, other.length) == 0;
+    }
+    return false;
 }
 
 inline bool CharSliceEql(CharSlice A, CharSlice B)
