@@ -653,37 +653,37 @@ struct CharSlice
 
         return result;
     }
-    inline bool StartsWith(text other) const
+    inline bool StartsWith(CharSlice other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
-            if (this->buffer == other)
+            if (this->buffer == other.buffer)
             {
                 return true;
             }
             return false;
         }
-        usize len = strlen(other);
-        if (len > length)
+        const usize otherLength = other.length;
+        if (otherLength > length)
         {
             return false;
         }
-        return memcmp(this->buffer, other, len) == 0;
+        return memcmp(this->buffer, other.buffer, otherLength) == 0;
     }
-    inline bool EndsWith(text other) const
+    inline bool EndsWith(CharSlice other) const
     {
         if (this->buffer == NULL || other == NULL)
         {
-            if (this->buffer == other)
+            if (this->buffer == other.buffer)
             {
                 return true;
             }
             return false;
         }
-        usize len = strlen(other);
-        if (this->length >= len)
+        const usize otherLength = other.length;
+        if (length >= otherLength)
         {
-            return memcmp(this->buffer + this->length - len, other, len) == 0;
+            return memcmp(this->buffer + this->length - otherLength, other.buffer, otherLength) == 0;
         }
         return false;
     }
