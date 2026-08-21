@@ -704,29 +704,6 @@ struct CharSlice
         }
     }
 
-    inline CharSlice WithoutTrailingWhitespace() const
-    {
-        CharSlice result;
-        result.buffer = buffer;
-        result.length = length;
-
-        i32 index = 0;
-        while (result.length > 0 && index < length && (buffer[index] == ' ' || buffer[index] == '\t'))
-        {
-            index++;
-            result.buffer += 1;
-            result.length -= 1;
-        }
-
-        index = length - 1;
-        while (result.length > 0 && index >= 0 && (buffer[index] == ' ' || buffer[index] == '\t'))
-        {
-            index--;
-            result.length -= 1;
-        }
-
-        return result;
-    }
     inline bool StartsWith(CharSlice other) const
     {
         if (this->buffer == NULL || other == NULL)
