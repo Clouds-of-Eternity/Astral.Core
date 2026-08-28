@@ -1,4 +1,5 @@
 #pragma once
+#include "Scope.hpp"
 #include "Box.hpp"
 #include "BinarySpacePartition.hpp"
 
