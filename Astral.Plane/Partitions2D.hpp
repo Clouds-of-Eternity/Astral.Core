@@ -457,6 +457,7 @@ inline void Partitions2D_MergeBoxes(const Box *inputs, u32 inputsCount, collecti
     {
         if (mergeHorizontal)
         {
+            memset(mergedIntoStates, 0, intermediateOutputs.count * sizeof(u8));
             Partitions2D_MergeBoxes_Vertical(intermediateOutputs.ptr, intermediateOutputs.count, mergedIntoStates, allowedApproximation, outputs);
         }
         else
@@ -481,6 +482,7 @@ inline void Partitions2D_MergeBoxes(const Box *inputs, u32 inputsCount, collecti
             intermediateOutputs.Add(outputs[i]);
         }
         outputs.count = prevOutputs;
+        memset(mergedIntoStates, 0, intermediateOutputs.count * sizeof(u8));
 
         Partitions2D_MergeBoxes_Horizontal(intermediateOutputs.ptr, intermediateOutputs.count, mergedIntoStates, allowedApproximation, outputs);
 
