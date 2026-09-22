@@ -27,4 +27,8 @@ struct option
     {
         return present ? value : alternate;
     }
+    inline operator bool() const
+    {
+        return present;
+    }
 };
