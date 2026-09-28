@@ -3,7 +3,7 @@
 
 #if WINDOWS
 #include "Shlwapi.h"
-#elif MACOS
+#else
 #include "fnmatch.h"
 #endif
 

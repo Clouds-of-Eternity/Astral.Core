@@ -20,11 +20,17 @@
 #define stat _stat
 #ifndef S_ISDIR
 #define S_ISDIR(m) (((m) & _S_IFDIR) != 0)
+
+typedef struct _stat FileStats;
+#define GET_FILE_STATS stat
+
 #endif
 #endif
 #if POSIX
 #include <unistd.h>
 #include <dirent.h>
+typedef struct stat FileStats;
+#define GET_FILE_STATS stat
 #endif
 
 namespace io
@@ -366,21 +372,22 @@ namespace io
         {
             while ((dir = readdir(srcdir)) != NULL) 
             {
-                struct stat st;
+                FileStats fileStats = {};
 
                 if(strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0)
                 {
                     continue;
                 }
-                if (fstatat(dirfd(srcdir), dir->d_name, &st, 0) < 0)
+                if (fstatat(dirfd(srcdir), dir->d_name, &fileStats, 0) < 0)
                 {
                     continue;
                 }
 
-                if (S_ISDIR(st.st_mode))
+                if (S_ISDIR(fileStats.st_mode))
                 {
                     resultCount++;
-                    output->Add(string::Format(allocator, "%s/%s", dirPath, dir->d_name));
+                    string outputDir = string::Format(allocator, "%s/%s", dirPath, dir->d_name);
+                    output->Add(outputDir);
                 }
             }
             closedir(srcdir);

@@ -506,6 +506,9 @@ struct string
         i32 requiredBytes = vsnprintf(NULL, 0, input, args);
         requiredBytes += 1;
 
+        va_end(args);
+        va_start(args, input);
+        
         char *buffer = (char *)allocator.Allocate(requiredBytes);
         vsnprintf(buffer, requiredBytes, input, args);
         buffer[requiredBytes - 1] = '\0';

@@ -5,6 +5,9 @@
 #ifndef NULL
 #define NULL 0
 #endif
+#ifndef _Nullable
+#define _Nullable
+#endif
 
 #define def_delegate(name, returns, ...) typedef returns (*name)(__VA_ARGS__)
 #define ExportOtherFile(filePath)
