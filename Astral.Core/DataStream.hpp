@@ -96,6 +96,10 @@ struct IDataStream
             i32 requiredBytes = vsnprintf(NULL, 0, str, args);
             requiredBytes += 1;
 
+            va_end(args);
+
+            va_start(args, str);
+
             char *buffer = (char *)DEFAULT_ALLOC(requiredBytes);
             vsnprintf(buffer, requiredBytes, str, args);
             buffer[requiredBytes - 1] = '\0';
