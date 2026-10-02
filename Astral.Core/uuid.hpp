@@ -5,6 +5,7 @@
 #include "string.hpp"
 
 #define UUID_STR_LEN 37
+#define UUID_EMPTY_STR "00000000-0000-0000-0000-000000000000"
 
 def_delegate(RandomNextU64, u64);
 
