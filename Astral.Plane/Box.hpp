@@ -545,6 +545,40 @@ struct Rect32
             other.Y > Y + height ||
             other.Y + other.height < Y);
     }
+    inline i8 Touches(Rect32 other) const
+    {
+        const float otherLeft = other.X;
+        const float otherTop = other.Y;
+        const float otherRight = other.GetRight();
+        const float otherBtm = other.GetBottom();
+
+        const float left = X;
+        const float top = Y;
+        const float right = GetRight();
+        const float btm = GetBottom();
+
+        //left -> other right
+        if (left - otherRight == 0)
+        {
+            return 0;
+        }
+        //top -> other bottom
+        else if (otherBtm - top == 0)
+        {
+            return 1;
+        }
+        //right -> other left
+        else if (otherLeft - right == 0)
+        {
+            return 2;
+        }
+        //bottom -> other top
+        else if (otherTop - btm == 0)
+        {
+            return 3;
+        }
+        else return -1;
+    }
     inline Rect32 IntersectionWith(Rect32 other) const
     {
         Rect32 result = *this;

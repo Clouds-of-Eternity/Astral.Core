@@ -2,6 +2,7 @@
 #include "Scope.hpp"
 #include "Box.hpp"
 #include "BinarySpacePartition.hpp"
+#include "BoolGrid2D.hpp"
 
 /// @brief cuts a hole into the box 'input' with the given clipping area 'clip.' This results in at
 /// most, 4 outputted boxes if the clip is contained by the input.
@@ -400,7 +401,7 @@ inline void Partitions2D_MergeBoxes_Vertical(const Box *scanFrom, u32 scanCount,
                 i8 touchingEdge = input.Touches(resultArea, 0.001f);
                 if (touchingEdge == 1)
                 {
-                    if (fabsf(input.GetTop() - resultArea.GetTop()) <= allowedApproximation && fabsf(input.GetBottom() - resultArea.GetBottom()) <= allowedApproximation)
+                    if (fabsf(input.GetLeft() - resultArea.GetLeft()) <= allowedApproximation && fabsf(input.GetRight() - resultArea.GetRight()) <= allowedApproximation)
                     {
                         *otherMergedInto = 1;
                         *thisMergedInto = 1;
