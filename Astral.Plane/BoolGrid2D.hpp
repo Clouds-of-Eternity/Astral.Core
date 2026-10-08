@@ -142,7 +142,7 @@ struct DynamicBoolGrid2D
     }
     inline bool Check(i64 X, i64 Y, BoolGridChunk2D **_Nullable cacheLastAccessedChunk) const
     {
-        const Maths::Point2 chunkPos = Maths::Point2((i32)(X / BOOL_GRID_CHUNK_SIZE), (i32)(Y / BOOL_GRID_CHUNK_SIZE));
+        const Maths::Point2 chunkPos = Maths::Point2((i32)floorf(X / (float)BOOL_GRID_CHUNK_SIZE), (i32)floorf(Y / (float)BOOL_GRID_CHUNK_SIZE));
 
         BoolGridChunk2D *chunk = NULL;
         if (cacheLastAccessedChunk != NULL && *cacheLastAccessedChunk != NULL && (*cacheLastAccessedChunk)->position == chunkPos)
@@ -161,7 +161,7 @@ struct DynamicBoolGrid2D
     }
     inline bool Set(i32 X, i32 Y, bool value, BoolGridChunk2D **_Nullable cacheLastAccessedChunk)
     {
-        const Maths::Point2 chunkPos = Maths::Point2(X / BOOL_GRID_CHUNK_SIZE, Y / BOOL_GRID_CHUNK_SIZE);
+        const Maths::Point2 chunkPos = Maths::Point2(floorf(X / (float)BOOL_GRID_CHUNK_SIZE), floorf(Y / (float)BOOL_GRID_CHUNK_SIZE));
 
         BoolGridChunk2D *chunk = NULL;
         if (cacheLastAccessedChunk != NULL && *cacheLastAccessedChunk != NULL && (*cacheLastAccessedChunk)->position == chunkPos)
