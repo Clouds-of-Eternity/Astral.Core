@@ -592,27 +592,11 @@ struct CharSlice
         buffer = stringLiteral;
         length = literalLength;
     }
-    inline bool operator==(text str) const
-    {
-        if (str == NULL)
-        {
-            return buffer == NULL;
-        }
-        return memcmp(buffer, str, length) == 0;
-    }
-    inline bool operator!=(text str) const
-    {
-        if (str == buffer)
-        {
-            return false;
-        }
-        return str == NULL || buffer == NULL || memcmp(buffer, str, length) != 0;
-    }
     inline bool operator==(const CharSlice str) const
     {
-        if (str.buffer == NULL)
+        if (str.buffer == NULL || buffer == NULL)
         {
-            return buffer == NULL;
+            return buffer == str.buffer;
         }
         if (str.length != length)
         {
