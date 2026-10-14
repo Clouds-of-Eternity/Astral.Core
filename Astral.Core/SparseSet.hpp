@@ -1,6 +1,7 @@
 #pragma once
 #include "DenseSet.hpp"
 #include "List.hpp"
+#include "SegmentedList.hpp"
 
 namespace collections
 {
@@ -10,21 +11,28 @@ namespace collections
         IAllocator allocator;
 
         collections::DenseSet<i64> IDtoActualIndex;
-        collections::List<T> storage;
+        collections::SegmentedList<T> storage;
         collections::List<i64> emptySpaces;
 
         inline SparseSet()
         {
             allocator = {};
             IDtoActualIndex = collections::DenseSet<i64>();
-            storage = collections::List<T>();
+            storage = collections::SegmentedList<T>();
             emptySpaces = collections::List<i64>();
         }
         inline SparseSet(IAllocator alloc)
         {
             allocator = alloc;
             IDtoActualIndex = collections::DenseSet<i64>(alloc, -1);
-            storage = collections::List<T>(alloc);
+            storage = collections::SegmentedList<T>(alloc);
+            emptySpaces = collections::List<i64>(alloc);
+        }
+        inline SparseSet(IAllocator alloc, u32 pageSize)
+        {
+            allocator = alloc;
+            IDtoActualIndex = collections::DenseSet<i64>(alloc, -1);
+            storage = collections::SegmentedList<T>(alloc, pageSize);
             emptySpaces = collections::List<i64>(alloc);
         }
         inline void deinit()
@@ -47,7 +55,7 @@ namespace collections
                 IDtoActualIndex.ptr[i] = -1;
             }
         }
-        inline T *Get(usize ID)
+        inline T *Get(usize ID) const
         {
             i64 index = IDtoActualIndex.GetCopyOr(ID, -1);
             if (index == -1)
@@ -56,7 +64,7 @@ namespace collections
             }
             return storage.Get(index);
         }
-        inline T GetCopyOr(usize ID, T valueOnNotFound)
+        inline T GetCopyOr(usize ID, T valueOnNotFound) const
         {
             i64 index = IDtoActualIndex.GetCopyOr(ID, -1);
             if (index == -1)

@@ -15,7 +15,7 @@ namespace collections
 
         IAllocator allocator;
         T **pages;
-        usize pageCapacity;
+        usize pageSize;
         usize pagesCount;
 
         usize count;
@@ -24,18 +24,27 @@ namespace collections
         {
             allocator = IAllocator{};
             pages = NULL;
-            capacity = 0;
-            count = 0;
-        }
-        inline SegmentedList(IAllocator myAllocator, usize pageCapacity)
-        {
-            allocator = myAllocator;
-            pages = NULL;
-            this->pageCapacity = pageCapacity;
+            pageSize = 0;
             pagesCount = 0;
             count = 0;
         }
-        void deinit()
+        inline SegmentedList(IAllocator myAllocator)
+        {
+            allocator = myAllocator;
+            pages = NULL;
+            this->pageSize = 32;
+            pagesCount = 0;
+            count = 0;
+        }
+        inline SegmentedList(IAllocator myAllocator, usize pageSize)
+        {
+            allocator = myAllocator;
+            pages = NULL;
+            this->pageSize = pageSize;
+            pagesCount = 0;
+            count = 0;
+        }
+        inline void deinit()
         {
             if (pages != NULL && this->allocator.allocFunction != NULL)
             {
@@ -45,17 +54,19 @@ namespace collections
                 }
                 this->allocator.Free(pages);
             }
+            pages = NULL;
             count = 0;
-            pageCapacity = 0;
+            pageSize = 0;
             pagesCount = 0;
+            allocator = {};
         }
 
-        usize EnsureArrayCapacity(usize minCapacity)
+        inline usize EnsureArrayCapacity(usize minCapacity)
         {
-            const usize totalCapacity = pageCapacity * pagesCount;
+            const usize totalCapacity = pageSize * pagesCount;
             if (totalCapacity < minCapacity)
             {
-                usize newPageCount = (minCapacity / pageCapacity) + 1;
+                usize newPageCount = (minCapacity / pageSize) + 1;
                 T **newPagesPtr = (T **)allocator.Allocate(sizeof(T *) * newPageCount);
 
                 if (pages != NULL)
@@ -68,50 +79,53 @@ namespace collections
                 }
                 for (usize i = pagesCount; i < newPageCount; i++)
                 {
-                    newPagesPtr[i] = (T *)allocator.Allocate(sizeof(T) * pageCapacity);
+                    newPagesPtr[i] = (T *)allocator.Allocate(sizeof(T) * pageSize);
                 }
                 pages = newPagesPtr;
                 pagesCount = newPageCount;
             }
-            return count / pageCapacity;
+            return count / pageSize;
         }
-        T *Add(T item)
+        inline T *Add(T item)
         {
             const usize toPage = EnsureArrayCapacity(count + 1);
-            const usize inPageIndex = count % pageCapacity;
+            const usize inPageIndex = count % pageSize;
             pages[toPage][inPageIndex] = item;
             count += 1;
 
             return &pages[toPage][inPageIndex];
         }
-        void Clear()
+        inline void Clear()
         {
             count = 0;
         }
-        T *Get(usize index) const
+        inline T *Get(usize index) const
         {
-            usize atPage = index / pageCapacity;
-            return &pages[atPage][index % pageCapacity];
+            assert(index < count);
+            usize atPage = index / pageSize;
+            return &pages[atPage][index % pageSize];
         }
         inline T& operator[](usize index) const
         {
-            return pages[atPage][index % pageCapacity];
+            assert(index < count);
+            usize atPage = index / pageSize;
+            return pages[atPage][index % pageSize];
         }
-        void RemoveAt_Swap(usize index)
+        inline void RemoveAt_Swap(usize index)
         {
-            assert(index >= 0 && index < count);
+            assert(index < count);
             if (index < count - 1)
             {
-                const usize indexPage = index / pageCapacity;
+                const usize indexPage = index / pageSize;
                 const usize lastPage = pagesCount - 1;
 
-                pages[indexPage][index % pageCapacity] = pages[lastPage][(count - 1) % pageCapacity];
+                pages[indexPage][index % pageSize] = pages[lastPage][(count - 1) % pageSize];
             }
             count -= 1;
         }
-        void RemoveAt_Pullback(usize index)
+        inline void RemoveAt_Pullback(usize index)
         {
-            assert(index >= 0 && index < count);
+            assert(index < count);
 
             if (index < count - 1)
             {
@@ -119,10 +133,10 @@ namespace collections
 
                 for (usize i = index + 1; i < count - 1; i++)
                 {
-                    const usize atPage = i / pageCapacity;
-                    const usize nextElemPage = (i + 1) / pageCapacity;
+                    const usize atPage = i / pageSize;
+                    const usize nextElemPage = (i + 1) / pageSize;
 
-                    pages[atPage][i % pageCapacity] = pages[nextElemPage][(i + 1) % pageCapacity];
+                    pages[atPage][i % pageSize] = pages[nextElemPage][(i + 1) % pageSize];
                 }
             }
             count -= 1;

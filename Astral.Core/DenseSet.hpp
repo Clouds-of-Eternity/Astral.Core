@@ -92,7 +92,7 @@ namespace collections
             ptr[index] = value;
             return &ptr[index];
         }
-        inline T *Get(usize index)
+        inline T *Get(usize index) const
         {
             if (index >= capacity)
             {
