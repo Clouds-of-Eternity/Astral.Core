@@ -1,7 +1,92 @@
 #pragma once
 #include "List.hpp"
 #include "Span.hpp"
-#include "Maths/Vec4.hpp"
+#include "Maths/Quaternion.hpp"
+#include "Maths/Util.hpp"
+
+struct LineTriangulationVertexArray
+{
+    void * ptr;
+
+    usize length;
+    usize structSize;
+
+    u16 positionVectorFieldOffset;
+    u16 positionVectorSize;
+
+    u16 uvFieldOffset;
+    u16 uvSize;
+
+    u16 directionFieldOffset;
+    u16 directionSize;
+
+    inline void SetPosition(u32 index, Maths::Vec3 position)
+    {
+        if (index >= length || positionVectorSize == 0)
+        {
+            return;
+        }
+        void *ptrAtIndex = (u8*)ptr + index * structSize + positionVectorFieldOffset;
+        if (positionVectorSize == 8)
+        {
+            *(Maths::Vec2 *)ptrAtIndex = position.ToVector2();
+        }
+        else if (positionVectorSize >= 12)
+        {
+            *(Maths::Vec3 *)ptrAtIndex = position;
+        }
+    }
+    inline void SetUV(u32 index, Maths::Vec2 UV)
+    {
+        if (index >= length || uvSize == 0)
+        {
+            return;
+        }
+        void *ptrAtIndex = (u8*)ptr + index * structSize + uvFieldOffset;
+        if (uvSize == 8)
+        {
+            *(Maths::Vec2 *)ptrAtIndex = UV;
+        }
+        else if (uvSize == 4)
+        {
+            //store as 2 u16s
+            u16 x = UV.X * AC_U16Max;
+            u16 y = UV.Y * AC_U16Max;
+            *(u32 *)ptrAtIndex = (x << 16) | y;
+        }
+    }
+    inline void SetDirection(u32 index, Maths::Quaternion direction)
+    {
+        if (index >= length || directionSize == 0)
+        {
+            return;
+        }
+        void *ptrAtIndex = (u8*)ptr + index * structSize + directionFieldOffset;
+
+        if (directionSize == 16)
+        {
+            *(Maths::Quaternion *)ptrAtIndex = direction;
+        }
+        //store as 4 bytes
+        else if (directionSize == 4)
+        {
+            i8 bytesX = (i8)(direction.X * AC_I8Max);
+            i8 bytesY = (i8)(direction.Y * AC_I8Max);
+            i8 bytesZ = (i8)(direction.Z * AC_I8Max);
+            i8 bytesW = (i8)(direction.W * AC_I8Max);
+
+            *(u32 *)ptrAtIndex = (bytesX << 24) | (bytesY << 16) | (bytesZ << 8) | (bytesW);
+        }
+    }
+    // inline void *GetAt(u32 index) const
+    // {
+    //     if (index >= length)
+    //     {
+    //         return NULL;
+    //     }
+    //     return (u8 *)ptr + structSize * index;
+    // }
+};
 
 struct LineTriangulationInput
 {
@@ -15,18 +100,28 @@ struct LineTriangulationInput
     bool segmented;
     /// @brief The number of vertices per column. Must be at least 2.
     u8 circumferenceVertices;
+
+    inline LineTriangulationInput(IAllocator allocator)
+    {
+        points = collections::List<Maths::Vec3>(allocator);
+        maxPointsIsListCapacity = false;
+        segmented = false;
+        circumferenceVertices = 2;
+    }
+    inline LineTriangulationInput(IAllocator allocator, u32 circumferenceVertices, bool segmented, bool maxPointsIsListCapacity)
+    {
+        points = collections::List<Maths::Vec3>(allocator);
+        this->maxPointsIsListCapacity = maxPointsIsListCapacity;
+        this->segmented = segmented;
+        this->circumferenceVertices = circumferenceVertices;
+    }
+    inline void deinit()
+    {
+        points.deinit();
+    }
 };
 
-// LineRenderer *LineRenderer_Create(Actor onHandle, u32 maxPoints, u8 circumferenceVertices)
-// {
-//     LineRenderer *result = (LineRenderer *)DEFAULT_ALLOC(sizeof(LineRenderer));
-//     *result = LineRenderer();
-
-//     result->onHandle = onHandle;
-//     result->circumferenceVertices = circumferenceVertices;
-//     LineRenderer_EnsureArrayCapacity(result, maxPoints);
-// }
-inline void LineRenderer_GetCounts(const LineTriangulationInput *self, u32 *outVerticesCount, u32 *outTrianglesCount, u32 *outIndicesCount)
+inline void LineTriangulator_GetCounts(const LineTriangulationInput *self, u32 *outVerticesCount, u32 *outTrianglesCount, u32 *outIndicesCount)
 {
     //if segmented, each segment will have a unique set of both the start and end columnal vertices.
     //Otherwise, the end column will be shared with the next segment's start column, if any.
@@ -84,11 +179,128 @@ inline void LineRenderer_GetCounts(const LineTriangulationInput *self, u32 *outV
         *outIndicesCount = totalTriangles * 3;
     }
 }
-inline bool LineRenderer_MapIndices(const LineTriangulationInput *input, Span<u32> output)
+inline bool LineTriangulator_MapVertices(const LineTriangulationInput *input, LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat)
 {
     u32 trianglesCount;
     u32 minSpanLength = 0;
-    LineRenderer_GetCounts(input, NULL, &trianglesCount, &minSpanLength);
+    LineTriangulator_GetCounts(input, &minSpanLength, &trianglesCount, NULL);
+    if (output.length < minSpanLength)
+    {
+        return false;
+    }
+
+    //pre-calculate circumference offsets.
+    //In these arrays, 'X' will refer to the Y offset, while 'Y' will refer to the Z offset.
+    Maths::Vec2 circumferenceOffsetSpanStack[8];
+    Maths::Vec2 *circumferenceOffsets = NULL;
+    if (input->circumferenceVertices > 8)
+    {
+        circumferenceOffsets = (Maths::Vec2 *)DEFAULT_ALLOC(sizeof(Maths::Vec2) * input->circumferenceVertices);
+    }
+    else
+    {
+        circumferenceOffsets = circumferenceOffsetSpanStack;
+    }
+    for (u32 i = 0; i < input->circumferenceVertices; i++)
+    {
+        if (isFlat)
+        {
+            circumferenceOffsets[i] = Maths::Vec2((i / (float)(input->circumferenceVertices - 1)) * lineWidthMult, 0.0f);
+        }
+        else
+        {
+            const float angle = i * (360.0f / input->circumferenceVertices) * Degree2Radian;
+            const float s = sinf(angle);
+            const float c = cosf(angle);
+            circumferenceOffsets[i] = Maths::Vec2(c * lineWidthMult, s * lineWidthMult);
+        }
+    }
+
+    if (input->segmented)
+    {
+        //( 0)-( 4)( 8)-(12)(16)-(20)(24)-(28)(32)-(36)
+        //|   /   ||   /   ||   /   ||   /   ||   /   |
+        //( 1)-( 5)( 9)-(13)(17)-(21)(25)-(29)(33)-(37)
+        //|   /   ||   /   ||   /   ||   /   ||   /   |
+        //( 2)-( 6)(10)-(14)(18)-(22)(26)-(30)(34)-(38)
+        //|   /   ||   /   ||   /   ||   /   ||   /   |
+        //( 3)-( 7)(11)-(15)(19)-(23)(27)-(31)(35)-(39)
+
+        const u32 segmentsCount = input->points.count - 1;
+        for (u32 i = 0; i < segmentsCount; i++)
+        {
+            const Maths::Quaternion segmentDir = Maths::Quaternion::FromAxisAngle((input->points[i + 1] - input->points[i]).Normalized(), 0.0f);
+
+            const Maths::Vec3 point = input->points[i];
+            const Maths::Vec3 next = input->points[i + 1];
+            for (u32 j = 0; j < input->circumferenceVertices; j++)
+            {
+                const u32 firstColumnIndex = (i * 2) * input->circumferenceVertices + j;
+                const u32 nextColumnIndex = (i * 2 + 1) * input->circumferenceVertices + j;
+
+                Maths::Vec3 pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+                Maths::Vec3 nextOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+
+                pointOffset = segmentDir.Transform(pointOffset);
+                nextOffset = segmentDir.Transform(nextOffset);
+
+                output.SetPosition(firstColumnIndex, point + pointOffset);
+                output.SetUV(firstColumnIndex, Maths::Vec2(i / (float)(input->points.count - 1), j / (float)(input->circumferenceVertices - 1)) * uvMult);
+                output.SetDirection(firstColumnIndex, segmentDir);
+
+                output.SetPosition(nextColumnIndex, next + nextOffset);
+                output.SetUV(nextColumnIndex, Maths::Vec2((i + 1) / (float)(input->points.count - 1), j / (float)(input->circumferenceVertices - 1)) * uvMult);
+                output.SetDirection(nextColumnIndex, segmentDir); //TODO: apply interpolation.
+            }
+        }
+    }
+    else
+    {
+        //00-04-08-12-16-20
+        //|/ |/ |/ |/ |/ |
+        //01-05-09-13-17-21
+        //|/ |/ |/ |/ |/ |
+        //02-06-10-14-18-22
+        //|/ |/ |/ |/ |/ |
+        //03-07-11-15-19-23
+        Maths::Quaternion dir = {};
+
+        for (u32 i = 0; i < input->points.count; i++)
+        {
+            if (i < input->points.count - 1)
+            {
+                if (isFlat)
+                {
+                    dir = Maths::Quaternion::FromAxisAngle(Maths::Vec3(0.0f, 0.0f, 1.0f), Maths::DirectionTowards(input->points[i].ToVector2(), input->points[i + 1].ToVector2()));
+                }
+                else dir = Maths::Quaternion::FromAxisAngle((input->points[i + 1] - input->points[i]).Normalized(), 0.0f);
+            }
+            const Maths::Vec3 point = input->points[i];
+
+            for (u32 j = 0; j < input->circumferenceVertices; j++)
+            {
+                Maths::Vec3 pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+                pointOffset = dir.Transform(pointOffset);
+
+                const u32 toIndex = i * input->circumferenceVertices + j;
+                output.SetPosition(toIndex, point + pointOffset);
+                output.SetUV(toIndex, Maths::Vec2(i / (float)(input->points.count - 1), j / (float)(input->circumferenceVertices - 1)) * uvMult);
+                output.SetDirection(toIndex, dir);
+            }
+        }
+    }
+
+    if (input->circumferenceVertices > 8)
+    {
+        DEFAULT_FREE(circumferenceOffsets);
+    }
+    return true;
+}
+inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Span<u32> output)
+{
+    u32 trianglesCount;
+    u32 minSpanLength = 0;
+    LineTriangulator_GetCounts(input, NULL, &trianglesCount, &minSpanLength);
     if (output.length < minSpanLength)
     {
         return false;
@@ -146,7 +358,7 @@ inline bool LineRenderer_MapIndices(const LineTriangulationInput *input, Span<u3
         const u32 nextRow = 1;
         for (u32 i = 0; i < trianglesCount; i += 2)
         {
-            const u32 triangleIndexStart = i * 6;
+            const u32 triangleIndexStart = i * 3;
             //Triangle 1
             output[triangleIndexStart + 0] = i;
             output[triangleIndexStart + 1] = i + nextColumn;

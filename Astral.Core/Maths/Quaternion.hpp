@@ -59,11 +59,11 @@ namespace Maths
 			return Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 		}
 
-		inline float Length()
+		inline float Length() const
 		{
 			return sqrtf(X * X + Y * Y + Z * Z + W * W);
 		}
-		inline float LengthSquared()
+		inline float LengthSquared() const
 		{
 			return X * X + Y * Y + Z * Z + W * W;
 		}
@@ -187,7 +187,7 @@ namespace Maths
 				).Normalized();
 			}
 		}
-		inline Quaternion Concat(Quaternion other)
+		inline Quaternion Concat(Quaternion other) const
 		{
 			float cX = other.Y * Z - other.Z * Y;
 			float cY = other.Z * X - other.X * Z;
@@ -206,11 +206,11 @@ namespace Maths
 		{
 			return A.Concat(B);
 		}
-		inline Quaternion Negative()
+		inline Quaternion Negative() const
 		{
 			return Quaternion(-X, -Y, -Z, -W);
 		}
-		inline Quaternion Add(Quaternion other)
+		inline Quaternion Add(Quaternion other) const
 		{
 #ifdef USE_SSE
 			return Quaternion(_mm_add_ps(this->asM128, other.asM128));
@@ -218,7 +218,7 @@ namespace Maths
 			return Quaternion(X + other.X, Y + other.Y, Z + other.Z, W + other.W);
 #endif
 		}
-		inline Quaternion Subtract(Quaternion other)
+		inline Quaternion Subtract(Quaternion other) const
 		{
 #ifdef USE_SSE
 			return Quaternion(_mm_sub_ps(this->asM128, other.asM128));
@@ -226,7 +226,7 @@ namespace Maths
 			return Quaternion(X - other.X, Y - other.Y, Z - other.Z, W - other.W);
 #endif
 		}
-		inline Quaternion Mult(Quaternion other)
+		inline Quaternion Mult(Quaternion other) const
 		{
 			float cX = Y * other.Z - Z * other.Y;
 			float cY = Z * other.X - X * other.Z;
@@ -241,7 +241,7 @@ namespace Maths
 				W * other.W - dot
 			);
 		}
-		inline Quaternion Div(Quaternion other)
+		inline Quaternion Div(Quaternion other) const
 		{
 			float ls = other.X * other.X + other.Y * other.Y + other.Z * other.Z + other.W * other.W;
 			float invNorm = 1.0f / ls;
@@ -264,27 +264,27 @@ namespace Maths
 				W * q2w - dot
 			);
 		}
-		inline void ToAxisAngle(float *output)
+		inline void ToAxisAngle(float *output) const
 		{
 			output[3] = acosf(W) * 2.0f;
 			output[0] = X / sinf(output[3] * 0.5f);
 			output[1] = Y / sinf(output[3] * 0.5f);
 			output[2] = Z / sinf(output[3] * 0.5f);
 		}
-		inline Vec4 Transform(Vec4 pos)
+		inline Vec4 Transform(Vec4 pos) const
 		{
 			Quaternion conjugated = Conjugate(*this);
 			Quaternion temp = Concat(conjugated, Quaternion(pos.X, pos.Y, pos.Z, pos.W));
 			temp = Concat(temp, *this);
 			return Vec4(temp.X, temp.Y, temp.Z, temp.W);
 		}
-		inline Vec3 Transform(Vec3 pos)
+		inline Vec3 Transform(Vec3 pos) const
 		{
 			Vec4 vec4 = Transform(Vec4(pos, 1.0));
 			float oneOverW = 1.0f / vec4.W;
 			return Vec3(vec4.X * oneOverW, vec4.Y * oneOverW, vec4.Z * oneOverW);
 		}
-		inline Quaternion operator*(Quaternion other)
+		inline Quaternion operator*(Quaternion other) const
 		{
 			return Mult(other);
 		}
@@ -292,7 +292,7 @@ namespace Maths
 		{
 			*this = Mult(other);
 		}
-		inline Quaternion operator/(Quaternion other)
+		inline Quaternion operator/(Quaternion other) const
 		{
 			return Div(other);
 		}
@@ -300,15 +300,15 @@ namespace Maths
 		{
 			*this = Div(other);
 		}
-		inline bool operator==(Quaternion other)
+		inline bool operator==(Quaternion other) const
 		{
 			return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
 		}
-		inline bool operator!=(Quaternion other)
+		inline bool operator!=(Quaternion other) const
 		{
 			return X != other.X || Y != other.Y || Z != other.Z || W != other.W;
 		}
-		inline bool Equals(Quaternion other, float approximation)
+		inline bool Equals(Quaternion other, float approximation) const
 		{
 			float dx = fabsf(other.X - X);
 			float dy = fabsf(other.Y - Y);

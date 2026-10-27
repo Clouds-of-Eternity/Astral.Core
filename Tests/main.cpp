@@ -7,6 +7,7 @@
 
 #include "CPPTests/GeometryTests.hpp"
 #include "CPPTests/CollectionsTests.hpp"
+#include "CPPTests/MeshTests.hpp"
 //#include "local/PerfTests.hpp"
 
 i32 main()
@@ -21,6 +22,7 @@ i32 main()
 
     RunCollectionsTests();
     RunGeometryTests();
+    RunMeshTests();
     //FindInString();
     // ParseJson5MB();
     // FindInString();

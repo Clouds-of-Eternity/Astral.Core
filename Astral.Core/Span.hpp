@@ -7,8 +7,8 @@ struct Span
 {
     def_delegate(EqlFunc, bool, T& A, T& B);
 
-    T* const data;
-    const usize length;
+    T* data;
+    usize length;
 
     inline Span()
     {
@@ -17,13 +17,13 @@ struct Span
     }
     inline Span(T *input, usize length)
     {
-        this->data = input;
-        this->length = length;
+        data = input;
+        length = length;
     }
     inline Span(const collections::Array<T> input)
     {
-        this->data = input.data;
-        this->length = input.length;
+        data = input.data;
+        length = input.length;
     }
     inline Span(const collections::Array<T> input, usize startIndex)
     {
@@ -112,8 +112,8 @@ struct ReadOnlySpan
 {
     def_delegate(EqlFunc, bool, T& A, T& B);
 
-    const T* const data;
-    const usize length;
+    const T* data;
+    usize length;
 
     inline ReadOnlySpan()
     {
