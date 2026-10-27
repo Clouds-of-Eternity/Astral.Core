@@ -322,27 +322,27 @@ inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Spa
         const u32 segmentsCount = pointsCount - 1;
 
         u32 columnStart = 0;
-        u32 columnPosition = 0;
 
-        for (u32 i = 0; i < trianglesCount; i += 2)
+        u32 triangleIndexStart = 0;
+        for (u32 i = 0; i < input->points.count - 1; i++)
         {
-            const u32 triangleIndexStart = i * 6;
-            //Triangle 1
-            output[triangleIndexStart + 0] = i + columnStart;
-            output[triangleIndexStart + 1] = i + columnStart + nextColumn;
-            output[triangleIndexStart + 2] = i + columnStart + nextRow;
-            //Triangle 2
-            output[triangleIndexStart + 3] = i + columnStart + nextRow;
-            output[triangleIndexStart + 4] = i + columnStart + nextColumn;
-            output[triangleIndexStart + 5] = i + columnStart + nextColumn + nextRow;
-            
-            columnPosition++;
-            if (columnPosition == input->circumferenceVertices - 1)
+            for (u32 j = 0; j < input->circumferenceVertices - 1; j++)
             {
-                //columnStart += verticesPerColumn * 2
-                columnStart += input->circumferenceVertices * 2;
-                columnPosition = 0;
+                const u32 index = i * input->circumferenceVertices * 2 + j;
+                
+                //Triangle 1
+                assert(index + nextColumn < minSpanLength);
+                output[triangleIndexStart + 0] = index;
+                output[triangleIndexStart + 1] = index + nextColumn;
+                output[triangleIndexStart + 2] = index + nextRow;
+                //Triangle 2
+                output[triangleIndexStart + 3] = index + nextRow;
+                output[triangleIndexStart + 4] = index + nextColumn;
+                output[triangleIndexStart + 5] = index + nextColumn + nextRow;
+                
+                triangleIndexStart += 6;
             }
+            columnStart += input->circumferenceVertices * 2;
         }
     }
     else
@@ -356,18 +356,34 @@ inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Spa
         //03-07-11-15-19-23
         const u32 nextColumn = input->circumferenceVertices;
         const u32 nextRow = 1;
-        for (u32 i = 0; i < trianglesCount; i += 2)
+        u32 triangleIndexStart = 0;
+        for (u32 i = 0; i < input->points.count - 1; i++)
         {
-            const u32 triangleIndexStart = i * 3;
-            //Triangle 1
-            output[triangleIndexStart + 0] = i;
-            output[triangleIndexStart + 1] = i + nextColumn;
-            output[triangleIndexStart + 2] = i + nextRow;
-            //Triangle 2
-            output[triangleIndexStart + 3] = i + nextRow;
-            output[triangleIndexStart + 4] = i + nextColumn;
-            output[triangleIndexStart + 5] = i + nextColumn + nextRow;
+            for (u32 j = 0; j < input->circumferenceVertices - 1; j++)
+            {
+                const u32 index = i * input->circumferenceVertices + j;
+                output[triangleIndexStart + 0] = index;
+                output[triangleIndexStart + 1] = index + nextColumn;
+                output[triangleIndexStart + 2] = index + nextRow;
+                //Triangle 2
+                output[triangleIndexStart + 3] = index + nextRow;
+                output[triangleIndexStart + 4] = index + nextColumn;
+                output[triangleIndexStart + 5] = index + nextColumn + nextRow;
+                triangleIndexStart += 6;
+            }
         }
+        // for (u32 i = 0; i < trianglesCount; i += 2)
+        // {
+        //     const u32 triangleIndexStart = i * 3;
+        //     //Triangle 1
+        //     output[triangleIndexStart + 0] = i;
+        //     output[triangleIndexStart + 1] = i + nextColumn;
+        //     output[triangleIndexStart + 2] = i + nextRow;
+        //     //Triangle 2
+        //     output[triangleIndexStart + 3] = i + nextRow;
+        //     output[triangleIndexStart + 4] = i + nextColumn;
+        //     output[triangleIndexStart + 5] = i + nextColumn + nextRow;
+        // }
     }
     return true;
 }

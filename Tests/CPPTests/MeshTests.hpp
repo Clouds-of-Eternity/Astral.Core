@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "DataStream.hpp"
 
-inline bool TriangulateToSVG(LineTriangulationInput *input, text path, float lineWidth)
+inline bool TriangulateToSVG(LineTriangulationInput *input, text path, float lineWidth, float intrudeVertices)
 {
     FILE *fs = fopen(path, "w");
     if (fs != NULL)
@@ -51,10 +51,24 @@ inline bool TriangulateToSVG(LineTriangulationInput *input, text path, float lin
                 color = "blue";
             }
             stream.WriteText("    <polygon points=\"");
-            Maths::Point2 vertex1 = vertices[indices[i * 3 + 0]].ToVector2().ToPoint2();
-            Maths::Point2 vertex2 = vertices[indices[i * 3 + 1]].ToVector2().ToPoint2();
-            Maths::Point2 vertex3 = vertices[indices[i * 3 + 2]].ToVector2().ToPoint2();
-            stream.WriteFormatted("%i,%i %i,%i %i,%i", vertex1.X, vertex1.Y, vertex2.X, vertex2.Y, vertex3.X, vertex3.Y);
+
+            Maths::Vec2 vertex1 = vertices[indices[i * 3 + 0]].ToVector2();      
+            Maths::Vec2 vertex2 = vertices[indices[i * 3 + 1]].ToVector2();
+            Maths::Vec2 vertex3 = vertices[indices[i * 3 + 2]].ToVector2();
+
+            if (intrudeVertices > 0.0f)
+            {
+                const Maths::Vec2 center = (vertex1 + vertex2 + vertex3) / 3.0f;
+                vertex1 += (center - vertex1).Normalized() * intrudeVertices;
+                vertex2 += (center - vertex2).Normalized() * intrudeVertices;
+                vertex3 += (center - vertex3).Normalized() * intrudeVertices;
+            }
+
+            const Maths::Point2 points1 = vertex1.ToPoint2();
+            const Maths::Point2 points2 = vertex2.ToPoint2();
+            const Maths::Point2 points3 = vertex3.ToPoint2();
+
+            stream.WriteFormatted("%i,%i %i,%i %i,%i", points1.X, points1.Y, points2.X, points2.Y, points3.X, points3.Y);
             stream.WriteFormatted("\" style=\"fill:%s;\"/>\n", color);
         }
         stream.WriteText("</svg>");
@@ -72,19 +86,21 @@ inline bool TestLineTriangulation()
 
 
     {
+        const float stepIncrement = 0.1f;
+        const u32 totalStep = 30 / (stepIncrement / 0.2f);
         LineTriangulationInput input = LineTriangulationInput(GetCAllocator());
         input.circumferenceVertices = 2;
-        input.segmented = false;
+        input.segmented = true;
         input.maxPointsIsListCapacity = false;
         Scope(LineTriangulationInput, input);
 
         //plot the line y=16sin(pi * 0.5x)
-        for (u32 x = 0; x < 30; x++)
+        for (u32 x = 0; x < totalStep; x++)
         {
-            input.points.Add(Maths::Vec3(x * 16.0f, 250.0f + 16.0f * sinf(x * 0.2f * PI), 0.0f));
+            input.points.Add(Maths::Vec3(x * 16.0f * (stepIncrement / 0.2f), 250.0f + 16.0f * sinf(x * stepIncrement * PI), 0.0f));
         }
 
-        if (!TriangulateToSVG(&input, "LineTriangulationTest1.svg", 8.0f))
+        if (!TriangulateToSVG(&input, "LineTriangulationTest1.svg", 8.0f, 0.0f))
         {
             return false;
         }
