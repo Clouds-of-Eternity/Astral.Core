@@ -101,6 +101,13 @@ struct LineTriangulationInput
     /// @brief The number of vertices per column. Must be at least 2.
     u8 circumferenceVertices;
 
+    inline LineTriangulationInput()
+    {
+        points = collections::List<Maths::Vec3>();
+        maxPointsIsListCapacity = false;
+        segmented = false;
+        circumferenceVertices = 0;
+    }
     inline LineTriangulationInput(IAllocator allocator)
     {
         points = collections::List<Maths::Vec3>(allocator);
@@ -296,7 +303,7 @@ inline bool LineTriangulator_MapVertices(const LineTriangulationInput *input, Li
     }
     return true;
 }
-inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Span<u32> output)
+inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Span<u32> output, u32 firstVertex)
 {
     u32 trianglesCount;
     u32 minSpanLength = 0;
@@ -328,10 +335,10 @@ inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Spa
         {
             for (u32 j = 0; j < input->circumferenceVertices - 1; j++)
             {
-                const u32 index = i * input->circumferenceVertices * 2 + j;
+                const u32 index = i * input->circumferenceVertices * 2 + j + firstVertex;
                 
                 //Triangle 1
-                assert(index + nextColumn < minSpanLength);
+                assert(index - firstVertex + nextColumn < minSpanLength);
                 output[triangleIndexStart + 0] = index;
                 output[triangleIndexStart + 1] = index + nextColumn;
                 output[triangleIndexStart + 2] = index + nextRow;
@@ -361,7 +368,7 @@ inline bool LineTriangulator_MapIndices(const LineTriangulationInput *input, Spa
         {
             for (u32 j = 0; j < input->circumferenceVertices - 1; j++)
             {
-                const u32 index = i * input->circumferenceVertices + j;
+                const u32 index = i * input->circumferenceVertices + j + firstVertex;
                 output[triangleIndexStart + 0] = index;
                 output[triangleIndexStart + 1] = index + nextColumn;
                 output[triangleIndexStart + 2] = index + nextRow;
