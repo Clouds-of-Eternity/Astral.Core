@@ -92,7 +92,6 @@ namespace io
                         //main purpose of this is to reduce the number of file IO calls (in this case, fread)
                         //that must be done.
                         usize totalRead = fread(chars, sizeof(char), 256, fs);
-                        actualSize += totalRead;
                         if (totalRead == 0)
                         {
                             break;
@@ -116,6 +115,7 @@ namespace io
                                 buffer[index] = curr;
                             }
                             index++;
+                            actualSize++;
                         }
                     }
 
