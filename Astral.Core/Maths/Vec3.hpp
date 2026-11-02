@@ -118,6 +118,11 @@ namespace Maths
             Vec3 diff = B - A;
             return Dot(diff, diff);
         }
+        static inline double DistanceSquaredDouble(Vec3 A, Vec3 B)
+        {
+            Vec3 diff = B - A;
+            return DotDouble(diff, diff);
+        }
         static inline Vec3 Cross(Vec3 vec1, Vec3 vec2)
         {
             return Vec3(

@@ -15,7 +15,7 @@ inline bool TriangulateToSVG(LineTriangulationInput *input, text path, float lin
         u32 verticesCount = 0;
         u32 trianglesCount = 0;
         u32 indicesCount = 0;
-        LineTriangulator_GetCounts(input, &verticesCount, &trianglesCount, &indicesCount);
+        input->GetCounts(&verticesCount, &trianglesCount, &indicesCount);
         ACASSERT(verticesCount > 0);
         ACASSERT(trianglesCount > 0);
         ACASSERT(indicesCount > 0);
@@ -32,8 +32,8 @@ inline bool TriangulateToSVG(LineTriangulationInput *input, text path, float lin
         vertexArray.length = vertices.length;
         vertexArray.structSize = sizeof(Maths::Vec3);
         vertexArray.positionVectorSize = sizeof(Maths::Vec3);
-        ACASSERT(LineTriangulator_MapVertices(input, vertexArray, Maths::Vec2(1.0f), lineWidth, true));
-        ACASSERT(LineTriangulator_MapIndices(input, indices));
+        ACASSERT(input->MapVertices(vertexArray, Maths::Vec2(1.0f), lineWidth, true));
+        ACASSERT(input->MapIndices(indices, 0));
 
         IDataStream stream = GetWriteFileDataStream(fs, true);
         //<polygon points="100,10 150,190 50,190" style="fill:lime;stroke:purple;stroke-width:3" />

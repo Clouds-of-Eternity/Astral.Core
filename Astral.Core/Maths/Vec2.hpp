@@ -153,6 +153,12 @@ namespace Maths
             float dy = B.Y - A.Y;
             return dx * dx + dy * dy;
         }
+        static inline double DistanceSquaredDouble(Vec2 A, Vec2 B)
+        {
+            double dx = B.X - A.X;
+            double dy = B.Y - A.Y;
+            return dx * dx + dy * dy;
+        }
         static inline Vec2 Lerp(Vec2 A, Vec2 B, float amount)
         {
             return Vec2(A.X + (B.X - A.X) * amount, A.Y + (B.Y - A.Y) * amount);

@@ -64,6 +64,10 @@ static inline float Dot(Vec3 A, Vec3 B)
 {
     return A.X * B.X + A.Y * B.Y + A.Z * B.Z;
 }
+static inline double DotDouble(Vec3 A, Vec3 B)
+{
+    return (double)A.X * (double)B.X + (double)A.Y * (double)B.Y + (double)A.Z * (double)B.Z;
+}
 static inline Vec3 Min(Vec3 A, Vec3 B)
 {
     return Vec3(fminf(A.X, B.X), fminf(A.Y, B.Y), fminf(A.Z, B.Z));
