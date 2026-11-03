@@ -32,7 +32,7 @@ inline bool TriangulateToSVG(LineTriangulationInput *input, text path, float lin
         vertexArray.length = vertices.length;
         vertexArray.structSize = sizeof(Maths::Vec3);
         vertexArray.positionVectorSize = sizeof(Maths::Vec3);
-        ACASSERT(input->MapVertices(vertexArray, Maths::Vec2(1.0f), lineWidth, true, NULL));
+        ACASSERT(input->MapVertices(vertexArray, Maths::Vec2(1.0f), lineWidth, true, true, NULL));
         ACASSERT(input->MapIndices(indices, 0));
 
         IDataStream stream = GetWriteFileDataStream(fs, true);

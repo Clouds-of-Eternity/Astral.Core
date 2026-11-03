@@ -20,6 +20,9 @@ struct LineTriangulationVertexArray
     u16 directionFieldOffset;
     u16 directionSize;
 
+    u16 lineWidthFieldOffset;
+    u16 lineWidthSize;
+
     inline void SetPosition(u32 index, Maths::Vec3 position)
     {
         if (index >= length || positionVectorSize == 0)
@@ -78,14 +81,22 @@ struct LineTriangulationVertexArray
             *(u32 *)ptrAtIndex = (bytesX << 24) | (bytesY << 16) | (bytesZ << 8) | (bytesW);
         }
     }
-    // inline void *GetAt(u32 index) const
-    // {
-    //     if (index >= length)
-    //     {
-    //         return NULL;
-    //     }
-    //     return (u8 *)ptr + structSize * index;
-    // }
+    inline void SetLineWidth(u32 index, float width)
+    {
+        if (index >= length || lineWidthSize == 0)
+        {
+            return;
+        }
+        void *ptrAtIndex = (u8*)ptr + index * structSize + lineWidthFieldOffset;
+        if (lineWidthSize == 4)
+        {
+            *(float *)ptrAtIndex = width;
+        }
+        else if (lineWidthSize == 1)
+        {
+            *(u8 *)ptrAtIndex = (u8)width;
+        }
+    }
 };
 
 struct LineTriangulationInput
@@ -185,7 +196,7 @@ struct LineTriangulationInput
             *outIndicesCount = totalTriangles * 3;
         }
     }
-    inline bool MapVertices(LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat, u32 *_Nullable outputActualUsedIndices) const
+    inline bool MapVertices(LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat, bool uvIsDistanceInWorldSpace, u32 *_Nullable outputActualUsedIndices) const
     {
         u32 trianglesCount;
         u32 minSpanLength = 0;
@@ -209,18 +220,24 @@ struct LineTriangulationInput
         {
             circumferenceOffsets = circumferenceOffsetSpanStack;
         }
-        for (u32 i = 0; i < this->circumferenceVertices; i++)
+
+        const bool hasDedicatedLineWidthSlot = output.lineWidthSize > 0;
+        if (!hasDedicatedLineWidthSlot)
         {
-            if (isFlat)
+            //bake line width offsets into core positions
+            for (u32 i = 0; i < this->circumferenceVertices; i++)
             {
-                circumferenceOffsets[i] = Maths::Vec2((i / (float)(this->circumferenceVertices - 1)) * lineWidthMult, 0.0f);
-            }
-            else
-            {
-                const float angle = i * (360.0f / this->circumferenceVertices) * Degree2Radian;
-                const float s = sinf(angle);
-                const float c = cosf(angle);
-                circumferenceOffsets[i] = Maths::Vec2(c * lineWidthMult, s * lineWidthMult);
+                if (isFlat)
+                {
+                    circumferenceOffsets[i] = Maths::Vec2((i / (float)(this->circumferenceVertices - 1)) * lineWidthMult, 0.0f);
+                }
+                else
+                {
+                    const float angle = i * (360.0f / this->circumferenceVertices) * Degree2Radian;
+                    const float s = sinf(angle);
+                    const float c = cosf(angle);
+                    circumferenceOffsets[i] = Maths::Vec2(c * lineWidthMult, s * lineWidthMult);
+                }
             }
         }
 
@@ -234,6 +251,7 @@ struct LineTriangulationInput
             //|   /   ||   /   ||   /   ||   /   ||   /   |
             //( 3)-( 7)(11)-(15)(19)-(23)(27)-(31)(35)-(39)
             
+            float coveredDistance = 0.0f;
             const u32 segmentsCount = this->points.count - 1;
             for (u32 i = 0; i < segmentsCount; i++)
             {
@@ -243,27 +261,42 @@ struct LineTriangulationInput
                 {
                     continue;
                 }
-                const Maths::Quaternion segmentDir = Maths::Quaternion::FromAxisAngle((next - curr).Normalized(), 0.0f);
+                const float currToNextDist = Maths::Vec3::Distance(curr, next);
+                const Maths::Quaternion segmentDir = Maths::Quaternion::FromAxisAngle((next - curr) / currToNextDist, 0.0f);
 
                 for (u32 j = 0; j < this->circumferenceVertices; j++)
                 {
                     const u32 firstColumnIndex = (usedSegments * 2) * this->circumferenceVertices + j;
                     const u32 nextColumnIndex = (usedSegments * 2 + 1) * this->circumferenceVertices + j;
 
-                    Maths::Vec3 pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
-                    Maths::Vec3 nextOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+                    Maths::Vec3 pointOffset = Maths::Vec3();
+                    Maths::Vec3 nextOffset = Maths::Vec3();
 
-                    pointOffset = segmentDir.Transform(pointOffset);
-                    nextOffset = segmentDir.Transform(nextOffset);
+                    if (!hasDedicatedLineWidthSlot)
+                    {
+                        pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+                        nextOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+
+                        pointOffset = segmentDir.Transform(pointOffset);
+                        nextOffset = segmentDir.Transform(nextOffset);
+                    }
+                    else
+                    {
+                        output.SetLineWidth(firstColumnIndex, lineWidthMult);
+                        output.SetLineWidth(nextColumnIndex, lineWidthMult);
+                    }
+
+                    const Maths::Quaternion segmentDirMultByCV = segmentDir * this->circumferenceVertices;
 
                     output.SetPosition(firstColumnIndex, curr + pointOffset);
-                    output.SetUV(firstColumnIndex, Maths::Vec2(usedSegments / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
-                    output.SetDirection(firstColumnIndex, segmentDir);
+                    output.SetUV(firstColumnIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance : (usedSegments / (float)segmentsCount), j / (float)(this->circumferenceVertices - 1)) * uvMult);
+                    output.SetDirection(firstColumnIndex, segmentDirMultByCV);
 
                     output.SetPosition(nextColumnIndex, next + nextOffset);
-                    output.SetUV(nextColumnIndex, Maths::Vec2((usedSegments + 1) / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
-                    output.SetDirection(nextColumnIndex, segmentDir);
+                    output.SetUV(nextColumnIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance + currToNextDist : ((usedSegments + 1) / (float)segmentsCount), j / (float)(this->circumferenceVertices - 1)) * uvMult);
+                    output.SetDirection(nextColumnIndex, segmentDirMultByCV);
                 }
+                coveredDistance += currToNextDist;
                 usedSegments++;
             }
         }
@@ -276,11 +309,13 @@ struct LineTriangulationInput
             //02-06-10-14-18-22
             //|/ |/ |/ |/ |/ |
             //03-07-11-15-19-23
+            float coveredDistance = 0.0f;
             Maths::Quaternion dir = {};
 
             for (u32 i = 0; i < this->points.count; i++)
             {
                 const Maths::Vec3 curr = this->points[i];
+                float currToNextDist = 0.0f;
                 if (i < this->points.count - 1)
                 {
                     const Maths::Vec3 next = this->points[i + 1];
@@ -288,23 +323,34 @@ struct LineTriangulationInput
                     {
                         continue;
                     }
+
+                    currToNextDist = Maths::Vec3::Distance(curr, next);
                     if (isFlat)
                     {
                         dir = Maths::Quaternion::FromAxisAngle(Maths::Vec3(0.0f, 0.0f, 1.0f), Maths::DirectionTowards(curr.ToVector2(), next.ToVector2()));
                     }
-                    else dir = Maths::Quaternion::FromAxisAngle((next - curr).Normalized(), 0.0f);
+                    else dir = Maths::Quaternion::FromAxisAngle((next - curr) / currToNextDist, 0.0f);
                 }
 
                 for (u32 j = 0; j < this->circumferenceVertices; j++)
                 {
-                    Maths::Vec3 pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
-                    pointOffset = dir.Transform(pointOffset);
-
                     const u32 toIndex = usedSegments * this->circumferenceVertices + j;
+                    Maths::Vec3 pointOffset = Maths::Vec3();
+                    if (!hasDedicatedLineWidthSlot)
+                    {
+                        pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
+                        pointOffset = dir.Transform(pointOffset);
+                    }
+                    else
+                    {
+                        output.SetLineWidth(toIndex, lineWidthMult);
+                    }
+
                     output.SetPosition(toIndex, curr + pointOffset);
-                    output.SetUV(toIndex, Maths::Vec2(usedSegments / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
-                    output.SetDirection(toIndex, dir);
+                    output.SetUV(toIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance : (usedSegments / (float)(this->points.count - 1)), j / (float)(this->circumferenceVertices - 1)) * uvMult);
+                    output.SetDirection(toIndex, dir * circumferenceVertices);
                 }
+                coveredDistance += currToNextDist;
                 usedSegments++;
             }
         }
@@ -348,7 +394,7 @@ struct LineTriangulationInput
             u32 columnStart = 0;
 
             u32 triangleIndexStart = 0;
-            for (u32 i = 0; i < this->points.count - 1; i++)
+            for (u32 i = 0; i < segmentsCount; i++)
             {
                 for (u32 j = 0; j < this->circumferenceVertices - 1; j++)
                 {
@@ -378,10 +424,11 @@ struct LineTriangulationInput
             //02-06-10-14-18-22
             //|/ |/ |/ |/ |/ |
             //03-07-11-15-19-23
+            const u32 segmentsCount = this->points.count - 1;
             const u32 nextColumn = this->circumferenceVertices;
             const u32 nextRow = 1;
             u32 triangleIndexStart = 0;
-            for (u32 i = 0; i < this->points.count - 1; i++)
+            for (u32 i = 0; i < segmentsCount; i++)
             {
                 for (u32 j = 0; j < this->circumferenceVertices - 1; j++)
                 {

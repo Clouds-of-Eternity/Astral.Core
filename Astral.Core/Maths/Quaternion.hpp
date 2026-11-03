@@ -53,6 +53,13 @@ namespace Maths
 			asM128 = m128;
 		}
 #endif
+		inline Quaternion(Maths::Vec4 fromVec4)
+		{
+			X = fromVec4.X;
+			Y = fromVec4.Y;
+			Z = fromVec4.Z;
+			W = fromVec4.W;
+		}
 
 		static inline Quaternion Identity()
 		{
@@ -226,6 +233,10 @@ namespace Maths
 			return Quaternion(X - other.X, Y - other.Y, Z - other.Z, W - other.W);
 #endif
 		}
+		inline Quaternion Mult(float other) const
+		{
+			return Quaternion(X * other, Y * other, Z * other, W * other);
+		}
 		inline Quaternion Mult(Quaternion other) const
 		{
 			float cX = Y * other.Z - Z * other.Y;
@@ -284,6 +295,20 @@ namespace Maths
 			float oneOverW = 1.0f / vec4.W;
 			return Vec3(vec4.X * oneOverW, vec4.Y * oneOverW, vec4.Z * oneOverW);
 		}
+		inline Vec4 ToVector4() const
+		{
+			return Vec4(X, Y, Z, W);
+		}
+
+		inline Quaternion operator*(float other) const
+		{
+			return Mult(other);
+		}
+		inline void operator*=(float other)
+		{
+			*this = Mult(other);
+		}
+
 		inline Quaternion operator*(Quaternion other) const
 		{
 			return Mult(other);
