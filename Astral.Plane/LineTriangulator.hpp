@@ -185,7 +185,7 @@ struct LineTriangulationInput
             *outIndicesCount = totalTriangles * 3;
         }
     }
-    inline bool MapVertices(LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat) const
+    inline bool MapVertices(LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat, u32 *_Nullable outputActualUsedIndices) const
     {
         u32 trianglesCount;
         u32 minSpanLength = 0;
@@ -194,6 +194,8 @@ struct LineTriangulationInput
         {
             return false;
         }
+
+        u32 usedSegments = 0;
 
         //pre-calculate circumference offsets.
         //In these arrays, 'X' will refer to the Y offset, while 'Y' will refer to the Z offset.
@@ -231,18 +233,22 @@ struct LineTriangulationInput
             //( 2)-( 6)(10)-(14)(18)-(22)(26)-(30)(34)-(38)
             //|   /   ||   /   ||   /   ||   /   ||   /   |
             //( 3)-( 7)(11)-(15)(19)-(23)(27)-(31)(35)-(39)
-
+            
             const u32 segmentsCount = this->points.count - 1;
             for (u32 i = 0; i < segmentsCount; i++)
             {
-                const Maths::Quaternion segmentDir = Maths::Quaternion::FromAxisAngle((this->points[i + 1] - this->points[i]).Normalized(), 0.0f);
-
-                const Maths::Vec3 point = this->points[i];
+                const Maths::Vec3 curr = this->points[i];
                 const Maths::Vec3 next = this->points[i + 1];
+                if (Maths::Vec3::AlmostEqual(curr, next))
+                {
+                    continue;
+                }
+                const Maths::Quaternion segmentDir = Maths::Quaternion::FromAxisAngle((next - curr).Normalized(), 0.0f);
+
                 for (u32 j = 0; j < this->circumferenceVertices; j++)
                 {
-                    const u32 firstColumnIndex = (i * 2) * this->circumferenceVertices + j;
-                    const u32 nextColumnIndex = (i * 2 + 1) * this->circumferenceVertices + j;
+                    const u32 firstColumnIndex = (usedSegments * 2) * this->circumferenceVertices + j;
+                    const u32 nextColumnIndex = (usedSegments * 2 + 1) * this->circumferenceVertices + j;
 
                     Maths::Vec3 pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
                     Maths::Vec3 nextOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
@@ -250,14 +256,15 @@ struct LineTriangulationInput
                     pointOffset = segmentDir.Transform(pointOffset);
                     nextOffset = segmentDir.Transform(nextOffset);
 
-                    output.SetPosition(firstColumnIndex, point + pointOffset);
-                    output.SetUV(firstColumnIndex, Maths::Vec2(i / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
+                    output.SetPosition(firstColumnIndex, curr + pointOffset);
+                    output.SetUV(firstColumnIndex, Maths::Vec2(usedSegments / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
                     output.SetDirection(firstColumnIndex, segmentDir);
 
                     output.SetPosition(nextColumnIndex, next + nextOffset);
-                    output.SetUV(nextColumnIndex, Maths::Vec2((i + 1) / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
-                    output.SetDirection(nextColumnIndex, segmentDir); //TODO: apply interpolation.
+                    output.SetUV(nextColumnIndex, Maths::Vec2((usedSegments + 1) / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
+                    output.SetDirection(nextColumnIndex, segmentDir);
                 }
+                usedSegments++;
             }
         }
         else
@@ -273,32 +280,43 @@ struct LineTriangulationInput
 
             for (u32 i = 0; i < this->points.count; i++)
             {
+                const Maths::Vec3 curr = this->points[i];
                 if (i < this->points.count - 1)
                 {
+                    const Maths::Vec3 next = this->points[i + 1];
+                    if (Maths::Vec3::AlmostEqual(curr, next))
+                    {
+                        continue;
+                    }
                     if (isFlat)
                     {
-                        dir = Maths::Quaternion::FromAxisAngle(Maths::Vec3(0.0f, 0.0f, 1.0f), Maths::DirectionTowards(this->points[i].ToVector2(), this->points[i + 1].ToVector2()));
+                        dir = Maths::Quaternion::FromAxisAngle(Maths::Vec3(0.0f, 0.0f, 1.0f), Maths::DirectionTowards(curr.ToVector2(), next.ToVector2()));
                     }
-                    else dir = Maths::Quaternion::FromAxisAngle((this->points[i + 1] - this->points[i]).Normalized(), 0.0f);
+                    else dir = Maths::Quaternion::FromAxisAngle((next - curr).Normalized(), 0.0f);
                 }
-                const Maths::Vec3 point = this->points[i];
 
                 for (u32 j = 0; j < this->circumferenceVertices; j++)
                 {
                     Maths::Vec3 pointOffset = Maths::Vec3(0.0f, circumferenceOffsets[j].X, circumferenceOffsets[j].Y);
                     pointOffset = dir.Transform(pointOffset);
 
-                    const u32 toIndex = i * this->circumferenceVertices + j;
-                    output.SetPosition(toIndex, point + pointOffset);
-                    output.SetUV(toIndex, Maths::Vec2(i / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
+                    const u32 toIndex = usedSegments * this->circumferenceVertices + j;
+                    output.SetPosition(toIndex, curr + pointOffset);
+                    output.SetUV(toIndex, Maths::Vec2(usedSegments / (float)(this->points.count - 1), j / (float)(this->circumferenceVertices - 1)) * uvMult);
                     output.SetDirection(toIndex, dir);
                 }
+                usedSegments++;
             }
         }
 
         if (this->circumferenceVertices > 8)
         {
             DEFAULT_FREE(circumferenceOffsets);
+        }
+
+        if (outputActualUsedIndices != NULL)
+        {
+            *outputActualUsedIndices = usedSegments * (this->circumferenceVertices - 1) * 2;
         }
         return true;
     }
