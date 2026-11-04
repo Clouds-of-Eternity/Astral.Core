@@ -4,9 +4,12 @@
 #include "Maths/Quaternion.hpp"
 #include "Maths/Util.hpp"
 
+def_delegate(LineTriangulationSetMiscDataFunc, void, void *verticesPtr, void *userData, u32 vertexIndex, float coveredDistance, u32 segmentIndex, u32 segmentsCount);
+
 struct LineTriangulationVertexArray
 {
-    void * ptr;
+    void *ptr;
+    void *userData;
 
     u32 length;
     u32 structSize;
@@ -196,7 +199,7 @@ struct LineTriangulationInput
             *outIndicesCount = totalTriangles * 3;
         }
     }
-    inline bool MapVertices(LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat, bool uvIsDistanceInWorldSpace, u32 *_Nullable outputActualUsedIndices) const
+    inline bool MapVertices(LineTriangulationVertexArray output, Maths::Vec2 uvMult, float lineWidthMult, bool isFlat, bool uvIsDistanceInWorldSpace, LineTriangulationSetMiscDataFunc _Nullable setMiscDataCallback, u32 *_Nullable outputActualUsedIndices) const
     {
         u32 trianglesCount;
         u32 minSpanLength = 0;
@@ -295,6 +298,12 @@ struct LineTriangulationInput
                     output.SetPosition(nextColumnIndex, next + nextOffset);
                     output.SetUV(nextColumnIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance + currToNextDist : ((usedSegments + 1) / (float)segmentsCount), j / (float)(this->circumferenceVertices - 1)) * uvMult);
                     output.SetDirection(nextColumnIndex, segmentDirMultByCV);
+
+                    if (setMiscDataCallback != NULL)
+                    {
+                        setMiscDataCallback(output.ptr, output.userData, firstColumnIndex, coveredDistance, usedSegments, segmentsCount);
+                        setMiscDataCallback(output.ptr, output.userData, nextColumnIndex, coveredDistance + currToNextDist, usedSegments + 1, segmentsCount);
+                    }
                 }
                 coveredDistance += currToNextDist;
                 usedSegments++;
@@ -349,6 +358,11 @@ struct LineTriangulationInput
                     output.SetPosition(toIndex, curr + pointOffset);
                     output.SetUV(toIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance : (usedSegments / (float)(this->points.count - 1)), j / (float)(this->circumferenceVertices - 1)) * uvMult);
                     output.SetDirection(toIndex, dir * (float)circumferenceVertices);
+
+                    if (setMiscDataCallback != NULL)
+                    {
+                        setMiscDataCallback(output.ptr, output.userData, toIndex, coveredDistance, usedSegments, this->points.count - 1);
+                    }
                 }
                 coveredDistance += currToNextDist;
                 usedSegments++;
