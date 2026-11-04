@@ -206,7 +206,7 @@ struct LineTriangulationInput
             return false;
         }
 
-        u32 usedSegments = 0;
+        i32 usedSegments = 0;
 
         //pre-calculate circumference offsets.
         //In these arrays, 'X' will refer to the Y offset, while 'Y' will refer to the Z offset.
@@ -286,7 +286,7 @@ struct LineTriangulationInput
                         output.SetLineWidth(nextColumnIndex, lineWidthMult);
                     }
 
-                    const Maths::Quaternion segmentDirMultByCV = segmentDir * this->circumferenceVertices;
+                    const Maths::Quaternion segmentDirMultByCV = segmentDir * (float)this->circumferenceVertices;
 
                     output.SetPosition(firstColumnIndex, curr + pointOffset);
                     output.SetUV(firstColumnIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance : (usedSegments / (float)segmentsCount), j / (float)(this->circumferenceVertices - 1)) * uvMult);
@@ -348,7 +348,7 @@ struct LineTriangulationInput
 
                     output.SetPosition(toIndex, curr + pointOffset);
                     output.SetUV(toIndex, Maths::Vec2(uvIsDistanceInWorldSpace ? coveredDistance : (usedSegments / (float)(this->points.count - 1)), j / (float)(this->circumferenceVertices - 1)) * uvMult);
-                    output.SetDirection(toIndex, dir * circumferenceVertices);
+                    output.SetDirection(toIndex, dir * (float)circumferenceVertices);
                 }
                 coveredDistance += currToNextDist;
                 usedSegments++;
@@ -362,7 +362,7 @@ struct LineTriangulationInput
 
         if (outputActualUsedIndices != NULL)
         {
-            *outputActualUsedIndices = usedSegments * (this->circumferenceVertices - 1) * 2;
+            *outputActualUsedIndices = (usedSegments - 1) * (this->circumferenceVertices - 1) * 2 * 3;
         }
         return true;
     }

@@ -18,7 +18,7 @@ struct Span
     inline Span(T *input, usize length)
     {
         data = input;
-        length = length;
+        this->length = length;
     }
     inline Span(const collections::Array<T> input)
     {
