@@ -45,23 +45,23 @@ namespace Maths
 	}
 	inline constexpr u64 rotl64(u64 value, u64 amount)
 	{
-		amount %= 64;
-		return (value << amount) | (value >> (64 - amount));
+		const u64 modulod = amount % 64;
+		return (value << modulod) | (value >> (64 - modulod));
 	}
 	inline constexpr u32 rotl32(u32 value, u32 amount)
 	{
-		amount %= 32;
-		return (value << amount) | (value >> (32 - amount));
+		const u32 modulod = amount % 32;
+		return (value << modulod) | (value >> (32 - modulod));
 	}
 	inline constexpr u64 rotr64(u64 value, u64 amount)
 	{
-		amount %= 64;
-		return (value >> amount) | (value << (64 - amount));
+		const u64 modulod = amount % 64;
+		return (value >> modulod) | (value << (64 - modulod));
 	}
 	inline constexpr u32 rotr32(u32 value, u32 amount)
 	{
-		amount %= 32;
-		return (value >> amount) | (value << (32 - amount));
+		const u32 modulod = amount % 32;
+		return (value >> modulod) | (value << (32 - modulod));
 	}
 	inline float LengthdirX(float len, float dirInRadians)
 	{
