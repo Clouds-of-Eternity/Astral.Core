@@ -6,6 +6,18 @@ struct BoundingBox
     Maths::Vec3 center;
     Maths::Vec3 extents;
 
+    inline BoundingBox()
+    {
+        this->center = Maths::Vec3();
+        this->extents = Maths::Vec3();
+    }
+
+    inline BoundingBox(Maths::Vec3 center, Maths::Vec3 extents)
+    {
+        this->center = center;
+        this->extents = extents;
+    }
+
     inline Maths::Vec3 GetMin() const
     {
         return center - extents;
