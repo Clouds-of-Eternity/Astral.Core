@@ -191,7 +191,7 @@ namespace io
         chars[finalDirPath.length] = '\0';
 
         bool skip = false;
-        for (usize i = 0; i < finalDirPath.length + 1; i++)
+        for (usize i = 0; i < finalDirPath.length; i++)
         {
             bool last = i == finalDirPath.length;
             if (finalDirPath[i] == ':')
