@@ -1,5 +1,7 @@
 #pragma once
-#include "Maths/Vec3.hpp"
+#include "Maths/Matrix4x4.hpp"
+#include "Maths/Util.hpp"
+#include "Span.hpp"
 
 struct BoundingBox
 {
@@ -67,5 +69,47 @@ struct BoundingBox
             return (max.Z >= otherMin.Z) && (min.Z <= otherMax.Z);
         }
         return false;
+    }
+    inline void GetCorners(Span<Maths::Vec3> output) const
+    {
+        const Maths::Vec3 min = GetMin();
+        const Maths::Vec3 max = GetMax();
+
+        assert(output.length >= 8);
+
+        //Top
+        // - Left Near
+        output[0] = Maths::Vec3(min.X, min.Y, min.Z);
+        // - Left Far
+        output[1] = Maths::Vec3(min.X, min.Y, max.Z);
+        // - Right Far
+        output[2] = Maths::Vec3(max.X, min.Y, max.Z);
+        // - Right Near
+        output[3] = Maths::Vec3(max.X, min.Y, min.Z);
+
+        //Bottom
+        // - Left Near
+        output[0] = Maths::Vec3(min.X, max.Y, min.Z);
+        // - Left Far
+        output[1] = Maths::Vec3(min.X, max.Y, max.Z);
+        // - Right Far
+        output[2] = Maths::Vec3(max.X, max.Y, max.Z);
+        // - Right Near
+        output[3] = Maths::Vec3(max.X, max.Y, min.Z);
+    }
+    inline BoundingBox TransformBy(const Maths::Matrix4x4 &matrix) const
+    {
+        Maths::Vec3 newMin = Maths::Vec3(AC_FloatMax);
+        Maths::Vec3 newMax = Maths::Vec3(AC_FloatMin);
+
+        Maths::Vec3 corners[8];
+        GetCorners(Span<Maths::Vec3>(corners, 8));
+        for (u32 i = 0; i < 8; i++)
+        {
+            Maths::Vec3 transformed = matrix.Transform(corners[i]);
+            newMin = Maths::Vec3::Min(newMin, transformed);
+            newMax = Maths::Vec3::Min(newMax, transformed);
+        }
+        return {(newMax + newMin) * 0.5f, (newMax - newMin) * 0.5f};
     }
 };
