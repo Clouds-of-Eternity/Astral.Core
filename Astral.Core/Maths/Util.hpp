@@ -250,6 +250,10 @@ namespace Maths
 		return Vec2((0.0f - C.Y) * num, C.X * num);
 	}
 
+	inline bool CharIsHex(char charValue)
+	{
+		return (charValue >= '0' && charValue <= '9') || (charValue >= 'A' && charValue <= 'F') || (charValue >= 'a' && charValue <= 'f');
+	}
 	inline constexpr u8 CharHexToByte(char charAt)
 	{
 		if (charAt >= '0' && charAt <= '9')
